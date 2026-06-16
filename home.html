@@ -179,7 +179,7 @@ let currentUser = null;
 // ── Auth check ────────────────────────────────────────────────────────────────
 async function init() {
   try {
-    const res  = await fetch(API + '/authVerify', { credentials: 'include' });
+    const res  = await fetch(API + '/auth/verify', { credentials: 'include' });
     if (!res.ok) { window.location.href = '/'; return; }
     const user = await res.json();
     currentUser = user;
@@ -208,7 +208,7 @@ async function init() {
 async function loadStats() {
   // Enrollment stats
   try {
-    const res  = await fetch(API + '/getDashboard', { credentials: 'include' });
+    const res  = await fetch(API + '/enrollment/getDashboard', { credentials: 'include' });
     const data = await res.json();
     if (Array.isArray(data)) {
       const pending = data.filter(r => r.status === 'sent' || r.status === 'opened').length;
@@ -254,7 +254,7 @@ async function loadActivity() {
 
   // Pull recent enrollment events
   try {
-    const res  = await fetch(API + '/getDashboard', { credentials: 'include' });
+    const res  = await fetch(API + '/enrollment/getDashboard', { credentials: 'include' });
     const data = await res.json();
     if (Array.isArray(data)) {
       data.slice(0, 5).forEach(r => {
@@ -289,7 +289,7 @@ async function loadActivity() {
 function nav(path) { window.location.href = path; }
 
 async function logout() {
-  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
+  await fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' });
   sessionStorage.clear();
   window.location.href = '/';
 }
