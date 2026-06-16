@@ -1,6 +1,4 @@
 const jwt = require('jsonwebtoken');
-
-// Temporarily hardcoded to test if env var is the issue
 const JWT_SECRET = process.env.JWT_SECRET || 'e42f24e9f5cfe3558144a25a0b30c6458fc4bd5ab6a6271404a1e7b509404c72';
 
 const CORS_HEADERS = {
@@ -17,15 +15,18 @@ module.exports = function(context, req) {
     return;
   }
 
-  const cookie = (req.headers && req.headers.cookie) || '';
-  const auth   = (req.headers && req.headers.authorization) || '';
-
+  // Get token from Authorization header OR cookie OR query string
   let token = null;
+  
+  const auth = (req.headers && req.headers.authorization) || '';
   if (auth && auth.startsWith('Bearer ')) token = auth.slice(7);
-  if (!token && cookie) {
+  
+  if (!token) {
+    const cookie = (req.headers && req.headers.cookie) || '';
     const match = cookie.match(/txl_token=([^;]+)/);
     if (match) token = match[1];
   }
+  
   if (!token && req.query && req.query.token) token = req.query.token;
 
   if (!token) {
