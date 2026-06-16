@@ -103,9 +103,8 @@ async function checkAuth() {
   try {
     const token = sessionStorage.getItem('txl_token');
     if (!token) return;
-    const res = await fetch('/api/authVerify', {
-      credentials: 'include',
-      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    const res = await fetch('/api/authVerify' + (token ? '?token=' + token : ''), {
+      credentials: 'include'
     });
     if (res.ok) {
       const data = await res.json();
