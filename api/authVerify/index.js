@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
+
+// Temporarily hardcoded to test if env var is the issue
+const JWT_SECRET = process.env.JWT_SECRET || 'e42f24e9f5cfe3558144a25a0b30c6458fc4bd5ab6a6271404a1e7b509404c72';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -15,42 +17,32 @@ module.exports = function(context, req) {
     return;
   }
 
-  // Debug info
   const cookie = (req.headers && req.headers.cookie) || '';
   const auth   = (req.headers && req.headers.authorization) || '';
-  
-  context.log('Cookie header:', cookie ? cookie.substring(0, 50) + '...' : 'NONE');
-  context.log('Auth header:', auth || 'NONE');
-  context.log('JWT_SECRET set:', !!process.env.JWT_SECRET);
 
-  // Get token from cookie
   let token = null;
   if (auth && auth.startsWith('Bearer ')) token = auth.slice(7);
   if (!token && cookie) {
     const match = cookie.match(/txl_token=([^;]+)/);
     if (match) token = match[1];
-    context.log('Token from cookie:', token ? 'FOUND (' + token.substring(0, 20) + '...)' : 'NOT FOUND');
   }
   if (!token && req.query && req.query.token) token = req.query.token;
 
   if (!token) {
-    context.log('No token found');
-    context.res = { status: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: 'No token', debug: { cookie: cookie.substring(0,100), auth } }) };
+    context.res = { status: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Unauthorized' }) };
     context.done();
     return;
   }
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    context.log('Token valid for:', payload.username);
     context.res = {
       status: 200,
       headers: CORS_HEADERS,
       body: JSON.stringify({ ok: true, username: payload.username, name: payload.name, role: payload.role, email: payload.email || '' })
     };
   } catch(e) {
-    context.log('JWT verify error:', e.message);
-    context.res = { status: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid token: ' + e.message }) };
+    context.res = { status: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
   context.done();
 };
