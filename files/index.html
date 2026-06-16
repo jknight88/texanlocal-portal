@@ -131,9 +131,8 @@ let currentYear, currentMonth;
 async function init() {
   try {
     const token = sessionStorage.getItem('txl_token');
-    const res  = await fetch(API + '/authVerify', {
-      credentials: 'include',
-      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    const res  = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), {
+      credentials: 'include'
     });
     if (!res.ok) { window.location.href = '/'; return; }
     const user = await res.json();
