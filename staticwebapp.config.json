@@ -1,0 +1,23 @@
+{
+  "routes": [
+    { "route": "/",                        "rewrite": "/public/index.html" },
+    { "route": "/home",                    "rewrite": "/public/home.html" },
+    { "route": "/enrollment",              "rewrite": "/public/enrollment/index.html" },
+    { "route": "/enrollment/sign*",        "rewrite": "/public/enrollment/sign.html" },
+    { "route": "/enrollment/inperson",     "rewrite": "/public/enrollment/inperson.html" },
+    { "route": "/enrollment/countersign*", "rewrite": "/public/enrollment/countersign.html" },
+    { "route": "/files",                   "rewrite": "/public/files/index.html" },
+    { "route": "/upload",                  "rewrite": "/public/upload/index.html" },
+    { "route": "/dashboard",               "rewrite": "/public/dashboard/index.html" }
+  ],
+  "navigationFallback": {
+    "rewrite": "/public/index.html",
+    "exclude": ["/api/*", "*.{css,scss,js,png,gif,ico,jpg,svg,json,woff,woff2,ttf}"]
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "platform": { "apiRuntime": "node:22" }
+}
