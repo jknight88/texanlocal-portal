@@ -44,7 +44,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 
 .ftr{text-align:center;padding:1.2rem;font-size:11px;color:#888}
 </style>
-</head> 
+</head>
 <body>
 
 <header class="hdr">
@@ -81,7 +81,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
         </div>
         <div class="field">
           <label>Password</label>
-          <input type="password" id="password" placeholder="Enter password" autocomplete="current-password">
+          <div style="position:relative"><input type="password" id="password" placeholder="Enter password" autocomplete="current-password" style="width:100%;padding-right:40px"><button type="button" onclick="togglePwd()" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#888;font-size:13px">👁</button></div>
         </div>
         <div id="msg" class="msg"></div>
         <button type="submit" class="btn-login" id="loginBtn">Sign In</button>
@@ -101,7 +101,7 @@ const BASE_URL  = window.location.origin;
 // ── Check if already logged in ───────────────────────────────────────────────
 async function checkAuth() {
   try {
-    const res = await fetch('/api/auth/verify', { credentials: 'include' });
+    const res = await fetch('/api/authVerify', { credentials: 'include' });
     if (res.ok) {
       const data = await res.json();
       redirectByRole(data.role);
@@ -149,7 +149,7 @@ async function simpleLogin(e) {
   msg.style.display = 'none';
 
   try {
-    const res  = await fetch('/api/auth/login', {
+    const res  = await fetch('/api/authLogin', {
       method:      'POST',
       headers:     { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -180,6 +180,7 @@ function showMsg(text, type) {
   msg.style.display = 'block';
 }
 
+function togglePwd() { const p = document.getElementById('password'); p.type = p.type === 'password' ? 'text' : 'password'; }
 checkAuth();
 </script>
 </body>
