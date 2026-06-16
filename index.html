@@ -101,10 +101,18 @@ const BASE_URL  = window.location.origin;
 // ── Check if already logged in ───────────────────────────────────────────────
 async function checkAuth() {
   try {
-    const res = await fetch('/api/authVerify', { credentials: 'include' });
+    const token = sessionStorage.getItem('txl_token');
+    if (!token) return;
+    const res = await fetch('/api/authVerify', {
+      credentials: 'include',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
     if (res.ok) {
       const data = await res.json();
       redirectByRole(data.role);
+    } else {
+      sessionStorage.removeItem('txl_token');
+      sessionStorage.removeItem('txl_user');
     }
   } catch(e) {}
 }
