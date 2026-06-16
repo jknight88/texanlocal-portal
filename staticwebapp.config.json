@@ -1,4 +1,4 @@
-
+{
   "routes": [
     { "route": "/",                        "rewrite": "/index.html" },
     { "route": "/home",                    "rewrite": "/home.html" },
@@ -23,5 +23,5 @@
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "X-XSS-Protection": "1; mode=block"
   },
-  "platform": { "apiRuntime": "node:22" }
+  "platform": { "apiRuntime": "node:18" }
 }
