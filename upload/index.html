@@ -169,7 +169,11 @@ let currentMonth, currentYear;
 
 async function init() {
   try {
-    const res  = await fetch(API + '/authVerify', { credentials: 'include' });
+    const token = sessionStorage.getItem('txl_token');
+    const res  = await fetch(API + '/authVerify', {
+      credentials: 'include',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
     if (!res.ok) { window.location.href = '/'; return; }
     const user = await res.json();
     document.getElementById('welcomeName').textContent = 'Hi ' + user.name.split(' ')[0] + '!';
