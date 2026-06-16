@@ -1,0 +1,28 @@
+{
+  "routes": [
+    { "route": "/",                   "rewrite": "/public/index.html" },
+    { "route": "/home",               "rewrite": "/public/home.html" },
+    { "route": "/enrollment",         "rewrite": "/public/enrollment/index.html" },
+    { "route": "/enrollment/sign*",   "rewrite": "/public/enrollment/sign.html" },
+    { "route": "/enrollment/inperson","rewrite": "/public/enrollment/inperson.html" },
+    { "route": "/enrollment/countersign*", "rewrite": "/public/enrollment/countersign.html" },
+    { "route": "/approvals",          "rewrite": "/public/approvals/index.html" },
+    { "route": "/respond",            "rewrite": "/public/respond/index.html" },
+    { "route": "/files",              "rewrite": "/public/files/index.html" },
+    { "route": "/upload",             "rewrite": "/public/upload/index.html" },
+    { "route": "/dashboard",          "rewrite": "/public/dashboard/index.html" }
+  ],
+  "navigationFallback": {
+    "rewrite": "/public/index.html",
+    "exclude": ["/api/*", "*.{css,js,png,gif,ico,jpg,svg,json,woff,woff2,ttf,pdf}"]
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-XSS-Protection": "1; mode=block",
+    "Content-Security-Policy": "default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://login.microsoftonline.com; script-src 'self' 'unsafe-inline' https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' https://graph.microsoft.com https://login.microsoftonline.com https://www.googleapis.com https://accounts.google.com;"
+  },
+  "platform": { "apiRuntime": "node:22" }
+}

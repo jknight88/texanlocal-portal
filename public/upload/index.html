@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Upload Ad Proofs</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit}
+
+.main{max-width:700px;margin:0 auto;padding:2rem;flex:1;width:100%}
+
+.welcome-box{background:#fff;border-radius:8px;padding:1.4rem 1.8rem;margin-bottom:1.5rem;border-left:4px solid var(--bl)}
+.welcome-box h2{font-family:'Playfair Display',serif;font-size:18px;color:var(--bl);margin-bottom:4px}
+.welcome-box p{font-size:13px;color:var(--md);line-height:1.6}
+
+/* ── Form ── */
+.upload-card{background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden}
+.card-hdr{background:var(--bl);padding:.8rem 1.4rem;border-bottom:3px solid var(--rd)}
+.card-hdr h3{color:#fff;font-size:14px;font-weight:700;letter-spacing:.4px}
+.card-body{padding:1.6rem}
+
+.field{margin-bottom:1.2rem}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.field select,.field input[type=text]{width:100%;border:none;border-bottom:2px solid var(--br);background:transparent;font-size:14px;font-family:inherit;padding:7px 2px;outline:none;transition:border-color .15s;-webkit-appearance:none}
+.field select:focus,.field input:focus{border-bottom-color:var(--rd)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.filename-preview{background:#f5f7fa;border:1px solid var(--br);border-radius:4px;padding:10px 14px;font-size:13px;color:var(--bl);font-weight:600;margin-top:8px;min-height:38px;word-break:break-all}
+.filename-preview.empty{color:#aaa;font-weight:400;font-style:italic}
+
+/* ── Drop zone ── */
+.drop-zone{border:2px dashed var(--br);border-radius:8px;padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;margin-top:1.4rem}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--rd);background:#fff8f8}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone .dz-icon{font-size:36px;margin-bottom:10px}
+.drop-zone h4{font-size:15px;font-weight:700;color:var(--bl);margin-bottom:4px}
+.drop-zone p{font-size:12px;color:var(--md)}
+
+/* ── Queue ── */
+.queue{margin-top:1.2rem}
+.queue-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f9fafb;border:1px solid var(--br);border-radius:5px;margin-bottom:6px;font-size:13px}
+.qi-name{flex:1;font-weight:600;color:var(--bl);word-break:break-all}
+.qi-size{color:var(--md);font-size:11px;white-space:nowrap}
+.qi-status{font-size:11px;font-weight:700;white-space:nowrap}
+.qi-status.pending{color:var(--md)}
+.qi-status.uploading{color:#1565c0}
+.qi-status.done{color:var(--green)}
+.qi-status.error{color:var(--rd)}
+.qi-remove{background:none;border:none;color:#ccc;cursor:pointer;font-size:16px;padding:0 4px}
+.qi-remove:hover{color:var(--rd)}
+
+.btn-upload-all{width:100%;background:var(--rd);color:#fff;border:none;padding:13px;border-radius:5px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:1rem;transition:background .15s}
+.btn-upload-all:hover{background:#9e0a31}
+.btn-upload-all:disabled{opacity:.5;cursor:not-allowed}
+
+.success-banner{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:1rem 1.2rem;text-align:center;margin-top:1rem;display:none}
+.success-banner h4{color:var(--green);font-size:15px;margin-bottom:4px}
+.success-banner p{font-size:12px;color:#388e3c}
+
+.hint{font-size:11px;color:var(--md);margin-top:4px;font-style:italic}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <img class="hdr-logo" src="/assets/logo.png" alt="" onerror="this.style.display='none'">
+    <h1>Ad Proof Upload</h1>
+  </div>
+  <button class="btn-hdr" onclick="logout()">Sign Out</button>
+</header>
+
+<div class="main">
+
+  <div class="welcome-box">
+    <h2 id="welcomeName">Hi Sherry!</h2>
+    <p>Upload completed ad proof PDFs here. Select the mailing month, ad type, and zones before uploading. The system will name the files automatically.</p>
+  </div>
+
+  <div class="upload-card">
+    <div class="card-hdr"><h3>Upload Ad Proofs</h3></div>
+    <div class="card-body">
+
+      <div class="field-row">
+        <div class="field">
+          <label>Mailing Month</label>
+          <select id="selMonth">
+            <option value="01">January</option><option value="02">February</option>
+            <option value="03">March</option><option value="04">April</option>
+            <option value="05">May</option><option value="06">June</option>
+            <option value="07">July</option><option value="08">August</option>
+            <option value="09">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Year</label>
+          <select id="selYear"></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Business Name <span style="color:var(--rd)">*</span></label>
+        <input type="text" id="bizName" placeholder="e.g. ChemDry, HillCountryCarpet" oninput="updateFilename()">
+        <div class="hint">No spaces or special characters — exactly as it appears in the file name</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Ad Type <span style="color:var(--rd)">*</span></label>
+          <select id="adType" onchange="updateFilename()">
+            <option value="">— Select —</option>
+            <option value="FP">FP — Full Page</option>
+            <option value="HP">HP — Half Page</option>
+            <option value="FC">FC — Front Cover</option>
+            <option value="BP">BP — Back Page</option>
+            <option value="2P">2P — 2-Page Spread</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Zones (optional)</label>
+          <input type="text" id="zones" placeholder="e.g. Z1-3, Z4, Z6-7" oninput="updateFilename()">
+          <div class="hint">Leave blank if no zones</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Generated Filename</label>
+        <div class="filename-preview empty" id="filenamePreview">Fill in fields above to see filename</div>
+      </div>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".pdf" multiple onchange="addFiles(this.files)">
+        <div class="dz-icon">📄</div>
+        <h4>Drop PDF files here</h4>
+        <p>or click to browse &nbsp;·&nbsp; Multiple files OK</p>
+      </div>
+
+      <!-- File queue -->
+      <div class="queue" id="fileQueue"></div>
+
+      <button class="btn-upload-all" id="uploadBtn" onclick="uploadAll()" disabled>
+        Upload All Files
+      </button>
+
+      <div class="success-banner" id="successBanner">
+        <h4>✓ All files uploaded successfully!</h4>
+        <p>Josh has been notified. You can upload more files or close this page.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let fileQueue = [];
+let currentMonth, currentYear;
+
+async function init() {
+  try {
+    const res  = await fetch(API + '/auth/verify', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/'; return; }
+    const user = await res.json();
+    document.getElementById('welcomeName').textContent = 'Hi ' + user.name.split(' ')[0] + '!';
+  } catch(e) { window.location.href = '/'; return; }
+
+  // Year options
+  const yearSel  = document.getElementById('selYear');
+  const thisYear = new Date().getFullYear();
+  for (let y = thisYear; y <= thisYear + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    yearSel.appendChild(opt);
+  }
+
+  // Default to current month
+  const now = new Date();
+  document.getElementById('selMonth').value = String(now.getMonth() + 1).padStart(2, '0');
+  document.getElementById('selYear').value  = now.getFullYear();
+  currentMonth = document.getElementById('selMonth').value;
+  currentYear  = document.getElementById('selYear').value;
+
+  document.getElementById('selMonth').addEventListener('change', () => {
+    currentMonth = document.getElementById('selMonth').value;
+    updateFilename();
+  });
+  document.getElementById('selYear').addEventListener('change', () => {
+    currentYear = document.getElementById('selYear').value;
+    updateFilename();
+  });
+
+  // Drag and drop
+  const zone = document.getElementById('dropZone');
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    addFiles(e.dataTransfer.files);
+  });
+}
+
+function updateFilename() {
+  currentMonth = document.getElementById('selMonth').value;
+  currentYear  = document.getElementById('selYear').value;
+  const biz    = document.getElementById('bizName').value.trim().replace(/\s+/g, '');
+  const type   = document.getElementById('adType').value;
+  const zones  = document.getElementById('zones').value.trim().replace(/\s+/g, '');
+  const yr2    = String(currentYear).slice(2);
+  const prev   = document.getElementById('filenamePreview');
+
+  if (!biz || !type) {
+    prev.textContent = 'Fill in fields above to see filename';
+    prev.className   = 'filename-preview empty';
+    return;
+  }
+
+  const mmyy  = currentMonth + yr2;
+  let name    = `${biz}_${mmyy}_${type}`;
+  if (zones) name += `_${zones}`;
+  name += '.pdf';
+
+  prev.textContent = name;
+  prev.className   = 'filename-preview';
+  return name;
+}
+
+function buildFilename(originalName) {
+  const generated = updateFilename();
+  if (!generated) return null;
+  // If only one file, use generated name exactly
+  // If multiple, use original name (they should follow convention already)
+  return fileQueue.length <= 1 ? generated : originalName;
+}
+
+function addFiles(files) {
+  for (const f of files) {
+    if (!f.name.toLowerCase().endsWith('.pdf')) continue;
+    if (fileQueue.find(q => q.file.name === f.name)) continue;
+    fileQueue.push({ file: f, status: 'pending', targetName: null });
+  }
+  renderQueue();
+  document.getElementById('uploadBtn').disabled = fileQueue.length === 0;
+  document.getElementById('fileInput').value = '';
+}
+
+function renderQueue() {
+  const el = document.getElementById('fileQueue');
+  if (!fileQueue.length) { el.innerHTML = ''; return; }
+  el.innerHTML = fileQueue.map((item, i) => `
+    <div class="queue-item" id="qi-${i}">
+      <div class="qi-name">${esc(item.file.name)}</div>
+      <div class="qi-size">${formatSize(item.file.size)}</div>
+      <div class="qi-status ${item.status}" id="qs-${i}">${statusLabel(item.status)}</div>
+      ${item.status === 'pending' ? `<button class="qi-remove" onclick="removeFile(${i})">✕</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function removeFile(i) {
+  fileQueue.splice(i, 1);
+  renderQueue();
+  document.getElementById('uploadBtn').disabled = fileQueue.length === 0;
+}
+
+async function uploadAll() {
+  const biz  = document.getElementById('bizName').value.trim().replace(/\s+/g, '');
+  const type = document.getElementById('adType').value;
+  if (!biz || !type) {
+    alert('Please fill in Business Name and Ad Type before uploading.');
+    return;
+  }
+
+  currentMonth = document.getElementById('selMonth').value;
+  currentYear  = document.getElementById('selYear').value;
+  const yr2    = String(currentYear).slice(2);
+  const mmyy   = currentMonth + yr2;
+  const zones  = document.getElementById('zones').value.trim().replace(/\s+/g, '');
+
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('successBanner').style.display = 'none';
+
+  let allOk = true;
+
+  for (let i = 0; i < fileQueue.length; i++) {
+    const item = fileQueue[i];
+    if (item.status === 'done') continue;
+
+    // Build target filename
+    let targetName;
+    if (fileQueue.length === 1) {
+      // Single file — use generated name
+      targetName = biz + '_' + mmyy + '_' + type + (zones ? '_' + zones : '') + '.pdf';
+    } else {
+      // Multiple files — use original filename (designer named them correctly)
+      targetName = item.file.name;
+    }
+
+    setStatus(i, 'uploading');
+
+    try {
+      const b64 = await fileToBase64(item.file);
+      const res = await fetch(`${API}/files/upload`, {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          filename:    targetName,
+          fileBase64:  b64,
+          contentType: 'application/pdf',
+          year:        currentYear,
+          month:       currentMonth
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      setStatus(i, 'done');
+    } catch(e) {
+      setStatus(i, 'error');
+      allOk = false;
+    }
+  }
+
+  if (allOk) {
+    document.getElementById('successBanner').style.display = 'block';
+    fileQueue = [];
+    renderQueue();
+    document.getElementById('bizName').value  = '';
+    document.getElementById('adType').value   = '';
+    document.getElementById('zones').value    = '';
+    updateFilename();
+  }
+
+  document.getElementById('uploadBtn').disabled = fileQueue.filter(f => f.status !== 'done').length === 0;
+}
+
+function setStatus(i, status) {
+  fileQueue[i].status = status;
+  const el = document.getElementById('qs-' + i);
+  if (el) { el.className = 'qi-status ' + status; el.textContent = statusLabel(status); }
+  const rem = document.getElementById('qi-' + i);
+  if (rem && status !== 'pending') {
+    const btn = rem.querySelector('.qi-remove');
+    if (btn) btn.remove();
+  }
+}
+
+function statusLabel(s) {
+  return { pending: 'Ready', uploading: '⏳ Uploading…', done: '✓ Done', error: '✗ Failed' }[s] || s;
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function formatSize(b) {
+  const mb = b / (1024 * 1024);
+  return mb >= 1 ? mb.toFixed(1) + 'MB' : Math.round(b / 1024) + 'KB';
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function logout() {
+  await fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' });
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+init();
+</script>
+</body>
+</html>

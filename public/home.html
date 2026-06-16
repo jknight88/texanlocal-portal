@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Portal Home</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── Header ── */
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
+.hdr-title h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.hdr-title p{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.hdr-r{display:flex;align-items:center;gap:16px}
+.user-pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;font-size:12px;color:#fff}
+.btn-logout{background:transparent;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-logout:hover{background:rgba(255,255,255,.1);color:#fff}
+
+/* ── Main ── */
+.main{max-width:1200px;margin:0 auto;padding:2rem;flex:1}
+
+.welcome{margin-bottom:2rem}
+.welcome h2{font-family:'Playfair Display',serif;font-size:24px;color:var(--bl);margin-bottom:4px}
+.welcome p{font-size:14px;color:var(--md)}
+
+/* ── Module grid ── */
+.modules{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.2rem;margin-bottom:2rem}
+
+.module-card{background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;cursor:pointer;border:none;font-family:inherit;text-align:left}
+.module-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.12)}
+
+.module-top{padding:1.4rem 1.4rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.module-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.icon-enroll{background:#e8ecf5}
+.icon-approval{background:#e8f5e9}
+.icon-files{background:#fff3e0}
+.icon-dashboard{background:#f3e5f5}
+.icon-upload{background:#fce4ec}
+.icon-settings{background:#e0f7fa}
+
+.module-badge{background:var(--rd);color:#fff;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;min-width:24px;text-align:center}
+.module-badge.zero{background:#ddd;color:#888}
+
+.module-info{padding:0 1.4rem 1.4rem}
+.module-info h3{font-size:15px;font-weight:700;color:var(--bl);margin-bottom:4px}
+.module-info p{font-size:12px;color:var(--md);line-height:1.5}
+
+.module-footer{background:var(--bg);padding:.65rem 1.4rem;font-size:11px;color:var(--md);border-top:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
+.module-footer span{color:var(--bl);font-weight:600}
+
+/* ── Activity feed ── */
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--md);margin-bottom:.8rem}
+.activity-card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.activity-hdr{background:var(--bl);padding:.65rem 1.2rem;display:flex;align-items:center;justify-content:space-between}
+.activity-hdr span{color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.activity-list{padding:.4rem 0}
+.activity-item{display:flex;align-items:center;gap:12px;padding:.6rem 1.2rem;border-bottom:1px solid #f0f2f5;font-size:12px}
+.activity-item:last-child{border-bottom:none}
+.a-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.a-dot.sent{background:var(--bl)}
+.a-dot.opened{background:var(--amber)}
+.a-dot.approved{background:var(--green)}
+.a-dot.changes{background:var(--rd)}
+.a-dot.signed{background:var(--green)}
+.a-time{color:#aaa;margin-left:auto;white-space:nowrap}
+.empty-feed{padding:2rem;text-align:center;color:var(--md);font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
+    <div class="hdr-title">
+      <h1>Staff Portal</h1>
+      <p>The Texan Local — Internal Platform</p>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="user-pill" id="userPill">Loading…</div>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="welcome">
+    <h2 id="welcomeMsg">Good morning</h2>
+    <p id="welcomeDate"></p>
+  </div>
+
+  <div class="modules" id="moduleGrid">
+    <!-- Enrollment & E-Sign -->
+    <button class="module-card" onclick="nav('/enrollment')">
+      <div class="module-top">
+        <div class="module-icon icon-enroll">📋</div>
+        <div class="module-badge zero" id="badge-enroll">—</div>
+      </div>
+      <div class="module-info">
+        <h3>Enrollment & E-Sign</h3>
+        <p>Send advertising enrollment agreements. Track client signing status in real time.</p>
+      </div>
+      <div class="module-footer">
+        <span id="stat-enroll">Loading…</span>
+        <span>→</span>
+      </div>
+    </button>
+
+    <!-- Ad Approvals -->
+    <button class="module-card" onclick="nav('/approvals')">
+      <div class="module-top">
+        <div class="module-icon icon-approval">✉️</div>
+        <div class="module-badge zero" id="badge-approvals">—</div>
+      </div>
+      <div class="module-info">
+        <h3>Ad Approvals</h3>
+        <p>Send monthly ad proof emails. Track who approved, who needs changes, who hasn't responded.</p>
+      </div>
+      <div class="module-footer">
+        <span id="stat-approvals">Loading…</span>
+        <span>→</span>
+      </div>
+    </button>
+
+    <!-- File Manager -->
+    <button class="module-card" onclick="nav('/files')">
+      <div class="module-top">
+        <div class="module-icon icon-files">📁</div>
+        <div class="module-badge zero" id="badge-files">—</div>
+      </div>
+      <div class="module-info">
+        <h3>File Manager</h3>
+        <p>Browse, download, and manage ad proof PDFs organized by mailing month.</p>
+      </div>
+      <div class="module-footer">
+        <span id="stat-files">Loading…</span>
+        <span>→</span>
+      </div>
+    </button>
+
+    <!-- Dashboard -->
+    <button class="module-card" onclick="nav('/dashboard')">
+      <div class="module-top">
+        <div class="module-icon icon-dashboard">📊</div>
+        <div class="module-badge zero" id="badge-dash">—</div>
+      </div>
+      <div class="module-info">
+        <h3>Activity Dashboard</h3>
+        <p>Combined view of enrollment and ad approval activity across all clients and months.</p>
+      </div>
+      <div class="module-footer">
+        <span id="stat-dash">All activity</span>
+        <span>→</span>
+      </div>
+    </button>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="section-title">Recent Activity</div>
+  <div class="activity-card">
+    <div class="activity-hdr">
+      <span>Latest Events</span>
+      <span style="color:rgba(255,255,255,.6);font-size:11px" id="activityTime">Loading…</span>
+    </div>
+    <div class="activity-list" id="activityList">
+      <div class="empty-feed">Loading activity…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let currentUser = null;
+
+// ── Auth check ────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res  = await fetch(API + '/auth/verify', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/'; return; }
+    const user = await res.json();
+    currentUser = user;
+
+    // Redirect designer to upload page
+    if (user.role === 'designer') { window.location.href = '/upload'; return; }
+
+    document.getElementById('userPill').textContent = user.name + ' (' + user.role + ')';
+
+    // Welcome message
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('welcomeMsg').textContent = greeting + ', ' + (user.name.split(' ')[0]) + '!';
+    document.getElementById('welcomeDate').textContent = new Date().toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    loadStats();
+    loadActivity();
+  } catch(e) {
+    window.location.href = '/';
+  }
+}
+
+// ── Load module stats ─────────────────────────────────────────────────────────
+async function loadStats() {
+  // Enrollment stats
+  try {
+    const res  = await fetch(API + '/enrollment/getDashboard', { credentials: 'include' });
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      const pending = data.filter(r => r.status === 'sent' || r.status === 'opened').length;
+      document.getElementById('badge-enroll').textContent = pending || '0';
+      document.getElementById('badge-enroll').className   = 'module-badge' + (pending ? '' : ' zero');
+      document.getElementById('stat-enroll').textContent  = pending + ' pending signature' + (pending !== 1 ? 's' : '');
+    }
+  } catch(e) {}
+
+  // File stats
+  const now   = new Date();
+  const year  = now.getFullYear().toString();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  try {
+    const res  = await fetch(`${API}/files/list?year=${year}&month=${month}`, { credentials: 'include' });
+    const data = await res.json();
+    if (data.files) {
+      const count = data.files.length;
+      document.getElementById('badge-files').textContent = count || '0';
+      document.getElementById('badge-files').className   = 'module-badge' + (count ? '' : ' zero');
+      document.getElementById('stat-files').textContent  = count + ' file' + (count !== 1 ? 's' : '') + ' this month';
+    }
+  } catch(e) {}
+
+  // Approval stats (current month)
+  try {
+    const res  = await fetch(`${API}/approvals/getDashboard?month=${month}&year=${year}`, { credentials: 'include' });
+    const data = await res.json();
+    if (data.records) {
+      const pending = data.records.filter(r => r.status === 'sent' || r.status === 'opened').length;
+      document.getElementById('badge-approvals').textContent = pending || '0';
+      document.getElementById('badge-approvals').className   = 'module-badge' + (pending ? '' : ' zero');
+      document.getElementById('stat-approvals').textContent  = pending + ' awaiting response';
+    }
+  } catch(e) {
+    document.getElementById('stat-approvals').textContent = 'No data yet';
+  }
+}
+
+// ── Load recent activity ──────────────────────────────────────────────────────
+async function loadActivity() {
+  const events = [];
+
+  // Pull recent enrollment events
+  try {
+    const res  = await fetch(API + '/enrollment/getDashboard', { credentials: 'include' });
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      data.slice(0, 5).forEach(r => {
+        if (r.signedAt)   events.push({ type: 'signed',   label: r.bizName + ' signed enrollment',    time: r.signedAt });
+        else if (r.openedAt) events.push({ type: 'opened', label: r.bizName + ' opened enrollment link', time: r.openedAt });
+        else              events.push({ type: 'sent',     label: r.bizName + ' — enrollment sent',    time: r.createdAt });
+      });
+    }
+  } catch(e) {}
+
+  // Sort by time desc
+  events.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+  const list = document.getElementById('activityList');
+  if (!events.length) {
+    list.innerHTML = '<div class="empty-feed">No recent activity</div>';
+    return;
+  }
+
+  list.innerHTML = events.slice(0, 8).map(e => `
+    <div class="activity-item">
+      <div class="a-dot ${e.type}"></div>
+      <span>${esc(e.label)}</span>
+      <span class="a-time">${timeAgo(e.time)}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('activityTime').textContent = 'Updated just now';
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function nav(path) { window.location.href = path; }
+
+async function logout() {
+  await fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' });
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)   return 'just now';
+  if (mins < 60)  return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)   return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+init();
+</script>
+</body>
+</html>
