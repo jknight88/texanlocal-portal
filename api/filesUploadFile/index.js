@@ -4,7 +4,7 @@
 // Stores file at ad-proofs/{year}/{month}/{filename}
 // Auth: admin, designer
 
-const { requireAuth, getContainer, corsOk, ok, err, sendEmail, emailWrapper, FROM_EMAIL } = require('../../shared/utils');
+const { requireAuth, getContainer, corsOk, ok, err, sendEmail, emailWrapper, FROM_EMAIL } = require('../shared/utils');
 const CONTAINER  = 'ad-proofs';
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || FROM_EMAIL;
 const MAX_SIZE_MB   = 100;

@@ -3,7 +3,7 @@
 // Verifies JWT token from cookie or Authorization header
 // Returns user info if valid
 
-const { requireAuth, ok, err, corsOk } = require('../../shared/utils');
+const { requireAuth, ok, err, corsOk } = require('../shared/utils');
 
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { corsOk(context); return; }

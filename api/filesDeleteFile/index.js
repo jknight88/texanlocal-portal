@@ -2,7 +2,7 @@
 // DELETE /api/files/delete?path=2026/06/ChemDry_0626_FP.pdf
 // Auth: admin only
 
-const { requireAuth, getContainer, corsOk, ok, err } = require('../../shared/utils');
+const { requireAuth, getContainer, corsOk, ok, err } = require('../shared/utils');
 const CONTAINER = 'ad-proofs';
 
 module.exports = async function(context, req) {

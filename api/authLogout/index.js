@@ -2,7 +2,7 @@
 // POST /api/auth/logout
 // Clears the auth cookie
 
-const { corsOk, ok, CORS_HEADERS } = require('../../shared/utils');
+const { corsOk, ok, CORS_HEADERS } = require('../shared/utils');
 
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { corsOk(context); return; }

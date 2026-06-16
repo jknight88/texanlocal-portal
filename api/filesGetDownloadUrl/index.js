@@ -4,7 +4,7 @@
 // Auth: admin, rep, designer
 
 const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
-const { requireAuth, corsOk, ok, err } = require('../../shared/utils');
+const { requireAuth, corsOk, ok, err } = require('../shared/utils');
 
 const STORAGE_CONN  = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const CONTAINER     = 'ad-proofs';

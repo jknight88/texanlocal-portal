@@ -4,7 +4,7 @@
 // Roles: admin | rep | designer
 
 const bcrypt = require('bcryptjs');
-const { signToken, corsOk, ok, err, CORS_HEADERS } = require('../../shared/utils');
+const { signToken, corsOk, ok, err, CORS_HEADERS } = require('../shared/utils');
 
 // Users are stored as env vars — no hardcoded credentials
 // Format: USERS_JSON = '[{"username":"sherry","passwordHash":"$2b$...","role":"designer","name":"Sherry Justice"}]'

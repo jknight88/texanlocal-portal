@@ -3,7 +3,7 @@
 // Lists all PDF files in ad-proofs/{year}/{month}/
 // Auth: admin, rep, designer (read-only for designer)
 
-const { requireAuth, getContainer, corsOk, ok, err } = require('../../shared/utils');
+const { requireAuth, getContainer, corsOk, ok, err } = require('../shared/utils');
 const CONTAINER = 'ad-proofs';
 
 module.exports = async function(context, req) {

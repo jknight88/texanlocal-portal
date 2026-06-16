@@ -130,7 +130,7 @@ let currentYear, currentMonth;
 
 async function init() {
   try {
-    const res  = await fetch(API + '/auth/verify', { credentials: 'include' });
+    const res  = await fetch(API + '/authVerify', { credentials: 'include' });
     if (!res.ok) { window.location.href = '/'; return; }
     const user = await res.json();
     userRole = user.role;
@@ -252,7 +252,7 @@ async function handleFiles(fileList) {
 
     try {
       const b64 = await fileToBase64(file);
-      const res = await fetch(`${API}/files/upload`, {
+      const res = await fetch(`${API}/filesUploadFile`, {
         method:      'POST',
         headers:     { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -287,7 +287,7 @@ function fileToBase64(file) {
 }
 
 async function logout() {
-  await fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' });
+  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
   sessionStorage.clear();
   window.location.href = '/';
 }
