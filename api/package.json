@@ -6,8 +6,6 @@
   "dependencies": {
     "@azure/storage-blob": "^12.17.0",
     "@azure/identity": "^4.0.0",
-    "uuid": "^9.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3"
+    "uuid": "^9.0.0"
   }
 }
