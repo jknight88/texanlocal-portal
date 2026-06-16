@@ -313,7 +313,7 @@ async function uploadAll() {
 
     try {
       const b64 = await fileToBase64(item.file);
-      const res = await fetch(`${API}/files/upload`, {
+      const res = await fetch(`${API}/filesUploadFile`, {
         method:      'POST',
         headers:     { 'Content-Type': 'application/json' },
         credentials: 'include',
