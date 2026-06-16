@@ -181,7 +181,7 @@ async function loadFiles() {
   grid.innerHTML = '<div class="empty"><div class="e-icon">⏳</div><h3>Loading…</h3></div>';
 
   try {
-    const res  = await fetch(`${API}/files/list?year=${year}&month=${month}`, { credentials: 'include' });
+    const res  = await fetch(`${API}/filesListFiles?year=${year}&month=${month}`, { credentials: 'include' });
     const data = await res.json();
 
     if (!data.files || !data.files.length) {
@@ -214,7 +214,7 @@ async function loadFiles() {
 async function downloadFile(fullPath, name) {
   try {
     showToast('Preparing download…');
-    const res  = await fetch(`${API}/files/download?path=${encodeURIComponent(fullPath)}`, { credentials: 'include' });
+    const res  = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}`, { credentials: 'include' });
     const data = await res.json();
     if (!data.url) throw new Error('No URL returned');
     const a = document.createElement('a');
@@ -229,7 +229,7 @@ async function downloadFile(fullPath, name) {
 async function deleteFile(fullPath, name) {
   if (!confirm(`Delete "${name}"?\n\nThis cannot be undone.`)) return;
   try {
-    const res = await fetch(`${API}/files/delete?path=${encodeURIComponent(fullPath)}`, {
+    const res = await fetch(`${API}/filesDeleteFile?path=${encodeURIComponent(fullPath)}`, {
       method: 'DELETE', credentials: 'include'
     });
     if (!res.ok) throw new Error('Delete failed');
@@ -255,7 +255,7 @@ async function handleFiles(fileList) {
 
     try {
       const b64 = await fileToBase64(file);
-      const res = await fetch(`${API}/files/upload`, {
+      const res = await fetch(`${API}/filesUploadFile`, {
         method:      'POST',
         headers:     { 'Content-Type': 'application/json' },
         credentials: 'include',
