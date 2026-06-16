@@ -1,17 +1,17 @@
 {
   "routes": [
-    { "route": "/",                        "rewrite": "/public/index.html" },
-    { "route": "/home",                    "rewrite": "/public/home.html" },
-    { "route": "/enrollment",              "rewrite": "/public/enrollment/index.html" },
-    { "route": "/enrollment/sign*",        "rewrite": "/public/enrollment/sign.html" },
-    { "route": "/enrollment/inperson",     "rewrite": "/public/enrollment/inperson.html" },
-    { "route": "/enrollment/countersign*", "rewrite": "/public/enrollment/countersign.html" },
-    { "route": "/files",                   "rewrite": "/public/files/index.html" },
-    { "route": "/upload",                  "rewrite": "/public/upload/index.html" },
-    { "route": "/dashboard",               "rewrite": "/public/dashboard/index.html" }
+    { "route": "/",                        "rewrite": "/index.html" },
+    { "route": "/home",                    "rewrite": "/home.html" },
+    { "route": "/enrollment",              "rewrite": "/enrollment/index.html" },
+    { "route": "/enrollment/sign*",        "rewrite": "/enrollment/sign.html" },
+    { "route": "/enrollment/inperson",     "rewrite": "/enrollment/inperson.html" },
+    { "route": "/enrollment/countersign*", "rewrite": "/enrollment/countersign.html" },
+    { "route": "/files",                   "rewrite": "/files/index.html" },
+    { "route": "/upload",                  "rewrite": "/upload/index.html" },
+    { "route": "/dashboard",               "rewrite": "/dashboard/index.html" }
   ],
   "navigationFallback": {
-    "rewrite": "/public/index.html",
+    "rewrite": "/index.html",
     "exclude": ["/api/*", "*.{css,scss,js,png,gif,ico,jpg,svg,json,woff,woff2,ttf}"]
   },
   "globalHeaders": {
