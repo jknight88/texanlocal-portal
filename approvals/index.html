@@ -12,11 +12,13 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 
 .hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
 .hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
 .hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
 .hdr-r{display:flex;gap:10px}
 .btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.btn-hdr:hover{background:rgba(255,255,255,.2)}
 
-.main{max-width:1100px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
+.main{max-width:1200px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
 
 /* Steps */
 .steps{display:flex;gap:0;margin-bottom:1.5rem;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07)}
@@ -30,7 +32,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 /* Panels */
 .panel{display:none;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
 .panel.active{display:block}
-.panel-hdr{background:var(--bl);padding:.75rem 1.4rem;border-bottom:3px solid var(--rd)}
+.panel-hdr{background:var(--bl);padding:.75rem 1.4rem;border-bottom:3px solid var(--rd);display:flex;align-items:center;justify-content:space-between}
 .panel-hdr h2{color:#fff;font-size:14px;font-weight:700;letter-spacing:.4px}
 .panel-body{padding:1.4rem}
 
@@ -39,9 +41,22 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .field label{display:block;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
 .field input,.field select,.field textarea{width:100%;border:none;border-bottom:2px solid var(--br);background:transparent;font-size:14px;font-family:inherit;padding:7px 2px;outline:none;transition:border-color .15s}
 .field input:focus,.field select:focus,.field textarea:focus{border-bottom-color:var(--rd)}
-.field textarea{min-height:80px;resize:vertical}
+.field textarea{min-height:100px;resize:vertical;line-height:1.6}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .hint{font-size:11px;color:var(--md);margin-top:4px;font-style:italic}
+
+/* Template bar */
+.template-bar{display:flex;align-items:center;gap:8px;background:#f5f7fb;border:1px solid var(--br);border-radius:6px;padding:8px 12px;margin-bottom:1rem}
+.template-bar label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.template-bar select{flex:1;border:none;border-bottom:none;background:transparent;font-size:13px;padding:2px 0;outline:none;cursor:pointer}
+.btn-tpl{padding:5px 12px;border-radius:4px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-tpl-save{background:var(--bl);color:#fff}
+.btn-tpl-delete{background:#ffebee;color:var(--rd);border:1px solid #ffcdd2}
+
+/* Email preview */
+.email-preview-wrap{border:1px solid var(--br);border-radius:6px;overflow:hidden;margin-top:.8rem}
+.email-preview-hdr{background:#f5f7fb;padding:6px 12px;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center}
+.email-preview-body{padding:12px;font-size:13px;color:#333;line-height:1.7;max-height:200px;overflow-y:auto;background:#fff}
 
 /* Client table */
 .client-table{width:100%;border-collapse:collapse;font-size:13px}
@@ -54,42 +69,33 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .badge-no-file{background:#fff3e0;color:var(--amber)}
 .chk{width:16px;height:16px;cursor:pointer}
 
-/* Upload */
-.upload-area{border:2px dashed var(--br);border-radius:6px;padding:1.2rem;text-align:center;cursor:pointer;position:relative;transition:all .2s;margin-bottom:1rem}
-.upload-area:hover{border-color:var(--rd);background:#fff8f8}
-.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-area p{font-size:13px;color:var(--md)}
-
 /* Buttons */
-.btn{padding:9px 20px;border-radius:5px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn{padding:9px 20px;border-radius:5px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
 .btn-primary{background:var(--bl);color:#fff}
 .btn-primary:hover{background:#001844}
 .btn-secondary{background:#f0f2f5;color:var(--md);border:1px solid var(--br)}
 .btn-secondary:hover{background:#e8eaf0}
 .btn-danger{background:var(--rd);color:#fff}
-.btn-danger:hover{background:#9e0a31}
+.btn-resend{background:#fff3e0;color:var(--amber);border:1px solid #ffcc80}
+.btn-resend:hover{background:#ffe0b2}
 .btn-success{background:var(--green);color:#fff}
 .btn-success:disabled{opacity:.5;cursor:not-allowed}
-.nav-btns{display:flex;gap:10px;justify-content:space-between;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--br)}
+.nav-btns{display:flex;gap:10px;justify-content:space-between;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--br);flex-wrap:wrap}
+
+/* Toolbar above client list */
+.list-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:.8rem;flex-wrap:wrap}
+.list-toolbar .search{flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;font-family:inherit;outline:none}
+.list-toolbar .search:focus{border-color:var(--rd)}
+.sel-count{font-size:12px;color:var(--md)}
 
 /* Progress */
 .progress-wrap{margin-top:1rem;display:none}
 .progress-bar{height:6px;background:var(--br);border-radius:3px;overflow:hidden;margin-bottom:8px}
 .progress-fill{height:100%;background:var(--green);transition:width .3s;width:0%}
 .progress-label{font-size:12px;color:var(--md);margin-bottom:6px}
-.send-log{max-height:200px;overflow-y:auto;font-size:12px;background:#f9fafc;border:1px solid var(--br);border-radius:4px;padding:8px}
+.send-log{max-height:240px;overflow-y:auto;font-size:12px;background:#f9fafc;border:1px solid var(--br);border-radius:4px;padding:8px}
 .log-item{padding:3px 0;border-bottom:1px solid #f0f2f5;display:flex;gap:8px}
 .log-item:last-child{border-bottom:none}
-
-/* Summary cards */
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.2rem}
-.sum-card{background:#fff;border-radius:6px;padding:1rem;text-align:center;border-top:3px solid var(--br);box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.sum-card.sent{border-color:var(--bl)}
-.sum-card.opened{border-color:var(--amber)}
-.sum-card.approved{border-color:var(--green)}
-.sum-card.changes{border-color:var(--rd)}
-.sum-num{font-size:28px;font-weight:700;color:var(--bl);margin-bottom:4px}
-.sum-lbl{font-size:11px;color:var(--md);text-transform:uppercase;letter-spacing:.5px}
 
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
@@ -101,7 +107,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 
 <header class="hdr">
   <div class="hdr-l">
-    <img src="/assets/logo.png" alt="" style="height:44px" onerror="this.style.display='none'">
+    <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
     <h1>Ad Approvals</h1>
   </div>
   <div class="hdr-r">
@@ -116,15 +122,16 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
   <!-- Steps -->
   <div class="steps">
     <div class="step active" id="step1tab" onclick="goStep(1)"><span class="step-num">1</span>Setup</div>
-    <div class="step" id="step2tab" onclick="goStep(2)"><span class="step-num">2</span>Client List</div>
-    <div class="step" id="step3tab" onclick="goStep(3)"><span class="step-num">3</span>Match &amp; Preview</div>
+    <div class="step" id="step2tab" onclick="goStep(2)"><span class="step-num">2</span>Select Clients</div>
+    <div class="step" id="step3tab" onclick="goStep(3)"><span class="step-num">3</span>Match Files</div>
     <div class="step" id="step4tab" onclick="goStep(4)"><span class="step-num">4</span>Send</div>
   </div>
 
   <!-- Step 1: Setup -->
   <div class="panel active" id="panel1">
-    <div class="panel-hdr"><h2>Step 1 — Mailing Setup</h2></div>
+    <div class="panel-hdr"><h2>Step 1 — Mailing Setup &amp; Email Template</h2></div>
     <div class="panel-body">
+
       <div class="field-row">
         <div class="field">
           <label>Mailing Month</label>
@@ -142,50 +149,85 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
           <select id="mailingYear"></select>
         </div>
       </div>
+
       <div class="field">
         <label>Approval Deadline</label>
         <input type="date" id="deadline">
         <div class="hint">Clients must approve or request changes by this date</div>
       </div>
+
+      <hr style="border:none;border-top:1px solid var(--br);margin:1.2rem 0">
+
+      <!-- Template bar -->
+      <div class="template-bar">
+        <label>Template</label>
+        <select id="templateSelect" onchange="loadTemplate()">
+          <option value="">— Select saved template —</option>
+        </select>
+        <button class="btn-tpl btn-tpl-save" onclick="saveTemplate()">💾 Save</button>
+        <button class="btn-tpl btn-tpl-delete" onclick="deleteTemplate()">🗑 Delete</button>
+      </div>
+
       <div class="field">
         <label>Email Subject Line</label>
         <input type="text" id="emailSubject" value="Your Ad Proof — {MONTH} Mailing | Please Review by {DEADLINE}">
-        <div class="hint">Placeholders: {MONTH} {DEADLINE} {BUSINESS}</div>
+        <div class="hint">Placeholders: {MONTH} {DEADLINE} {BUSINESS} {CONTACT}</div>
       </div>
+
+      <div class="field">
+        <label>Email Body</label>
+        <textarea id="emailBody" rows="10"></textarea>
+        <div class="hint">Placeholders: {CONTACT} {BUSINESS} {MONTH} {DEADLINE} — The ad image and Approve/Request Changes buttons are added automatically below the body.</div>
+      </div>
+
+      <!-- Preview -->
+      <div class="email-preview-wrap">
+        <div class="email-preview-hdr">
+          <span>Preview</span>
+          <button onclick="refreshPreview()" style="background:none;border:none;font-size:11px;color:var(--md);cursor:pointer">↻ Refresh</button>
+        </div>
+        <div class="email-preview-body" id="emailPreview"></div>
+      </div>
+
       <div class="nav-btns">
         <div></div>
-        <button class="btn btn-primary" onclick="goStep(2)">Next: Client List →</button>
+        <button class="btn btn-primary" onclick="goStep(2)">Next: Select Clients →</button>
       </div>
     </div>
   </div>
 
-  <!-- Step 2: Client List -->
+  <!-- Step 2: Select Clients -->
   <div class="panel" id="panel2">
-    <div class="panel-hdr"><h2>Step 2 — Client List</h2></div>
+    <div class="panel-hdr">
+      <h2>Step 2 — Select Clients</h2>
+      <span id="step2count" style="color:rgba(255,255,255,.7);font-size:12px"></span>
+    </div>
     <div class="panel-body">
-      <div class="upload-area" id="xlsxDrop">
-        <input type="file" id="xlsxFile" accept=".xlsx,.xls,.csv" onchange="loadExcel(this.files[0])">
-        <p>📊 Drop your client Excel/CSV file here or click to browse</p>
-        <p style="font-size:11px;margin-top:6px">Columns needed: Business Name, Contact Name, Email</p>
+      <div class="list-toolbar">
+        <input type="text" class="search" id="clientSearch" placeholder="Search clients…" oninput="renderClientList()">
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="selectAllClients(true)">Select All</button>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="selectAllClients(false)">Deselect All</button>
+        <span class="sel-count" id="selCount"></span>
       </div>
-      <div id="clientTableWrap"></div>
+      <div id="clientListWrap"></div>
       <div class="nav-btns">
         <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
-        <button class="btn btn-primary" onclick="goStep(3)" id="toStep3Btn" disabled>Next: Match Files →</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Next: Match Files →</button>
       </div>
     </div>
   </div>
 
-  <!-- Step 3: Match & Preview -->
+  <!-- Step 3: Match Files -->
   <div class="panel" id="panel3">
-    <div class="panel-hdr"><h2>Step 3 — Match Files &amp; Preview</h2></div>
+    <div class="panel-hdr"><h2>Step 3 — Match Files</h2></div>
     <div class="panel-body">
-      <div id="matchSummary" style="margin-bottom:1rem;font-size:13px;color:var(--md)">Click Match Files to find PDFs for each client.</div>
-      <div style="display:flex;gap:10px;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;flex-wrap:wrap">
+        <div id="matchSummary" style="font-size:13px;color:var(--md);flex:1">Click Match Files to find PDFs for each client.</div>
         <button class="btn btn-secondary" onclick="matchFiles()">🔍 Match Files</button>
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer">
-          <input type="checkbox" id="isResend"> Resend Proof (use current month files)
-        </label>
+        <button class="btn btn-resend" id="resendBtn" onclick="toggleResend()" title="Resend uses current mailing month files instead of prior month">📤 Resend Revision Proof</button>
+      </div>
+      <div id="resendNote" style="display:none;font-size:12px;color:var(--amber);background:#fff3e0;border:1px solid #ffcc80;border-radius:4px;padding:8px 12px;margin-bottom:.8rem">
+        ⚠️ Resend mode — looking in the <strong>current mailing month</strong> folder for revised files
       </div>
       <div id="matchTableWrap"></div>
       <div class="nav-btns">
@@ -208,7 +250,10 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
       </div>
       <div class="nav-btns">
         <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
-        <button class="btn btn-success" id="sendBtn" onclick="sendAll()">🚀 Send Approval Emails</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary" id="resetBtn" style="display:none" onclick="resetAll()">↺ Send Another Batch</button>
+          <button class="btn btn-success" id="sendBtn" onclick="sendAll()">🚀 Send Approval Emails</button>
+        </div>
       </div>
     </div>
   </div>
@@ -220,9 +265,28 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script>
 const API = '/api';
-let clients     = [];
-let matchResult = [];
-let currentStep = 1;
+let allClients    = [];
+let selectedIds   = new Set();
+let matchResult   = [];
+let currentStep   = 1;
+let isResend      = false;
+let sendComplete  = false;
+
+const DEFAULT_BODY = `Hi {CONTACT},
+
+Your ad proof for the {MONTH} mailing of The Texan Local is ready for your review. Please look it over carefully and let us know your decision by {DEADLINE}.
+
+Things to double-check:
+• Business name, address & phone number
+• Website and email address
+• Any specials, pricing, or promotional details
+• Overall design and layout
+
+Your ad image is shown below. Please click one of the buttons to let us know your decision.
+
+If I don't hear back by {DEADLINE}, your ad will run as shown.
+
+Thank you for advertising with The Texan Local!`;
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 async function init() {
@@ -239,19 +303,93 @@ async function init() {
 
   const yearSel = document.getElementById('mailingYear');
   for (let y = now.getFullYear(); y <= now.getFullYear() + 1; y++) {
-    const o = document.createElement('option');
-    o.value = y; o.textContent = y; yearSel.appendChild(o);
+    const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o);
   }
-  document.getElementById('mailingYear').value = nextMonth.getFullYear();
+  yearSel.value = nextMonth.getFullYear();
 
-  // Default deadline 2 weeks out
   const dl = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   document.getElementById('deadline').value = dl.toISOString().split('T')[0];
+
+  // Set default body
+  document.getElementById('emailBody').value = DEFAULT_BODY;
+
+  // Load templates from localStorage
+  loadTemplateList();
+  refreshPreview();
+
+  // Load clients
+  await loadClients();
+}
+
+// ── Template management ───────────────────────────────────────────────────────
+function getTemplates() {
+  try { return JSON.parse(localStorage.getItem('txl_email_templates') || '{}'); } catch(e) { return {}; }
+}
+
+function loadTemplateList() {
+  const templates = getTemplates();
+  const sel = document.getElementById('templateSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Select saved template —</option>';
+  Object.keys(templates).sort().forEach(name => {
+    const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+}
+
+function loadTemplate() {
+  const name = document.getElementById('templateSelect').value;
+  if (!name) return;
+  const templates = getTemplates();
+  const tpl = templates[name];
+  if (!tpl) return;
+  if (tpl.subject) document.getElementById('emailSubject').value = tpl.subject;
+  if (tpl.body)    document.getElementById('emailBody').value    = tpl.body;
+  refreshPreview();
+  showToast(`Template "${name}" loaded`);
+}
+
+function saveTemplate() {
+  const name = prompt('Template name:', document.getElementById('templateSelect').value || 'Default');
+  if (!name) return;
+  const templates = getTemplates();
+  templates[name] = {
+    subject: document.getElementById('emailSubject').value,
+    body:    document.getElementById('emailBody').value
+  };
+  localStorage.setItem('txl_email_templates', JSON.stringify(templates));
+  loadTemplateList();
+  document.getElementById('templateSelect').value = name;
+  showToast(`Template "${name}" saved`);
+}
+
+function deleteTemplate() {
+  const name = document.getElementById('templateSelect').value;
+  if (!name) { showToast('Select a template to delete', true); return; }
+  if (!confirm(`Delete template "${name}"?`)) return;
+  const templates = getTemplates();
+  delete templates[name];
+  localStorage.setItem('txl_email_templates', JSON.stringify(templates));
+  loadTemplateList();
+  showToast(`Template "${name}" deleted`);
+}
+
+function refreshPreview() {
+  const body     = document.getElementById('emailBody').value;
+  const month    = getMonthLabel();
+  const deadline = getDeadlineLabel();
+  const preview  = body
+    .replace(/{CONTACT}/g, 'John')
+    .replace(/{BUSINESS}/g, 'Sample Business')
+    .replace(/{MONTH}/g, month)
+    .replace(/{DEADLINE}/g, deadline)
+    .replace(/\n/g, '<br>');
+  document.getElementById('emailPreview').innerHTML = preview;
 }
 
 // ── Steps ─────────────────────────────────────────────────────────────────────
 function goStep(n) {
-  if (n === 3 && !clients.length) { showToast('Load a client list first', true); return; }
+  if (n === 3 && selectedIds.size === 0) { showToast('Select at least one client first', true); return; }
   if (n === 4) buildSendPreview();
   currentStep = n;
   document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i+1 === n));
@@ -262,63 +400,92 @@ function goStep(n) {
   if (n === 3 && matchResult.length === 0) matchFiles();
 }
 
-// ── Excel upload ──────────────────────────────────────────────────────────────
-function loadExcel(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb   = XLSX.read(e.target.result, { type: 'binary' });
-    const ws   = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-    if (!rows.length) { showToast('No data found in file', true); return; }
-
-    // Auto-detect columns
-    const keys = Object.keys(rows[0]).map(k => k.toLowerCase().trim());
-    const bizCol     = Object.keys(rows[0])[keys.findIndex(k => k.includes('biz') || k.includes('business') || k.includes('company') || k.includes('name'))];
-    const contactCol = Object.keys(rows[0])[keys.findIndex(k => k.includes('contact') || k.includes('first') || k.includes('person'))];
-    const emailCol   = Object.keys(rows[0])[keys.findIndex(k => k.includes('email') || k.includes('mail'))];
-
-    if (!bizCol || !emailCol) { showToast('Could not find Business Name or Email columns', true); return; }
-
-    clients = rows.map(r => ({
-      business: String(r[bizCol] || '').trim(),
-      contact:  contactCol ? String(r[contactCol] || '').trim() : '',
-      email:    String(r[emailCol] || '').trim()
-    })).filter(c => c.business && c.email && c.email.includes('@'));
-
-    renderClientTable();
-    document.getElementById('toStep3Btn').disabled = clients.length === 0;
-    matchResult = []; // reset matches
-    showToast(`Loaded ${clients.length} clients`);
-  };
-  reader.readAsBinaryString(file);
+// ── Load clients ──────────────────────────────────────────────────────────────
+async function loadClients() {
+  try {
+    const res  = await fetch(API + '/getClients', { credentials: 'include' });
+    const data = await res.json();
+    allClients = data.clients || [];
+    // Select all by default
+    selectedIds = new Set(allClients.map(c => c.id));
+    renderClientList();
+    document.getElementById('step2count').textContent = allClients.length + ' clients';
+  } catch(e) {
+    showToast('Failed to load clients: ' + e.message, true);
+  }
 }
 
-function renderClientTable() {
-  const wrap = document.getElementById('clientTableWrap');
-  if (!clients.length) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = `
+function renderClientList() {
+  const q        = (document.getElementById('clientSearch').value || '').toLowerCase();
+  const filtered = q ? allClients.filter(c =>
+    c.business.toLowerCase().includes(q) ||
+    (c.contact||'').toLowerCase().includes(q) ||
+    (c.email||'').toLowerCase().includes(q)
+  ) : allClients;
+
+  const selCount = allClients.filter(c => selectedIds.has(c.id)).length;
+  document.getElementById('selCount').textContent = selCount + ' of ' + allClients.length + ' selected';
+
+  if (!allClients.length) {
+    document.getElementById('clientListWrap').innerHTML = `
+      <div style="padding:2rem;text-align:center;color:var(--md)">
+        <p>No clients in master list.</p>
+        <a href="/clients" style="color:var(--bl);font-weight:700">→ Go to Client List to add clients</a>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('clientListWrap').innerHTML = `
     <table class="client-table">
-      <thead><tr><th>#</th><th>Business</th><th>Contact</th><th>Email</th></tr></thead>
-      <tbody>${clients.map((c,i) => `
-        <tr>
-          <td style="color:var(--md)">${i+1}</td>
+      <thead><tr>
+        <th><input type="checkbox" onchange="toggleAllVisible(this)" ${filtered.every(c => selectedIds.has(c.id)) ? 'checked' : ''}></th>
+        <th>Business</th><th>Contact</th><th>Email</th>
+      </tr></thead>
+      <tbody>${filtered.map(c => `
+        <tr onclick="toggleClient('${c.id}')" style="cursor:pointer">
+          <td><input type="checkbox" class="chk" ${selectedIds.has(c.id) ? 'checked' : ''} onclick="event.stopPropagation();toggleClient('${c.id}')"></td>
           <td><strong>${esc(c.business)}</strong></td>
-          <td>${esc(c.contact)}</td>
-          <td style="color:var(--md)">${esc(c.email)}</td>
+          <td style="font-size:12px">${esc((c.contact||'') + (c.lastName ? ' '+c.lastName : ''))}</td>
+          <td style="font-size:12px;color:var(--md)">${esc(c.email||'—')}</td>
         </tr>`).join('')}
       </tbody>
-    </table>
-    <p style="font-size:12px;color:var(--md);margin-top:8px">${clients.length} clients loaded</p>`;
+    </table>`;
+}
+
+function toggleClient(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  renderClientList();
+  matchResult = []; // reset matches when selection changes
+}
+
+function toggleAllVisible(cb) {
+  const q = (document.getElementById('clientSearch').value || '').toLowerCase();
+  const filtered = q ? allClients.filter(c => c.business.toLowerCase().includes(q) || (c.contact||'').toLowerCase().includes(q)) : allClients;
+  filtered.forEach(c => { if (cb.checked) selectedIds.add(c.id); else selectedIds.delete(c.id); });
+  renderClientList();
+}
+
+function selectAllClients(sel) {
+  allClients.forEach(c => { if (sel) selectedIds.add(c.id); else selectedIds.delete(c.id); });
+  renderClientList();
 }
 
 // ── Match files ───────────────────────────────────────────────────────────────
-async function matchFiles() {
-  const month    = document.getElementById('mailingMonth').value;
-  const year     = document.getElementById('mailingYear').value;
-  const isResend = document.getElementById('isResend').checked;
+function toggleResend() {
+  isResend = !isResend;
+  document.getElementById('resendBtn').style.background  = isResend ? 'var(--amber)' : '';
+  document.getElementById('resendBtn').style.color       = isResend ? '#fff' : '';
+  document.getElementById('resendNote').style.display    = isResend ? 'block' : 'none';
+  matchResult = [];
+  matchFiles();
+}
 
-  // Determine lookup folder
+async function matchFiles() {
+  const month = document.getElementById('mailingMonth').value;
+  const year  = document.getElementById('mailingYear').value;
+  const selected = allClients.filter(c => selectedIds.has(c.id));
+
   let lookupMonth, lookupYear;
   if (isResend) {
     lookupMonth = month; lookupYear = year;
@@ -335,8 +502,7 @@ async function matchFiles() {
     const data = await res.json();
     const files = data.files || [];
 
-    // Match each client to their files
-    matchResult = clients.map(c => {
+    matchResult = selected.map(c => {
       const norm    = normBiz(c.business);
       const matched = files.filter(f => normBiz(f.name.replace(/\.pdf$/i,'').split('_')[0]) === norm);
       return { ...c, files: matched, hasMatch: matched.length > 0 };
@@ -345,54 +511,48 @@ async function matchFiles() {
     const matched   = matchResult.filter(r => r.hasMatch).length;
     const unmatched = matchResult.filter(r => !r.hasMatch).length;
     document.getElementById('matchSummary').innerHTML =
-      `<strong style="color:var(--green)">${matched} matched</strong> &nbsp;·&nbsp; <span style="color:var(--amber)">${unmatched} no file found</span> &nbsp;·&nbsp; Folder: ${lookupMonth}/${lookupYear}`;
+      `<strong style="color:var(--green)">${matched} matched</strong> &nbsp;·&nbsp; <span style="color:var(--amber)">${unmatched} no file</span> &nbsp;·&nbsp; Folder: ${lookupMonth}/${lookupYear}`;
 
     renderMatchTable();
   } catch(e) {
-    document.getElementById('matchSummary').textContent = 'Error loading files: ' + e.message;
+    document.getElementById('matchSummary').textContent = 'Error: ' + e.message;
   }
 }
 
-function normBiz(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function normBiz(n) { return String(n||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 
 function renderMatchTable() {
-  const wrap = document.getElementById('matchTableWrap');
-  if (!matchResult.length) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = `
+  if (!matchResult.length) { document.getElementById('matchTableWrap').innerHTML = ''; return; }
+  document.getElementById('matchTableWrap').innerHTML = `
     <table class="client-table">
       <thead><tr>
-        <th><input type="checkbox" onchange="toggleAll(this)" checked></th>
+        <th><input type="checkbox" onchange="toggleAllMatch(this)" checked></th>
         <th>Business</th><th>Email</th><th>Files Found</th><th>Status</th>
       </tr></thead>
       <tbody>${matchResult.map((r,i) => `
         <tr>
-          <td><input type="checkbox" class="chk" id="chk-${i}" ${r.hasMatch ? 'checked' : ''} ${!r.hasMatch ? 'disabled' : ''}></td>
-          <td><strong>${esc(r.business)}</strong><br><span style="font-size:11px;color:var(--md)">${esc(r.contact)}</span></td>
-          <td style="font-size:12px;color:var(--md)">${esc(r.email)}</td>
-          <td style="font-size:11px;color:var(--md)">${r.files.map(f => esc(f.name)).join('<br>') || '—'}</td>
-          <td><span class="status-badge ${r.hasMatch ? 'badge-matched' : 'badge-no-file'}">${r.hasMatch ? '✓ Ready' : '⚠ No File'}</span></td>
+          <td><input type="checkbox" class="mchk" id="mchk-${i}" ${r.hasMatch ? 'checked' : ''} ${!r.hasMatch ? 'disabled' : ''}></td>
+          <td><strong>${esc(r.business)}</strong><br><span style="font-size:11px;color:var(--md)">${esc(r.contact||'')}</span></td>
+          <td style="font-size:12px;color:var(--md)">${esc(r.email||'')}</td>
+          <td style="font-size:11px;color:var(--md)">${r.files.map(f=>esc(f.name)).join('<br>')||'—'}</td>
+          <td><span class="status-badge ${r.hasMatch?'badge-matched':'badge-no-file'}">${r.hasMatch?'✓ Ready':'⚠ No File'}</span></td>
         </tr>`).join('')}
       </tbody>
     </table>`;
 }
 
-function toggleAll(cb) {
-  document.querySelectorAll('.chk:not(:disabled)').forEach(c => c.checked = cb.checked);
+function toggleAllMatch(cb) {
+  document.querySelectorAll('.mchk:not(:disabled)').forEach(c => c.checked = cb.checked);
 }
 
 // ── Send preview ──────────────────────────────────────────────────────────────
 function buildSendPreview() {
-  const selected = getSelected();
-  const month    = document.getElementById('mailingMonth').value;
-  const year     = document.getElementById('mailingYear').value;
-  const deadline = document.getElementById('deadline').value;
-  const isResend = document.getElementById('isResend').checked;
-  const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const monthLabel = MONTHS[parseInt(month)-1] + ' ' + year;
-  const dlLabel    = deadline ? new Date(deadline + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '—';
+  const selected  = getSelectedForSend();
+  const monthLabel = getMonthLabel();
+  const dlLabel    = getDeadlineLabel();
 
   document.getElementById('sendSummary').innerHTML =
-    `<strong>${selected.length}</strong> emails ready to send &nbsp;·&nbsp; Mailing: <strong>${monthLabel}</strong> &nbsp;·&nbsp; Deadline: <strong>${dlLabel}</strong> &nbsp;·&nbsp; ${isResend ? '<span style="color:var(--amber)">📤 Resend (using current month files)</span>' : 'Initial send (using prior month files)'}`;
+    `<strong>${selected.length}</strong> emails ready &nbsp;·&nbsp; Mailing: <strong>${monthLabel}</strong> &nbsp;·&nbsp; Deadline: <strong>${dlLabel}</strong>${isResend ? ' &nbsp;·&nbsp; <span style="color:var(--amber)">📤 Resend mode</span>' : ''}`;
 
   document.getElementById('sendTableWrap').innerHTML = `
     <table class="client-table">
@@ -400,34 +560,37 @@ function buildSendPreview() {
       <tbody>${selected.map(r => `
         <tr>
           <td><strong>${esc(r.business)}</strong></td>
-          <td>${esc(r.contact)}</td>
-          <td style="font-size:12px;color:var(--md)">${esc(r.email)}</td>
-          <td style="font-size:11px;color:var(--md)">${r.files.length} file${r.files.length !== 1 ? 's' : ''}</td>
+          <td>${esc(r.contact||'')}</td>
+          <td style="font-size:12px;color:var(--md)">${esc(r.email||'')}</td>
+          <td style="font-size:11px;color:var(--md)">${r.files.length} file${r.files.length!==1?'s':''}</td>
         </tr>`).join('')}
       </tbody>
     </table>`;
+
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('sendBtn').textContent = '🚀 Send Approval Emails';
+  document.getElementById('resetBtn').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('sendLog').innerHTML = '';
 }
 
-function getSelected() {
+function getSelectedForSend() {
   return matchResult.filter((r,i) => {
-    const chk = document.getElementById('chk-' + i);
+    const chk = document.getElementById('mchk-' + i);
     return chk && chk.checked && r.hasMatch;
   });
 }
 
-// ── Send all ──────────────────────────────────────────────────────────────────
+// ── Send ──────────────────────────────────────────────────────────────────────
 async function sendAll() {
-  const selected = getSelected();
-  if (!selected.length) { showToast('No clients selected', true); return; }
+  const selected = getSelectedForSend();
+  if (!selected.length) { showToast('No clients ready to send', true); return; }
 
-  const month    = document.getElementById('mailingMonth').value;
-  const year     = document.getElementById('mailingYear').value;
-  const deadline = document.getElementById('deadline').value;
-  const isResend = document.getElementById('isResend').checked;
-  const subject  = document.getElementById('emailSubject').value;
-  const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const dlLabel  = deadline ? new Date(deadline + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
-  const subj     = subject.replace(/{MONTH}/g, MONTHS[parseInt(month)-1] + ' ' + year).replace(/{DEADLINE}/g, dlLabel);
+  const month   = document.getElementById('mailingMonth').value;
+  const year    = document.getElementById('mailingYear').value;
+  const deadline = getDeadlineLabel();
+  const subject  = buildSubject();
+  const body     = document.getElementById('emailBody').value;
 
   document.getElementById('sendBtn').disabled = true;
   document.getElementById('sendBtn').textContent = '⏳ Sending…';
@@ -437,25 +600,25 @@ async function sendAll() {
   wrap.style.display = 'block';
   log.innerHTML = '';
 
-  const BATCH = 5; // send in batches of 5
+  const BATCH = 5;
   let sent = 0;
 
   for (let i = 0; i < selected.length; i += BATCH) {
     const batch = selected.slice(i, i + BATCH);
-    document.getElementById('progressLabel').textContent = `Sending ${i+1}–${Math.min(i+BATCH, selected.length)} of ${selected.length}…`;
+    document.getElementById('progressLabel').textContent = `Sending ${i+1}–${Math.min(i+BATCH,selected.length)} of ${selected.length}…`;
     fill.style.width = (i / selected.length * 100) + '%';
 
     try {
       const res  = await fetch(`${API}/sendApprovals`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ mailingMonth: month, mailingYear: year, deadline: dlLabel, clients: batch, isResend, subject: subj })
+        method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
+        body: JSON.stringify({ mailingMonth: month, mailingYear: year, deadline, clients: batch, isResend, subject, bodyTemplate: body })
       });
       const data = await res.json();
       if (data.results) {
         data.results.forEach(r => {
-          const icon = r.status === 'sent' ? '✅' : r.status === 'no_file' ? '⚠️' : '❌';
-          addLog(log, icon, r.business + (r.message ? ' — ' + r.message : ''));
-          if (r.status === 'sent') sent++;
+          const icon = r.status==='sent' ? '✅' : r.status==='no_file' ? '⚠️' : '❌';
+          addLog(log, icon, r.business + (r.message ? ' — '+r.message : ''));
+          if (r.status==='sent') sent++;
         });
       }
     } catch(e) {
@@ -466,7 +629,22 @@ async function sendAll() {
   fill.style.width = '100%';
   document.getElementById('progressLabel').textContent = `✓ Done! ${sent} of ${selected.length} emails sent.`;
   document.getElementById('sendBtn').textContent = '✓ Sent';
-  showToast(`${sent} emails sent successfully!`);
+  document.getElementById('resetBtn').style.display = 'inline-flex';
+  showToast(`${sent} emails sent!`);
+}
+
+function resetAll() {
+  matchResult = [];
+  isResend    = false;
+  document.getElementById('resendBtn').style.background = '';
+  document.getElementById('resendBtn').style.color      = '';
+  document.getElementById('resendNote').style.display   = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('sendLog').innerHTML           = '';
+  document.getElementById('matchTableWrap').innerHTML    = '';
+  document.getElementById('matchSummary').textContent    = 'Click Match Files to find PDFs for each client.';
+  goStep(1);
+  showToast('Ready for next batch');
 }
 
 function addLog(container, icon, msg) {
@@ -477,18 +655,45 @@ function addLog(container, icon, msg) {
   container.scrollTop = container.scrollHeight;
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function getMonthLabel() {
+  return MONTHS[parseInt(document.getElementById('mailingMonth').value)-1] + ' ' + document.getElementById('mailingYear').value;
+}
+
+function getDeadlineLabel() {
+  const dl = document.getElementById('deadline').value;
+  return dl ? new Date(dl+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
+}
+
+function buildSubject() {
+  return document.getElementById('emailSubject').value
+    .replace(/{MONTH}/g, getMonthLabel())
+    .replace(/{DEADLINE}/g, getDeadlineLabel());
+}
+
 async function logout() {
-  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
-  sessionStorage.clear(); window.location.href = '/';
+  await fetch(API+'/authLogout',{method:'POST',credentials:'include'});
+  sessionStorage.clear(); window.location.href='/';
 }
 
 function showToast(msg, isErr) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
-  setTimeout(() => t.className = 'toast', 3000);
+  t.textContent = msg; t.className = 'toast show'+(isErr?' err':'');
+  setTimeout(() => t.className='toast', 3500);
 }
 
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Auto-refresh preview on body/subject change
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('emailBody').addEventListener('input', refreshPreview);
+  document.getElementById('emailSubject').addEventListener('input', refreshPreview);
+  document.getElementById('mailingMonth').addEventListener('change', refreshPreview);
+  document.getElementById('mailingYear').addEventListener('change', refreshPreview);
+  document.getElementById('deadline').addEventListener('change', refreshPreview);
+});
 
 init();
 </script>
