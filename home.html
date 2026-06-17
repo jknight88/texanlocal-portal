@@ -40,6 +40,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .icon-approval{background:#e8f5e9}
 .icon-files{background:#fff3e0}
 .icon-dashboard{background:#f3e5f5}
+.icon-clients{background:#e8f5e9}
 .icon-upload{background:#fce4ec}
 .icon-settings{background:#e0f7fa}
 
@@ -157,6 +158,22 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
         <span>→</span>
       </div>
     </button>
+
+    <!-- Clients -->
+    <button class="module-card" onclick="nav('/clients')">
+      <div class="module-top">
+        <div class="module-icon icon-clients">👥</div>
+        <div class="module-badge zero" id="badge-clients">—</div>
+      </div>
+      <div class="module-info">
+        <h3>Client List</h3>
+        <p>Manage your master client list. Import from CSV or add clients manually.</p>
+      </div>
+      <div class="module-footer">
+        <span id="stat-clients">Loading…</span>
+        <span>→</span>
+      </div>
+    </button>
   </div>
 
   <!-- Recent Activity -->
@@ -211,7 +228,7 @@ async function init() {
 async function loadStats() {
   // Enrollment stats
   try {
-    const res  = await fetch(API + '/enrollment/getDashboard', { credentials: 'include' });
+    const res  = await fetch(API + '/getDashboard', { credentials: 'include' });
     const data = await res.json();
     if (Array.isArray(data)) {
       const pending = data.filter(r => r.status === 'sent' || r.status === 'opened').length;
@@ -226,7 +243,7 @@ async function loadStats() {
   const year  = now.getFullYear().toString();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   try {
-    const res  = await fetch(`${API}/files/list?year=${year}&month=${month}`, { credentials: 'include' });
+    const res  = await fetch(`${API}/filesListFiles?year=${year}&month=${month}`, { credentials: 'include' });
     const data = await res.json();
     if (data.files) {
       const count = data.files.length;
@@ -238,7 +255,7 @@ async function loadStats() {
 
   // Approval stats (current month)
   try {
-    const res  = await fetch(`${API}/approvals/getDashboard?month=${month}&year=${year}`, { credentials: 'include' });
+    const res  = await fetch(`${API}/getApprovalsDashboard?month=${month}&year=${year}`, { credentials: 'include' });
     const data = await res.json();
     if (data.records) {
       const pending = data.records.filter(r => r.status === 'sent' || r.status === 'opened').length;
@@ -249,6 +266,18 @@ async function loadStats() {
   } catch(e) {
     document.getElementById('stat-approvals').textContent = 'No data yet';
   }
+
+  // Client count
+  try {
+    const res  = await fetch(API + '/getClients', { credentials: 'include' });
+    const data = await res.json();
+    const count = (data.clients || []).length;
+    document.getElementById('badge-clients').textContent = count || '0';
+    document.getElementById('badge-clients').className   = 'module-badge' + (!count ? ' zero' : '');
+    document.getElementById('stat-clients').textContent  = count + ' active client' + (count !== 1 ? 's' : '');
+  } catch(e) {
+    document.getElementById('stat-clients').textContent = 'No data yet';
+  }
 }
 
 // ── Load recent activity ──────────────────────────────────────────────────────
@@ -257,7 +286,7 @@ async function loadActivity() {
 
   // Pull recent enrollment events
   try {
-    const res  = await fetch(API + '/enrollment/getDashboard', { credentials: 'include' });
+    const res  = await fetch(API + '/getDashboard', { credentials: 'include' });
     const data = await res.json();
     if (Array.isArray(data)) {
       data.slice(0, 5).forEach(r => {
