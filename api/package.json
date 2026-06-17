@@ -7,6 +7,7 @@
     "@azure/identity": "^4.0.0",
     "uuid": "^9.0.0",
     "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3"
+    "bcryptjs": "^2.4.3",
+    "pdf-to-img": "^4.2.0"
   }
 }
