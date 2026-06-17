@@ -210,6 +210,20 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
         <span class="sel-count" id="selCount"></span>
       </div>
       <div id="clientListWrap"></div>
+
+      <!-- Secondary CSV option -->
+      <div style="margin-top:1rem;border-top:1px solid var(--br);padding-top:1rem">
+        <button onclick="toggleCsvImport()" style="background:none;border:none;font-size:12px;color:var(--md);cursor:pointer;text-decoration:underline">
+          📊 Import a one-time CSV list instead
+        </button>
+        <div id="csvImportWrap" style="display:none;margin-top:.8rem">
+          <div style="background:#f9fafc;border:1px solid var(--br);border-radius:6px;padding:1rem">
+            <p style="font-size:12px;color:var(--md);margin-bottom:.6rem">Upload a CSV/Excel with Business Name, Contact, Email columns. This overrides the master list for this send only.</p>
+            <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" onchange="loadCsvClients(this.files[0])" style="font-size:12px">
+            <div id="csvStatus" style="font-size:12px;color:var(--green);margin-top:6px"></div>
+          </div>
+        </div>
+      </div>
       <div class="nav-btns">
         <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
         <button class="btn btn-primary" onclick="goStep(3)">Next: Match Files →</button>
@@ -464,6 +478,45 @@ function toggleAllVisible(cb) {
   const filtered = q ? allClients.filter(c => c.business.toLowerCase().includes(q) || (c.contact||'').toLowerCase().includes(q)) : allClients;
   filtered.forEach(c => { if (cb.checked) selectedIds.add(c.id); else selectedIds.delete(c.id); });
   renderClientList();
+}
+
+function toggleCsvImport() {
+  const wrap = document.getElementById('csvImportWrap');
+  wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+}
+
+function loadCsvClients(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb   = XLSX.read(e.target.result, { type: 'binary' });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!rows.length) { document.getElementById('csvStatus').textContent = 'No data found'; return; }
+
+    const keys       = Object.keys(rows[0]).map(k => k.toLowerCase().trim());
+    const bizKey     = Object.keys(rows[0])[keys.findIndex(k => k.includes('biz') || k.includes('business') || k.includes('company') || k === 'name')];
+    const contactKey = Object.keys(rows[0])[keys.findIndex(k => k.includes('contact') || k.includes('first'))];
+    const emailKey   = Object.keys(rows[0])[keys.findIndex(k => k.includes('email'))];
+
+    if (!bizKey || !emailKey) { document.getElementById('csvStatus').textContent = 'Could not find Business Name or Email columns'; return; }
+
+    const csvClients = rows.map(r => ({
+      id:       'csv_' + Math.random().toString(36).slice(2),
+      business: String(r[bizKey]     || '').trim(),
+      contact:  contactKey ? String(r[contactKey] || '').trim() : '',
+      email:    String(r[emailKey]   || '').trim()
+    })).filter(c => c.business && c.email && c.email.includes('@'));
+
+    // Replace client list with CSV data
+    allClients  = csvClients;
+    selectedIds = new Set(csvClients.map(c => c.id));
+    renderClientList();
+    matchResult = [];
+    document.getElementById('csvStatus').textContent = `✓ ${csvClients.length} clients loaded from CSV`;
+    document.getElementById('csvImportWrap').style.display = 'none';
+  };
+  reader.readAsBinaryString(file);
 }
 
 function selectAllClients(sel) {
