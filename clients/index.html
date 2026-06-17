@@ -76,6 +76,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .field input:focus,.field textarea:focus{border-bottom-color:var(--rd)}
 .field textarea{resize:vertical;min-height:60px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row-3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--br)}
 .btn-cancel{background:#f0f2f5;color:var(--md);padding:8px 16px;border-radius:4px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-save{background:var(--bl);color:#fff;padding:8px 20px;border-radius:4px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
@@ -118,13 +119,13 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
       <p>📊 Drop your client CSV or Excel file here</p>
       <small>Columns: Business Name, Contact Name, Email, Phone (optional)</small>
     </div>
-    <div class="import-options" id="importOptions" style="display:none">
-      <p id="importPreview" style="font-size:13px;color:var(--md);margin-bottom:8px"></p>
-      <div style="display:flex;gap:8px;justify-content:center">
-        <button class="btn-sm btn-merge" onclick="doImport('merge')">Merge with existing</button>
-        <button class="btn-sm btn-replace" onclick="doImport('replace')">Replace all clients</button>
-        <button class="btn-sm" onclick="cancelImport()" style="background:#f0f2f5;color:var(--md)">Cancel</button>
-      </div>
+  </div>
+  <div id="importOptions" style="display:none;background:#fff;border:1px solid var(--br);border-radius:6px;padding:1rem;margin-bottom:1rem;text-align:center">
+    <p id="importPreview" style="font-size:13px;color:var(--md);margin-bottom:10px"></p>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn-sm btn-merge" onclick="doImport('merge')">Merge with existing</button>
+      <button class="btn-sm btn-replace" onclick="doImport('replace')">Replace all clients</button>
+      <button class="btn-sm" onclick="cancelImport()" style="background:#f0f2f5;color:var(--md)">Cancel</button>
     </div>
   </div>
 
@@ -143,10 +144,19 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
     <h3 id="modalTitle">Add Client</h3>
     <div class="field"><label>Business Name *</label><input type="text" id="fBusiness" placeholder="ChemDry"></div>
     <div class="field-row">
-      <div class="field"><label>Contact Name</label><input type="text" id="fContact" placeholder="John Smith"></div>
+      <div class="field"><label>First Name</label><input type="text" id="fContact" placeholder="John"></div>
+      <div class="field"><label>Last Name</label><input type="text" id="fLastName" placeholder="Smith"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Email *</label><input type="email" id="fEmail" placeholder="john@chemdry.com"></div>
       <div class="field"><label>Phone</label><input type="text" id="fPhone" placeholder="830-555-0100"></div>
     </div>
-    <div class="field"><label>Email *</label><input type="email" id="fEmail" placeholder="john@chemdry.com"></div>
+    <div class="field"><label>Address</label><input type="text" id="fAddress" placeholder="123 Main St"></div>
+    <div class="field-row-3">
+      <div class="field"><label>City</label><input type="text" id="fCity" placeholder="Canyon Lake"></div>
+      <div class="field"><label>State</label><input type="text" id="fState" placeholder="TX" style="max-width:60px"></div>
+      <div class="field"><label>Zip</label><input type="text" id="fZip" placeholder="78133"></div>
+    </div>
     <div class="field"><label>Notes</label><textarea id="fNotes" placeholder="Optional notes…"></textarea></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
@@ -163,6 +173,8 @@ const API = '/api';
 let allClients   = [];
 let editingId    = null;
 let importBuffer = null;
+let sortCol = 'business';
+let sortDir = 1;
 
 async function init() {
   const token = sessionStorage.getItem('txl_token');
@@ -182,6 +194,12 @@ async function loadClients() {
   } catch(e) {
     document.getElementById('tableContainer').innerHTML = '<div class="empty-state"><div class="ei">⚠️</div><h3>Failed to load clients</h3></div>';
   }
+}
+
+function setSort(col) {
+  if (sortCol === col) sortDir = -sortDir;
+  else { sortCol = col; sortDir = 1; }
+  renderTable();
 }
 
 function renderTable() {
@@ -209,18 +227,30 @@ function renderTable() {
     return;
   }
 
+  // Sort
+  filtered.sort((a,b) => {
+    const av = (a[sortCol]||'').toLowerCase();
+    const bv = (b[sortCol]||'').toLowerCase();
+    return av < bv ? -sortDir : av > bv ? sortDir : 0;
+  });
+
+  function sortIcon(col) { return sortCol===col ? (sortDir===1?' ↑':' ↓') : ''; }
+
   document.getElementById('tableContainer').innerHTML = `
     <table class="client-table">
       <thead><tr>
-        <th>Business Name</th><th>Contact</th><th>Email</th><th>Phone</th><th>Notes</th><th style="text-align:right">Actions</th>
+        <th onclick="setSort('business')" style="cursor:pointer">Business Name${sortIcon('business')}</th>
+        <th onclick="setSort('contact')" style="cursor:pointer">Contact${sortIcon('contact')}</th>
+        <th onclick="setSort('email')" style="cursor:pointer">Email${sortIcon('email')}</th>
+        <th>Phone</th><th>Notes</th><th style="text-align:right">Actions</th>
       </tr></thead>
       <tbody>${filtered.map(c => `
         <tr>
           <td class="td-biz">${esc(c.business)}</td>
-          <td>${esc(c.contact || '—')}</td>
+          <td>${esc(c.contact || '')}${c.lastName ? ' ' + esc(c.lastName) : ''||'—'}</td>
           <td class="td-email">${esc(c.email || '—')}</td>
           <td style="font-size:12px;color:var(--md)">${esc(c.phone || '—')}</td>
-          <td style="font-size:12px;color:var(--md);max-width:150px">${esc(c.notes || '—')}</td>
+          <td style="font-size:12px;color:var(--md)">${c.address ? esc(c.address) + (c.city ? ', '+esc(c.city) : '') : '—'}</td>
           <td class="td-actions">
             <button class="btn-sm btn-edit" onclick="openModal('${c.id}')">✏ Edit</button>
             <button class="btn-sm btn-del" onclick="deleteClient('${c.id}','${esc(c.business)}')">🗑</button>
@@ -237,8 +267,13 @@ function openModal(id) {
   document.getElementById('modalTitle').textContent = client ? 'Edit Client' : 'Add Client';
   document.getElementById('fBusiness').value = client ? client.business : '';
   document.getElementById('fContact').value  = client ? (client.contact || '') : '';
+  document.getElementById('fLastName').value = client ? (client.lastName || '') : '';
   document.getElementById('fPhone').value    = client ? (client.phone || '') : '';
   document.getElementById('fEmail').value    = client ? (client.email || '') : '';
+  document.getElementById('fAddress').value  = client ? (client.address || '') : '';
+  document.getElementById('fCity').value     = client ? (client.city || '') : '';
+  document.getElementById('fState').value    = client ? (client.state || 'TX') : 'TX';
+  document.getElementById('fZip').value      = client ? (client.zip || '') : '';
   document.getElementById('fNotes').value    = client ? (client.notes || '') : '';
   document.getElementById('modalOverlay').classList.add('show');
   setTimeout(() => document.getElementById('fBusiness').focus(), 100);
@@ -256,10 +291,15 @@ async function saveClient() {
 
   const client = {
     business,
-    contact: document.getElementById('fContact').value.trim(),
-    phone:   document.getElementById('fPhone').value.trim(),
+    contact:  document.getElementById('fContact').value.trim(),
+    lastName: document.getElementById('fLastName').value.trim(),
+    phone:    document.getElementById('fPhone').value.trim(),
     email,
-    notes:   document.getElementById('fNotes').value.trim()
+    address:  document.getElementById('fAddress').value.trim(),
+    city:     document.getElementById('fCity').value.trim(),
+    state:    document.getElementById('fState').value.trim(),
+    zip:      document.getElementById('fZip').value.trim(),
+    notes:    document.getElementById('fNotes').value.trim()
   };
   if (editingId) client.id = editingId;
 
@@ -295,7 +335,7 @@ async function deleteClient(id, name) {
 // ── Import ────────────────────────────────────────────────────────────────────
 function toggleImport() {
   const zone = document.getElementById('importZone');
-  zone.classList.toggle('visible');
+  zone.style.display = zone.style.display === 'none' || !zone.style.display ? 'block' : 'none';
 }
 
 function handleImportFile(file) {
@@ -315,11 +355,22 @@ function handleImportFile(file) {
 
     if (!bizKey) { showToast('Could not find Business Name column', true); return; }
 
+    const lastNameKey = Object.keys(rows[0])[keys.findIndex(k => k.includes('last'))];
+    const addressKey  = Object.keys(rows[0])[keys.findIndex(k => k.includes('address') || k.includes('street') || k.includes('addr'))];
+    const cityKey     = Object.keys(rows[0])[keys.findIndex(k => k === 'city' || k.includes('city'))];
+    const stateKey    = Object.keys(rows[0])[keys.findIndex(k => k === 'state' || k.includes('state'))];
+    const zipKey      = Object.keys(rows[0])[keys.findIndex(k => k.includes('zip') || k.includes('postal'))];
+
     importBuffer = rows.map(r => ({
-      business: String(r[bizKey] || '').trim(),
-      contact:  contactKey ? String(r[contactKey] || '').trim() : '',
-      email:    emailKey   ? String(r[emailKey]   || '').trim() : '',
-      phone:    phoneKey   ? String(r[phoneKey]   || '').trim() : ''
+      business: String(r[bizKey]      || '').trim(),
+      contact:  contactKey  ? String(r[contactKey]  || '').trim() : '',
+      lastName: lastNameKey ? String(r[lastNameKey] || '').trim() : '',
+      email:    emailKey    ? String(r[emailKey]    || '').trim() : '',
+      phone:    phoneKey    ? String(r[phoneKey]    || '').trim() : '',
+      address:  addressKey  ? String(r[addressKey]  || '').trim() : '',
+      city:     cityKey     ? String(r[cityKey]     || '').trim() : '',
+      state:    stateKey    ? String(r[stateKey]    || '').trim() : '',
+      zip:      zipKey      ? String(r[zipKey]      || '').trim() : ''
     })).filter(c => c.business);
 
     // Hide drop area, show options
@@ -356,7 +407,7 @@ function cancelImport() {
   document.getElementById('importOptions').style.display = 'none';
   document.getElementById('importDropArea').style.display = 'block';
   document.getElementById('csvFile').value = '';
-  document.getElementById('importZone').classList.remove('visible');
+  document.getElementById('importZone').style.display = 'none';
 }
 
 async function logout() {
