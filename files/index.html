@@ -50,6 +50,8 @@ select:focus{border-color:var(--rd)}
 .file-meta{font-size:11px;color:var(--md)}
 .file-actions{padding:.6rem .8rem;border-top:1px solid var(--br);display:flex;gap:6px}
 .btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-view{background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff}
+.btn-view:hover{background:#dde5ff}
 .btn-download{background:var(--bl);color:#fff}
 .btn-delete{background:#f5f5f5;color:#e53935;border:1px solid #ffcdd2}
 .btn-download:hover{background:#001844}
@@ -200,6 +202,7 @@ async function loadFiles() {
           <div class="file-meta">${f.sizeLabel} &nbsp;·&nbsp; ${formatDate(f.uploadedAt)}</div>
         </div>
         <div class="file-actions">
+          <button class="btn-sm btn-view" onclick="viewFile('${esc(f.fullPath)}')">👁 View</button>
           <button class="btn-sm btn-download" onclick="downloadFile('${esc(f.fullPath)}','${esc(f.name)}')">⬇ Download</button>
           ${userRole === 'admin' ? `<button class="btn-sm btn-delete" onclick="deleteFile('${esc(f.fullPath)}','${esc(f.name)}')">🗑</button>` : ''}
         </div>
@@ -208,6 +211,21 @@ async function loadFiles() {
 
   } catch(e) {
     grid.innerHTML = '<div class="empty"><div class="e-icon">⚠️</div><h3>Failed to load files</h3></div>';
+  }
+}
+
+async function viewFile(fullPath) {
+  try {
+    showToast('Opening file…');
+    const token = sessionStorage.getItem('txl_token');
+    const res  = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}`, { credentials: 'include', headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
+    const data = await res.json();
+    if (!data.url) throw new Error('No URL returned');
+    // Remove content-disposition to allow inline viewing
+    const viewUrl = data.url.replace('attachment', 'inline');
+    window.open(viewUrl, '_blank');
+  } catch(e) {
+    showToast('Could not open file: ' + e.message, true);
   }
 }
 
