@@ -113,13 +113,18 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 
   <!-- Import zone -->
   <div class="import-zone" id="importZone">
-    <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" onchange="handleImportFile(this.files[0])">
-    <p>📊 Drop your client CSV or Excel file here</p>
-    <small>Columns: Business Name, Contact Name, Email, Phone (optional)</small>
+    <div id="importDropArea">
+      <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" onchange="handleImportFile(this.files[0])">
+      <p>📊 Drop your client CSV or Excel file here</p>
+      <small>Columns: Business Name, Contact Name, Email, Phone (optional)</small>
+    </div>
     <div class="import-options" id="importOptions" style="display:none">
-      <button class="btn-sm btn-merge" onclick="doImport('merge')">Merge with existing</button>
-      <button class="btn-sm btn-replace" onclick="doImport('replace')">Replace all clients</button>
-      <button class="btn-sm" onclick="cancelImport()" style="background:#f0f2f5;color:var(--md)">Cancel</button>
+      <p id="importPreview" style="font-size:13px;color:var(--md);margin-bottom:8px"></p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn-sm btn-merge" onclick="doImport('merge')">Merge with existing</button>
+        <button class="btn-sm btn-replace" onclick="doImport('replace')">Replace all clients</button>
+        <button class="btn-sm" onclick="cancelImport()" style="background:#f0f2f5;color:var(--md)">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -317,8 +322,10 @@ function handleImportFile(file) {
       phone:    phoneKey   ? String(r[phoneKey]   || '').trim() : ''
     })).filter(c => c.business);
 
-    showToast(`Found ${importBuffer.length} clients — choose import mode`);
-    document.getElementById('importOptions').style.display = 'flex';
+    // Hide drop area, show options
+    document.getElementById('importDropArea').style.display = 'none';
+    document.getElementById('importPreview').textContent = `Found ${importBuffer.length} clients in "${file.name}" — choose how to import:`;
+    document.getElementById('importOptions').style.display = 'block';
   };
   reader.readAsBinaryString(file);
 }
@@ -333,7 +340,11 @@ async function doImport(mode) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     showToast(`✓ ${data.added} added, ${data.updated} updated — ${data.total} total clients`);
-    cancelImport();
+    importBuffer = null;
+    document.getElementById('importOptions').style.display = 'none';
+    document.getElementById('importDropArea').style.display = 'block';
+    document.getElementById('csvFile').value = '';
+    document.getElementById('importZone').classList.remove('visible');
     loadClients();
   } catch(e) {
     showToast('Import failed: ' + e.message, true);
@@ -343,6 +354,7 @@ async function doImport(mode) {
 function cancelImport() {
   importBuffer = null;
   document.getElementById('importOptions').style.display = 'none';
+  document.getElementById('importDropArea').style.display = 'block';
   document.getElementById('csvFile').value = '';
   document.getElementById('importZone').classList.remove('visible');
 }
