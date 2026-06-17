@@ -572,6 +572,49 @@ async function matchFiles() {
   }
 }
 
+function toggleCsvImport() {
+  const wrap = document.getElementById('csvImportWrap');
+  wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+}
+
+function loadCsvClients(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb   = XLSX.read(e.target.result, { type: 'binary' });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!rows.length) { document.getElementById('csvStatus').textContent = 'No data found'; return; }
+
+    const keys       = Object.keys(rows[0]).map(k => k.toLowerCase().trim());
+    const bizKey     = Object.keys(rows[0])[keys.findIndex(k => k.includes('biz') || k.includes('business') || k.includes('company') || k === 'name')];
+    const contactKey = Object.keys(rows[0])[keys.findIndex(k => k.includes('contact') || k.includes('first') || k.includes('person'))];
+    const emailKey   = Object.keys(rows[0])[keys.findIndex(k => k.includes('email') || k.includes('mail'))];
+
+    if (!bizKey || !emailKey) {
+      document.getElementById('csvStatus').textContent = '⚠ Could not find Business Name or Email columns';
+      return;
+    }
+
+    // Override allClients with CSV data for this send
+    allClients = rows.map((r, i) => ({
+      id:       'csv_' + i,
+      business: String(r[bizKey]      || '').trim(),
+      contact:  contactKey ? String(r[contactKey] || '').trim() : '',
+      email:    emailKey   ? String(r[emailKey]   || '').trim() : ''
+    })).filter(c => c.business && c.email && c.email.includes('@'));
+
+    selectedIds = new Set(allClients.map(c => c.id));
+    renderClientList();
+    matchResult = [];
+
+    document.getElementById('csvStatus').textContent = `✓ Loaded ${allClients.length} clients from CSV`;
+    document.getElementById('step2count').textContent = allClients.length + ' clients (from CSV)';
+    showToast(`${allClients.length} clients loaded from CSV`);
+  };
+  reader.readAsBinaryString(file);
+}
+
 function normBiz(n) { return String(n||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 
 function renderMatchTable() {
