@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -39,15 +39,31 @@ select:focus{border-color:var(--rd)}
 .upload-zone p{font-size:12px;color:var(--md)}
 .upload-progress{margin-top:10px;font-size:12px;color:var(--green);font-weight:600;display:none}
 
-/* ── File grid ── */
-.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+/* ── Layout with preview panel ── */
+.content-area{display:flex;gap:1rem;align-items:flex-start}
+.file-section{flex:1;min-width:0}
 
-.file-card{background:#fff;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
+/* ── Preview panel ── */
+.preview-panel{width:420px;flex-shrink:0;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.1);overflow:hidden;position:sticky;top:1rem;display:none}
+.preview-panel.visible{display:flex;flex-direction:column}
+.preview-hdr{background:var(--bl);padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between}
+.preview-hdr span{color:#fff;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
+.preview-close{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:18px;padding:0 4px;line-height:1}
+.preview-close:hover{color:#fff}
+.preview-frame{width:100%;height:600px;border:none;display:block;background:#f5f5f5}
+.preview-loading{height:600px;display:flex;align-items:center;justify-content:center;color:var(--md);font-size:13px}
+
+/* ── File grid ── */
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+
+.file-card{background:#fff;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s,border-color .15s;border:2px solid transparent}
 .file-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
-.file-thumb{height:120px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:40px;border-bottom:1px solid var(--br)}
-.file-info{padding:.8rem;flex:1}
-.file-name{font-size:12px;font-weight:700;color:var(--bl);word-break:break-all;margin-bottom:4px;line-height:1.4}
-.file-meta{font-size:11px;color:var(--md)}
+.file-card.active{border-color:var(--rd)}
+.file-thumb{height:100px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:36px;border-bottom:1px solid var(--br);cursor:pointer}
+.file-thumb:hover{background:#e8ecf5}
+.file-info{padding:.7rem;flex:1}
+.file-name{font-size:11px;font-weight:700;color:var(--bl);word-break:break-all;margin-bottom:4px;line-height:1.4}
+.file-meta{font-size:10px;color:var(--md)}
 .file-actions{padding:.6rem .8rem;border-top:1px solid var(--br);display:flex;gap:6px}
 .btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-view{background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff}
@@ -113,11 +129,25 @@ select:focus{border-color:var(--rd)}
     <div class="upload-progress" id="uploadProgress"></div>
   </div>
 
-  <!-- File grid -->
-  <div class="file-grid" id="fileGrid">
-    <div class="empty">
-      <div class="e-icon">📁</div>
-      <h3>Select a month and click Load Files</h3>
+  <!-- Content area with file grid and preview panel -->
+  <div class="content-area">
+    <div class="file-section">
+      <!-- File grid -->
+      <div class="file-grid" id="fileGrid">
+        <div class="empty">
+          <div class="e-icon">📁</div>
+          <h3>Select a month and click Load Files</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF Preview Panel -->
+    <div class="preview-panel" id="previewPanel">
+      <div class="preview-hdr">
+        <span id="previewName">Preview</span>
+        <button class="preview-close" onclick="closePreview()">✕</button>
+      </div>
+      <div id="previewContent" class="preview-loading">Click a file to preview</div>
     </div>
   </div>
 
@@ -195,14 +225,14 @@ async function loadFiles() {
     document.getElementById('fileCount').textContent = data.files.length + ' file' + (data.files.length !== 1 ? 's' : '');
 
     grid.innerHTML = data.files.map(f => `
-      <div class="file-card">
-        <div class="file-thumb">📄</div>
+      <div class="file-card" id="card-${esc(f.fullPath).replace(/[^a-z0-9]/gi,'_')}">
+        <div class="file-thumb" onclick="viewFile('${esc(f.fullPath)}','${esc(f.name)}')">📄</div>
         <div class="file-info">
           <div class="file-name">${esc(f.name)}</div>
           <div class="file-meta">${f.sizeLabel} &nbsp;·&nbsp; ${formatDate(f.uploadedAt)}</div>
         </div>
         <div class="file-actions">
-          <button class="btn-sm btn-view" onclick="viewFile('${esc(f.fullPath)}')">👁 View</button>
+          <button class="btn-sm btn-view" onclick="viewFile('${esc(f.fullPath)}','${esc(f.name)}')">👁 View</button>
           <button class="btn-sm btn-download" onclick="downloadFile('${esc(f.fullPath)}','${esc(f.name)}')">⬇ Download</button>
           ${userRole === 'admin' ? `<button class="btn-sm btn-delete" onclick="deleteFile('${esc(f.fullPath)}','${esc(f.name)}')">🗑</button>` : ''}
         </div>
@@ -214,19 +244,39 @@ async function loadFiles() {
   }
 }
 
-async function viewFile(fullPath) {
+async function viewFile(fullPath, name) {
   try {
-    showToast('Opening file…');
+    // Highlight active card
+    document.querySelectorAll('.file-card').forEach(c => c.classList.remove('active'));
+    const cardId = 'card-' + fullPath.replace(/[^a-z0-9]/gi,'_');
+    const card = document.getElementById(cardId);
+    if (card) card.classList.add('active');
+
+    // Show panel with loading state
+    const panel = document.getElementById('previewPanel');
+    panel.classList.add('visible');
+    document.getElementById('previewName').textContent = name || fullPath.split('/').pop();
+    document.getElementById('previewContent').innerHTML = '<div class="preview-loading">⏳ Loading preview…</div>';
+
     const token = sessionStorage.getItem('txl_token');
-    const res  = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}`, { credentials: 'include', headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
+    const res  = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}&inline=true`, {
+      credentials: 'include',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
     const data = await res.json();
     if (!data.url) throw new Error('No URL returned');
-    // Remove content-disposition to allow inline viewing
-    const viewUrl = data.url.replace('attachment', 'inline');
-    window.open(viewUrl, '_blank');
+
+    document.getElementById('previewContent').innerHTML =
+      `<iframe class="preview-frame" src="${data.url}" title="${esc(name)}"></iframe>`;
   } catch(e) {
-    showToast('Could not open file: ' + e.message, true);
+    document.getElementById('previewContent').innerHTML =
+      `<div class="preview-loading" style="color:var(--rd)">Failed to load preview: ${esc(e.message)}</div>`;
   }
+}
+
+function closePreview() {
+  document.getElementById('previewPanel').classList.remove('visible');
+  document.querySelectorAll('.file-card').forEach(c => c.classList.remove('active'));
 }
 
 async function downloadFile(fullPath, name) {
