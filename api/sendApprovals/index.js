@@ -1,7 +1,7 @@
 // api/sendApprovals/index.js
-// Uses pre-converted JPG previews stored at upload time
-const { BlobServiceClient } = require('@azure/storage-blob');
-const { v4: uuidv4 }        = require('uuid');
+'use strict';
+const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
+const { v4: uuidv4 } = require('uuid');
 
 const STORAGE_CONN  = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TENANT_ID     = process.env.TENANT_ID;
@@ -21,6 +21,7 @@ const CORS = {
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+// ── Graph token ───────────────────────────────────────────────────────────────
 let _token = null, _expiry = 0;
 async function getGraphToken() {
   if (_token && Date.now() < _expiry) return _token;
@@ -32,20 +33,49 @@ async function getGraphToken() {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString()
   });
   const data = await res.json();
-  if (!data.access_token) throw new Error('Graph token error');
+  if (!data.access_token) throw new Error('Graph token error: ' + JSON.stringify(data));
   _token  = data.access_token;
   _expiry = Date.now() + (data.expires_in - 60) * 1000;
   return _token;
 }
 
+// ── PDF to image - try pdf-to-img, fall back to SAS link ────────────────────
+async function pdfToImageB64(pdfBuffer, filePath) {
+  try {
+    // Try pdf-to-img (works on warm instances)
+    const { pdf } = await import('pdf-to-img');
+    const pages   = await pdf(pdfBuffer, { scale: 1.5 });
+    for await (const page of pages) {
+      return { type: 'image', data: page.toString('base64') };
+    }
+  } catch(e) {}
+
+  // Fall back to SAS URL for PDF viewing
+  try {
+    const connParts = {};
+    STORAGE_CONN.split(';').forEach(p => { const i=p.indexOf('='); if(i>-1) connParts[p.slice(0,i)]=p.slice(i+1); });
+    const sharedKey = new StorageSharedKeyCredential(connParts['AccountName'], connParts['AccountKey']);
+    const expiresOn = new Date(Date.now() + 30*24*60*60*1000);
+    const sasToken  = generateBlobSASQueryParameters(
+      { containerName: CONTAINER_FILES, blobName: filePath, permissions: BlobSASPermissions.parse('r'), expiresOn },
+      sharedKey
+    ).toString();
+    const url = `https://${connParts['AccountName']}.blob.core.windows.net/${CONTAINER_FILES}/${filePath}?${sasToken}`;
+    return { type: 'link', data: url, name: filePath.split('/').pop() };
+  } catch(e) {
+    throw new Error('Both image conversion and link generation failed: ' + e.message);
+  }
+}
+
+// ── Normalize business name ───────────────────────────────────────────────────
 function normBiz(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
+// ── Find matching PDFs ────────────────────────────────────────────────────────
 async function findPdfs(container, businessName, year, month) {
   const norm   = normBiz(businessName);
   const prefix = `${year}/${month}/`;
   const found  = [];
   for await (const blob of container.listBlobsFlat({ prefix })) {
-    if (blob.name.includes('/previews/')) continue; // skip preview folder
     const fname = blob.name.replace(prefix, '');
     const parts = fname.replace(/\.pdf$/i, '').split('_');
     if (normBiz(parts[0]) === norm) found.push(blob.name);
@@ -53,32 +83,7 @@ async function findPdfs(container, businessName, year, month) {
   return found;
 }
 
-// Get pre-converted JPG preview, fall back to on-the-fly conversion
-async function getImageB64(container, pdfPath) {
-  // Check for pre-converted preview
-  const parts      = pdfPath.split('/'); // year/month/filename.pdf
-  const previewPath = `${parts[0]}/${parts[1]}/previews/${parts[2].replace(/\.pdf$/i, '.jpg')}`;
-
-  try {
-    const previewBlob = container.getBlockBlobClient(previewPath);
-    const buffer      = await previewBlob.downloadToBuffer();
-    context.log('Using pre-converted preview:', previewPath);
-    return buffer.toString('base64');
-  } catch(e) {
-    // No preview exists - try live conversion
-    context.log('No preview found, trying live conversion');
-  }
-
-  // Fall back to pdf-to-img
-  const pdfBuffer = await container.getBlockBlobClient(pdfPath).downloadToBuffer();
-  const { pdf }   = await import('pdf-to-img');
-  const pages     = await pdf(pdfBuffer, { scale: 1.5 });
-  for await (const page of pages) {
-    return page.toString('base64');
-  }
-  throw new Error('No pages in PDF');
-}
-
+// ── Build email HTML ──────────────────────────────────────────────────────────
 function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId, bodyTemplate) {
   const approveUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=approved`;
   const changesUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=changes`;
@@ -89,7 +94,6 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
     .replace(/{BUSINESS}/g, client.business)
     .replace(/{MONTH}/g,    mailingMonthLabel)
     .replace(/{DEADLINE}/g, deadline);
-
   const bodyHtml = bodyText
     ? bodyText.split('\n').map(l => l.trim()
         ? `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 10px">${l}</p>`
@@ -97,10 +101,19 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
     : `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Hi ${client.contact || client.business},</p>
        <p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Your ad proof for the <strong>${mailingMonthLabel}</strong> mailing is ready. Please review by <strong>${deadline}</strong>.</p>`;
 
-  const images = imageB64List.map(b64 => `
-    <div style="margin:16px 0;text-align:center">
-      <img src="data:image/png;base64,${b64}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
-    </div>`).join('');
+  const images = imageB64List.map(item => {
+    if (item.type === 'image') {
+      return `<div style="margin:16px 0;text-align:center">
+        <img src="data:image/png;base64,${item.data}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
+      </div>`;
+    } else {
+      return `<div style="margin:16px 0;text-align:center">
+        <a href="${item.data}" target="_blank" style="display:inline-block;background:#f0f4ff;border:2px solid #00205B;border-radius:6px;padding:16px 32px;text-decoration:none;color:#00205B;font-family:Arial,sans-serif;font-size:14px;font-weight:700">
+          📄 View Ad Proof — ${item.name}
+        </a>
+      </div>`;
+    }
+  }).join('');
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,sans-serif">
@@ -129,6 +142,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
 </body></html>`;
 }
 
+// ── Send email via Graph ──────────────────────────────────────────────────────
 async function sendEmail(toEmail, toName, subject, html) {
   const token = await getGraphToken();
   const res   = await fetch(`https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/sendMail`, {
@@ -148,6 +162,7 @@ async function sendEmail(toEmail, toName, subject, html) {
   if (res.status !== 202) throw new Error('sendMail failed: ' + await res.text());
 }
 
+// ── Save approval record ──────────────────────────────────────────────────────
 async function saveRecord(blobSvc, record) {
   const c   = blobSvc.getContainerClient(CONTAINER_APPROVALS);
   await c.createIfNotExists();
@@ -157,6 +172,7 @@ async function saveRecord(blobSvc, record) {
   });
 }
 
+// ── Main handler ──────────────────────────────────────────────────────────────
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res = { status: 200, headers: CORS, body: '{}' }; context.done(); return; }
 
@@ -202,15 +218,16 @@ module.exports = async function(context, req) {
       const images = [];
       for (const filePath of matchedFiles) {
         try {
-          const b64 = await getImageB64(filesContainer, filePath);
-          images.push(b64);
+          const pdfBuffer = await filesContainer.getBlockBlobClient(filePath).downloadToBuffer();
+          const result    = await pdfToImageB64(pdfBuffer, filePath);
+          images.push(result);
         } catch(e) {
-          context.log.error('Image failed:', filePath, e.message);
+          context.log.error('PDF error for', filePath, ':', e.message);
         }
       }
 
       if (!images.length) {
-        results.push({ business: client.business, status: 'conversion_failed', message: 'No preview available — please re-upload the PDF' });
+        results.push({ business: client.business, status: 'conversion_failed', message: 'Image conversion failed' });
         continue;
       }
 
