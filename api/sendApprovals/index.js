@@ -1,13 +1,7 @@
 // api/sendApprovals/index.js
+'use strict';
 const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
 const { v4: uuidv4 } = require('uuid');
-const { execFile }   = require('child_process');
-const { promisify }  = require('util');
-const fs             = require('fs');
-const path           = require('path');
-const os             = require('os');
-
-const execFileAsync = promisify(execFile);
 
 const STORAGE_CONN  = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TENANT_ID     = process.env.TENANT_ID;
@@ -45,22 +39,42 @@ async function getGraphToken() {
   return _token;
 }
 
-// ── PDF to JPEG using system pdftoppm ─────────────────────────────────────────
-async function pdfToImageB64(buffer) {
-  const tmpPdf  = path.join(os.tmpdir(), `proof_${Date.now()}_${Math.random().toString(36).slice(2)}.pdf`);
-  const tmpBase = tmpPdf.replace('.pdf', '_out');
+// ── PDF to image using Microsoft Graph (convert via OneDrive) ─────────────────
+// Upload PDF to OneDrive temp, get thumbnail/preview, download as image
+// This uses Graph API which we already have - no extra packages needed
+async function pdfToImageB64(pdfBuffer, filename) {
+  const token = await getGraphToken();
+  
+  // Upload PDF to OneDrive temp location
+  const uploadRes = await fetch(
+    `https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/drive/root:/TempProofConvert/${filename}:/content`,
+    {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/pdf' },
+      body: pdfBuffer
+    }
+  );
+  if (!uploadRes.ok) throw new Error('OneDrive upload failed: ' + uploadRes.status);
+  const uploadData = await uploadRes.json();
+  const itemId = uploadData.id;
 
-  fs.writeFileSync(tmpPdf, buffer);
   try {
-    await execFileAsync('pdftoppm', ['-jpeg', '-r', '150', '-f', '1', '-l', '1', tmpPdf, tmpBase]);
-    const files = fs.readdirSync(os.tmpdir()).filter(f => f.startsWith(path.basename(tmpBase)));
-    if (!files.length) throw new Error('pdftoppm produced no output');
-    const outPath = path.join(os.tmpdir(), files[0]);
-    const b64     = fs.readFileSync(outPath).toString('base64');
-    files.forEach(f => { try { fs.unlinkSync(path.join(os.tmpdir(), f)); } catch(e){} });
-    return b64;
+    // Get thumbnail/preview as image
+    const thumbRes = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/drive/items/${itemId}/thumbnails/0/large/content`,
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    if (!thumbRes.ok) throw new Error('Thumbnail failed: ' + thumbRes.status);
+    const imgBuffer = Buffer.from(await thumbRes.arrayBuffer());
+    return imgBuffer.toString('base64');
   } finally {
-    try { fs.unlinkSync(tmpPdf); } catch(e) {}
+    // Clean up temp file
+    try {
+      await fetch(
+        `https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/drive/items/${itemId}`,
+        { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }
+      );
+    } catch(e) {}
   }
 }
 
@@ -92,7 +106,9 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
     .replace(/{MONTH}/g,    mailingMonthLabel)
     .replace(/{DEADLINE}/g, deadline);
   const bodyHtml = bodyText
-    ? bodyText.split('\n').map(l => l.trim() ? `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 10px">${l}</p>` : '<br>').join('')
+    ? bodyText.split('\n').map(l => l.trim()
+        ? `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 10px">${l}</p>`
+        : '<br>').join('')
     : `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Hi ${client.contact || client.business},</p>
        <p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Your ad proof for the <strong>${mailingMonthLabel}</strong> mailing is ready. Please review by <strong>${deadline}</strong>.</p>`;
 
@@ -118,7 +134,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
       If I don't hear back by ${deadline}, your ad will run as shown.
     </p>
   </div>
-  <div style="border-top:3px solid #BF0D3E;padding:20px 32px;font-family:Arial,sans-serif">
+  <div style="border-top:3px solid #BF0D3E;padding:20px 32px">
     <div style="font-size:14px;color:#1a1a1a;margin-bottom:6px"><strong>Josh Knight</strong>, Publisher</div>
     <div style="font-size:13px;color:#333">Where Local Residents Find Local Businesses</div>
     <div style="font-size:13px;color:#333">Mobile: 830-214-3487</div>
@@ -162,14 +178,13 @@ async function saveRecord(blobSvc, record) {
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res = { status: 200, headers: CORS, body: '{}' }; context.done(); return; }
 
-  // Validate env vars
   const missing = [];
   if (!TENANT_ID)     missing.push('TENANT_ID');
   if (!CLIENT_ID)     missing.push('GRAPH_CLIENT_ID');
   if (!CLIENT_SECRET) missing.push('GRAPH_CLIENT_SECRET');
   if (!STORAGE_CONN)  missing.push('AZURE_STORAGE_CONNECTION_STRING');
   if (missing.length) {
-    context.res = { status: 500, headers: CORS, body: JSON.stringify({ error: 'Missing env vars: ' + missing.join(', ') }) };
+    context.res = { status: 500, headers: CORS, body: JSON.stringify({ error: 'Missing: ' + missing.join(', ') }) };
     context.done(); return;
   }
 
@@ -179,7 +194,6 @@ module.exports = async function(context, req) {
     context.done(); return;
   }
 
-  // Determine lookup folder
   let lookupMonth, lookupYear;
   if (isResend) {
     lookupMonth = String(mailingMonth).padStart(2, '0');
@@ -203,20 +217,20 @@ module.exports = async function(context, req) {
         continue;
       }
 
-      // Convert first PDF to JPEG image
       const images = [];
       for (const filePath of matchedFiles) {
         try {
           const pdfBuffer = await filesContainer.getBlockBlobClient(filePath).downloadToBuffer();
-          const b64       = await pdfToImageB64(pdfBuffer);
+          const filename  = filePath.split('/').pop();
+          const b64       = await pdfToImageB64(pdfBuffer, filename);
           images.push(b64);
         } catch(e) {
-          context.log.warn('PDF convert failed for', filePath, ':', e.message);
+          context.log.warn('PDF convert failed:', e.message);
         }
       }
 
       if (!images.length) {
-        results.push({ business: client.business, status: 'conversion_failed', message: 'PDF to image failed' });
+        results.push({ business: client.business, status: 'conversion_failed', message: 'Image conversion failed' });
         continue;
       }
 
@@ -229,7 +243,6 @@ module.exports = async function(context, req) {
 
       const html = buildEmail(client, mailingMonthLabel, deadline, images, sessionId, bodyTemplate);
       await sendEmail(client.email, client.contact || client.business, subject, html);
-
       await saveRecord(blobSvc, {
         sessionId, business: client.business, contact: client.contact || '',
         email: client.email, mailingMonth: String(mailingMonth).padStart(2,'0'),
@@ -243,7 +256,7 @@ module.exports = async function(context, req) {
       await new Promise(r => setTimeout(r, 500));
 
     } catch(e) {
-      context.log.error('Error for', client.business, ':', e.message);
+      context.log.error('Error:', client.business, e.message);
       results.push({ business: client.business, status: 'error', message: e.message });
     }
   }
