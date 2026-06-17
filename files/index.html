@@ -21,14 +21,21 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .main{max-width:1400px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
 
 /* Controls */
-.controls{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap}
+.controls{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
 .ctrl-group{display:flex;align-items:center;gap:6px}
 .ctrl-group label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.6px}
 select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;font-family:inherit;background:#fff;color:#1a1a2e;outline:none;cursor:pointer}
 select:focus{border-color:var(--rd)}
-.btn-load{background:var(--bl);color:#fff;border:none;padding:7px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
-.btn-load:hover{background:#001844}
 .file-count{font-size:12px;color:var(--md);margin-left:auto}
+
+/* Month tabs */
+.month-tabs{display:flex;gap:0;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:1.2rem;flex-wrap:wrap}
+.month-tab{flex:1;min-width:60px;padding:.6rem .4rem;font-size:12px;font-weight:700;color:var(--md);cursor:pointer;border-right:1px solid #f0f2f5;text-align:center;transition:all .15s;user-select:none}
+.month-tab:last-child{border-right:none}
+.month-tab:hover{background:#f5f8ff;color:var(--bl)}
+.month-tab.active{background:var(--bl);color:#fff}
+.month-tab.has-files{position:relative}
+.month-tab.has-files::after{content:'•';position:absolute;top:4px;right:6px;color:var(--rd);font-size:10px}
 
 /* Upload zone */
 .upload-zone{border:2px dashed var(--br);border-radius:8px;padding:1.2rem 2rem;text-align:center;background:#fff;margin-bottom:1.2rem;cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;gap:16px;justify-content:center}
@@ -105,23 +112,14 @@ select:focus{border-color:var(--rd)}
 
   <div class="controls">
     <div class="ctrl-group">
-      <label>Month</label>
-      <select id="selMonth">
-        <option value="01">January</option><option value="02">February</option>
-        <option value="03">March</option><option value="04">April</option>
-        <option value="05">May</option><option value="06">June</option>
-        <option value="07">July</option><option value="08">August</option>
-        <option value="09">September</option><option value="10">October</option>
-        <option value="11">November</option><option value="12">December</option>
-      </select>
-    </div>
-    <div class="ctrl-group">
       <label>Year</label>
-      <select id="selYear"></select>
+      <select id="selYear" onchange="renderMonthTabs()"></select>
     </div>
-    <button class="btn-load" onclick="loadFiles()">Load Files</button>
     <div class="file-count" id="fileCount"></div>
   </div>
+
+  <!-- Month tabs -->
+  <div class="month-tabs" id="monthTabs"></div>
 
   <!-- Upload zone (admin only) -->
   <div class="upload-zone" id="uploadZone">
@@ -138,7 +136,7 @@ select:focus{border-color:var(--rd)}
       <div id="fileListContainer">
         <div class="empty-state">
           <div class="ei">📁</div>
-          <h3>Select a month and click Load Files</h3>
+          <h3>Select a month above to view files</h3>
         </div>
       </div>
     </div>
@@ -174,6 +172,9 @@ let currentPreviewPath = null;
 let currentPreviewName = null;
 let currentPreviewUrl  = null;
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
 async function init() {
   try {
     const token = sessionStorage.getItem('txl_token');
@@ -191,24 +192,46 @@ async function init() {
     const o = document.createElement('option');
     o.value = y; o.textContent = y; yearSel.appendChild(o);
   }
-
-  const now = new Date();
-  const prior = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  document.getElementById('selMonth').value = String(prior.getMonth() + 1).padStart(2, '0');
-  document.getElementById('selYear').value  = prior.getFullYear();
+  yearSel.value = thisYear;
 
   const zone = document.getElementById('uploadZone');
   zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
   zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
 
+  renderMonthTabs();
+  // Auto-select current month
+  const now = new Date();
+  selectMonth(String(now.getMonth() + 1).padStart(2, '0'));
+}
+
+function renderMonthTabs() {
+  const year = document.getElementById('selYear').value;
+  const now  = new Date();
+  const tabs  = document.getElementById('monthTabs');
+  tabs.innerHTML = MONTHS.map((m, i) => {
+    const monthNum = String(i + 1).padStart(2, '0');
+    const isFuture = parseInt(year) === now.getFullYear() && i > now.getMonth();
+    return `<div class="month-tab${currentMonth === monthNum ? ' active' : ''}${isFuture ? ' style="opacity:.4;pointer-events:none"' : ''}" 
+      onclick="selectMonth('${monthNum}')">${m}</div>`;
+  }).join('');
+}
+
+function selectMonth(month) {
+  currentMonth = month;
+  currentYear  = document.getElementById('selYear').value;
+  // Update active tab
+  document.querySelectorAll('.month-tab').forEach((t, i) => {
+    t.classList.toggle('active', String(i + 1).padStart(2, '0') === month);
+  });
+  closePreview();
   loadFiles();
 }
 
 async function loadFiles() {
-  const month = document.getElementById('selMonth').value;
-  const year  = document.getElementById('selYear').value;
-  currentMonth = month; currentYear = year;
+  const month = currentMonth;
+  const year  = currentYear;
+  if (!month || !year) return;
   closePreview();
 
   const container = document.getElementById('fileListContainer');
