@@ -1,6 +1,6 @@
 // api/sendApprovals/index.js
 // POST /api/sendApprovals
-// Fetches PDFs from blob, embeds as images in email, creates approval records
+// Fetches PDFs from blob, embeds as images in email, creates approval records 
 
 const { BlobServiceClient } = require('@azure/storage-blob');
 const { v4: uuidv4 }        = require('uuid');
