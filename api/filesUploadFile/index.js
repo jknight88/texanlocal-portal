@@ -1,8 +1,8 @@
-// v1 - upload file to blob storage
+// api/filesUploadFile/index.js
+// Uploads PDF and immediately converts first page to JPG for email proofs
 const { BlobServiceClient } = require('@azure/storage-blob');
-const STORAGE_CONN  = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const CONTAINER     = 'ad-proofs';
-const NOTIFY_EMAIL  = process.env.NOTIFY_EMAIL || 'josh@thetexanlocal.com';
+const STORAGE_CONN = process.env.AZURE_STORAGE_CONNECTION_STRING;
+const CONTAINER    = 'ad-proofs';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -12,10 +12,7 @@ const CORS = {
 };
 
 module.exports = async function(context, req) {
-  if (req.method === 'OPTIONS') {
-    context.res = { status: 200, headers: CORS, body: '{}' };
-    context.done(); return;
-  }
+  if (req.method === 'OPTIONS') { context.res = { status: 200, headers: CORS, body: '{}' }; context.done(); return; }
 
   const body = req.body || {};
   const { filename, fileBase64, year, month } = body;
@@ -37,8 +34,8 @@ module.exports = async function(context, req) {
     context.done(); return;
   }
 
-  const yr  = year  || new Date().getFullYear().toString();
-  const mo  = month || String(new Date().getMonth() + 1).padStart(2, '0');
+  const yr       = year  || new Date().getFullYear().toString();
+  const mo       = month || String(new Date().getMonth() + 1).padStart(2, '0');
   const blobPath = `${yr}/${mo}/${filename}`;
 
   try {
@@ -46,13 +43,39 @@ module.exports = async function(context, req) {
     const container = blobSvc.getContainerClient(CONTAINER);
     await container.createIfNotExists();
 
-    const blob = container.getBlockBlobClient(blobPath);
-    await blob.upload(buffer, buffer.length, {
+    // Upload the PDF
+    const pdfBlob = container.getBlockBlobClient(blobPath);
+    await pdfBlob.upload(buffer, buffer.length, {
       overwrite: true,
       blobHTTPHeaders: { blobContentType: 'application/pdf' }
     });
 
-    context.res = { status: 200, headers: CORS, body: JSON.stringify({ ok: true, filename, blobPath, sizeMB: parseFloat(sizeMB.toFixed(2)) }) };
+    // Convert first page to JPG using pdf-to-img and store as preview
+    let previewPath = null;
+    try {
+      const { pdf } = await import('pdf-to-img');
+      const pages   = await pdf(buffer, { scale: 1.5 });
+      for await (const page of pages) {
+        const jpgName    = filename.replace(/\.pdf$/i, '.jpg');
+        const jpgPath    = `${yr}/${mo}/previews/${jpgName}`;
+        const jpgBlob    = container.getBlockBlobClient(jpgPath);
+        await jpgBlob.upload(page, page.length, {
+          overwrite: true,
+          blobHTTPHeaders: { blobContentType: 'image/png' }
+        });
+        previewPath = jpgPath;
+        break; // first page only
+      }
+      context.log('Preview generated:', previewPath);
+    } catch(e) {
+      context.log.warn('Preview generation failed (non-fatal):', e.message);
+    }
+
+    context.res = {
+      status: 200,
+      headers: CORS,
+      body: JSON.stringify({ ok: true, filename, blobPath, previewPath, sizeMB: parseFloat(sizeMB.toFixed(2)) })
+    };
   } catch(e) {
     context.log.error('uploadFile error:', e.message);
     context.res = { status: 500, headers: CORS, body: JSON.stringify({ error: e.message }) };
