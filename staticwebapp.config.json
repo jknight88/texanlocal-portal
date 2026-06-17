@@ -9,6 +9,9 @@
     { "route": "/files",                   "rewrite": "/files/index.html" },
     { "route": "/upload",                  "rewrite": "/upload/index.html" },
     { "route": "/dashboard",               "rewrite": "/dashboard/index.html" }
+    { "route": "/approvals", "rewrite": "/approvals/index.html" },
+    { "route": "/approvals/dashboard", "rewrite": "/approvals/dashboard.html" },
+    { "route": "/respond", "rewrite": "/respond/index.html" }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
