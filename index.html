@@ -35,13 +35,6 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .msg.err{background:#fff0f0;color:var(--rd);border:1px solid #ffcccc;display:block}
 .msg.info{background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff;display:block}
 
-.divider{display:flex;align-items:center;gap:10px;margin:1.4rem 0;color:#aaa;font-size:11px}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--br)}
-
-.btn-ms{width:100%;background:#fff;color:#1a1a2e;border:1.5px solid var(--br);padding:11px;border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .15s}
-.btn-ms:hover{background:#f5f7fb}
-.ms-icon{width:18px;height:18px}
-
 .ftr{text-align:center;padding:1.2rem;font-size:11px;color:#888}
 </style>
 </head>
@@ -60,20 +53,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
     </div>
     <div class="login-body">
 
-      <!-- Microsoft 365 login for staff/admin -->
-      <button class="btn-ms" onclick="msLogin()">
-        <svg class="ms-icon" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-          <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-          <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-          <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-        </svg>
-        Sign in with Microsoft 365
-      </button>
-
-      <div class="divider">or</div>
-
-      <!-- Simple login for designer -->
+      <!-- Staff login -->
       <form onsubmit="simpleLogin(event)">
         <div class="field">
           <label>Username</label>
