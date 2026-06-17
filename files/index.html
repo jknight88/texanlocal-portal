@@ -7,7 +7,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a}
 body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
 
 .hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
@@ -18,9 +18,9 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
 .btn-hdr:hover{background:rgba(255,255,255,.2)}
 
-.main{max-width:1300px;margin:0 auto;padding:1.5rem;flex:1}
+.main{max-width:1400px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
 
-/* ── Controls ── */
+/* Controls */
 .controls{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap}
 .ctrl-group{display:flex;align-items:center;gap:6px}
 .ctrl-group label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.6px}
@@ -30,55 +30,59 @@ select:focus{border-color:var(--rd)}
 .btn-load:hover{background:#001844}
 .file-count{font-size:12px;color:var(--md);margin-left:auto}
 
-/* ── Upload drop zone ── */
-.upload-zone{border:2px dashed var(--br);border-radius:8px;padding:2rem;text-align:center;background:#fff;margin-bottom:1.2rem;cursor:pointer;transition:all .2s;position:relative}
+/* Upload zone */
+.upload-zone{border:2px dashed var(--br);border-radius:8px;padding:1.2rem 2rem;text-align:center;background:#fff;margin-bottom:1.2rem;cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;gap:16px;justify-content:center}
 .upload-zone:hover,.upload-zone.drag-over{border-color:var(--rd);background:#fff8f8}
 .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-zone .icon{font-size:28px;margin-bottom:8px}
-.upload-zone h3{font-size:15px;font-weight:700;color:var(--bl);margin-bottom:4px}
-.upload-zone p{font-size:12px;color:var(--md)}
-.upload-progress{margin-top:10px;font-size:12px;color:var(--green);font-weight:600;display:none}
+.upload-zone .icon{font-size:22px}
+.upload-zone p{font-size:13px;color:var(--md)}
+.upload-zone strong{color:var(--bl)}
+.upload-progress{font-size:12px;color:var(--green);font-weight:600;display:none;margin-left:12px}
 
-/* ── Layout with preview panel ── */
-.content-area{display:flex;gap:1rem;align-items:flex-start}
-.file-section{flex:1;min-width:0}
+/* Layout */
+.workspace{display:flex;gap:1rem;align-items:flex-start;min-height:500px}
+.file-list-wrap{flex:1;min-width:0;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
 
-/* ── Preview panel ── */
-.preview-panel{width:420px;flex-shrink:0;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.1);overflow:hidden;position:sticky;top:1rem;display:none}
-.preview-panel.visible{display:flex;flex-direction:column}
-.preview-hdr{background:var(--bl);padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between}
-.preview-hdr span{color:#fff;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
-.preview-close{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:18px;padding:0 4px;line-height:1}
-.preview-close:hover{color:#fff}
-.preview-frame{width:100%;height:600px;border:none;display:block;background:#f5f5f5}
-.preview-loading{height:600px;display:flex;align-items:center;justify-content:center;color:var(--md);font-size:13px}
-
-/* ── File grid ── */
-.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
-
-.file-card{background:#fff;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s,border-color .15s;border:2px solid transparent}
-.file-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
-.file-card.active{border-color:var(--rd)}
-.file-thumb{height:100px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:36px;border-bottom:1px solid var(--br);cursor:pointer}
-.file-thumb:hover{background:#e8ecf5}
-.file-info{padding:.7rem;flex:1}
-.file-name{font-size:11px;font-weight:700;color:var(--bl);word-break:break-all;margin-bottom:4px;line-height:1.4}
-.file-meta{font-size:10px;color:var(--md)}
-.file-actions{padding:.6rem .8rem;border-top:1px solid var(--br);display:flex;gap:6px}
-.btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+/* File list table */
+.file-table{width:100%;border-collapse:collapse}
+.file-table thead{background:var(--bl)}
+.file-table thead th{color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:10px 14px;text-align:left}
+.file-table tbody tr{border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background .1s}
+.file-table tbody tr:hover{background:#f5f8ff}
+.file-table tbody tr.active{background:#e8ecf8;border-left:3px solid var(--rd)}
+.file-table tbody tr:last-child{border-bottom:none}
+.file-table td{padding:10px 14px;font-size:13px;vertical-align:middle}
+.td-icon{width:32px;font-size:18px;color:var(--rd)}
+.td-name{font-weight:600;color:var(--bl)}
+.td-size{color:var(--md);font-size:12px;white-space:nowrap}
+.td-date{color:var(--md);font-size:12px;white-space:nowrap}
+.td-actions{white-space:nowrap;text-align:right}
+.btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:4px}
 .btn-view{background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff}
 .btn-view:hover{background:#dde5ff}
 .btn-download{background:var(--bl);color:#fff}
-.btn-delete{background:#f5f5f5;color:#e53935;border:1px solid #ffcdd2}
 .btn-download:hover{background:#001844}
+.btn-delete{background:#fff0f0;color:#e53935;border:1px solid #ffcdd2}
 .btn-delete:hover{background:#ffebee}
 
-/* ── Empty state ── */
-.empty{text-align:center;padding:4rem 2rem;color:var(--md)}
-.empty .e-icon{font-size:48px;margin-bottom:12px}
-.empty h3{font-size:16px;color:var(--bl);margin-bottom:8px}
+/* Preview panel */
+.preview-panel{width:480px;flex-shrink:0;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.1);overflow:hidden;position:sticky;top:1rem;display:none;flex-direction:column}
+.preview-panel.visible{display:flex}
+.preview-hdr{background:var(--bl);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:3px solid var(--rd)}
+.preview-hdr span{color:#fff;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preview-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-preview-action{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-preview-action:hover{background:rgba(255,255,255,.25)}
+.preview-frame{width:100%;height:680px;border:none;display:block;background:#f5f5f5}
+.preview-empty{height:680px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--md);gap:12px}
+.preview-empty .pi{font-size:48px}
 
-/* ── Toast ── */
+/* Empty state */
+.empty-state{padding:4rem 2rem;text-align:center;color:var(--md)}
+.empty-state .ei{font-size:48px;margin-bottom:12px}
+.empty-state h3{font-size:16px;color:var(--bl);margin-bottom:6px}
+
+/* Toast */
 .toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
 .toast.show{opacity:1}
 .toast.err{background:var(--rd)}
@@ -99,7 +103,6 @@ select:focus{border-color:var(--rd)}
 
 <div class="main">
 
-  <!-- Month/Year selector -->
   <div class="controls">
     <div class="ctrl-group">
       <label>Month</label>
@@ -123,34 +126,42 @@ select:focus{border-color:var(--rd)}
   <!-- Upload zone (admin only) -->
   <div class="upload-zone" id="uploadZone">
     <input type="file" id="fileInput" accept=".pdf" multiple onchange="handleFiles(this.files)">
-    <div class="icon">📤</div>
-    <h3>Drop PDF files here to upload</h3>
-    <p>or click to browse &nbsp;·&nbsp; Files are stored as <code>BusinessName_MMYY_AdType.pdf</code></p>
-    <div class="upload-progress" id="uploadProgress"></div>
+    <span class="icon">📤</span>
+    <p><strong>Drop PDFs here</strong> to upload &nbsp;·&nbsp; or click to browse</p>
+    <span class="upload-progress" id="uploadProgress"></span>
   </div>
 
-  <!-- Content area with file grid and preview panel -->
-  <div class="content-area">
-    <div class="file-section">
-      <!-- File grid -->
-      <div class="file-grid" id="fileGrid">
-        <div class="empty">
-          <div class="e-icon">📁</div>
+  <div class="workspace">
+
+    <!-- File list -->
+    <div class="file-list-wrap">
+      <div id="fileListContainer">
+        <div class="empty-state">
+          <div class="ei">📁</div>
           <h3>Select a month and click Load Files</h3>
         </div>
       </div>
     </div>
 
-    <!-- PDF Preview Panel -->
+    <!-- Preview panel -->
     <div class="preview-panel" id="previewPanel">
       <div class="preview-hdr">
         <span id="previewName">Preview</span>
-        <button class="preview-close" onclick="closePreview()">✕</button>
+        <div class="preview-actions">
+          <button class="btn-preview-action" onclick="openFullWindow()">⛶ Full View</button>
+          <button class="btn-preview-action" onclick="downloadCurrent()">⬇ Download</button>
+          <button class="btn-preview-action" onclick="closePreview()">✕</button>
+        </div>
       </div>
-      <div id="previewContent" class="preview-loading">Click a file to preview</div>
+      <div id="previewContent">
+        <div class="preview-empty">
+          <div class="pi">📄</div>
+          <p>Click a file to preview</p>
+        </div>
+      </div>
     </div>
-  </div>
 
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -159,47 +170,37 @@ select:focus{border-color:var(--rd)}
 const API = '/api';
 let userRole = 'rep';
 let currentYear, currentMonth;
+let currentPreviewPath = null;
+let currentPreviewName = null;
+let currentPreviewUrl  = null;
 
 async function init() {
   try {
     const token = sessionStorage.getItem('txl_token');
-    const res  = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), {
-      credentials: 'include'
-    });
+    const res = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
     if (!res.ok) { window.location.href = '/'; return; }
     const user = await res.json();
     userRole = user.role;
     if (user.role === 'designer') { window.location.href = '/upload'; return; }
-
-    // Hide upload zone for reps
-    if (user.role !== 'admin') {
-      document.getElementById('uploadZone').style.display = 'none';
-    }
+    if (user.role !== 'admin') document.getElementById('uploadZone').style.display = 'none';
   } catch(e) { window.location.href = '/'; return; }
 
-  // Populate year selector
-  const yearSel = document.getElementById('selYear');
+  const yearSel  = document.getElementById('selYear');
   const thisYear = new Date().getFullYear();
   for (let y = thisYear; y >= thisYear - 3; y--) {
-    const opt = document.createElement('option');
-    opt.value = y; opt.textContent = y;
-    yearSel.appendChild(opt);
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y; yearSel.appendChild(o);
   }
 
-  // Default to current month (prior month for production files)
   const now = new Date();
   const prior = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   document.getElementById('selMonth').value = String(prior.getMonth() + 1).padStart(2, '0');
   document.getElementById('selYear').value  = prior.getFullYear();
 
-  // Drag and drop
   const zone = document.getElementById('uploadZone');
   zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault(); zone.classList.remove('drag-over');
-    handleFiles(e.dataTransfer.files);
-  });
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
 
   loadFiles();
 }
@@ -208,75 +209,92 @@ async function loadFiles() {
   const month = document.getElementById('selMonth').value;
   const year  = document.getElementById('selYear').value;
   currentMonth = month; currentYear = year;
+  closePreview();
 
-  const grid = document.getElementById('fileGrid');
-  grid.innerHTML = '<div class="empty"><div class="e-icon">⏳</div><h3>Loading…</h3></div>';
+  const container = document.getElementById('fileListContainer');
+  container.innerHTML = '<div class="empty-state"><div class="ei">⏳</div><h3>Loading…</h3></div>';
 
   try {
     const res  = await fetch(`${API}/filesListFiles?year=${year}&month=${month}`, { credentials: 'include' });
     const data = await res.json();
 
     if (!data.files || !data.files.length) {
-      grid.innerHTML = `<div class="empty"><div class="e-icon">📭</div><h3>No files for ${month}/${year}</h3><p>Upload files using the area above</p></div>`;
+      container.innerHTML = `<div class="empty-state"><div class="ei">📭</div><h3>No files for ${month}/${year}</h3><p>Upload files using the area above</p></div>`;
       document.getElementById('fileCount').textContent = '0 files';
       return;
     }
 
     document.getElementById('fileCount').textContent = data.files.length + ' file' + (data.files.length !== 1 ? 's' : '');
 
-    grid.innerHTML = data.files.map(f => `
-      <div class="file-card" id="card-${esc(f.fullPath).replace(/[^a-z0-9]/gi,'_')}">
-        <div class="file-thumb" onclick="viewFile('${esc(f.fullPath)}','${esc(f.name)}')">📄</div>
-        <div class="file-info">
-          <div class="file-name">${esc(f.name)}</div>
-          <div class="file-meta">${f.sizeLabel} &nbsp;·&nbsp; ${formatDate(f.uploadedAt)}</div>
-        </div>
-        <div class="file-actions">
-          <button class="btn-sm btn-view" onclick="viewFile('${esc(f.fullPath)}','${esc(f.name)}')">👁 View</button>
-          <button class="btn-sm btn-download" onclick="downloadFile('${esc(f.fullPath)}','${esc(f.name)}')">⬇ Download</button>
-          ${userRole === 'admin' ? `<button class="btn-sm btn-delete" onclick="deleteFile('${esc(f.fullPath)}','${esc(f.name)}')">🗑</button>` : ''}
-        </div>
-      </div>
-    `).join('');
+    container.innerHTML = `<table class="file-table">
+      <thead><tr>
+        <th style="width:32px"></th>
+        <th>File Name</th>
+        <th>Size</th>
+        <th>Uploaded</th>
+        <th style="text-align:right">Actions</th>
+      </tr></thead>
+      <tbody>
+        ${data.files.map(f => `
+          <tr id="row-${safeId(f.fullPath)}" onclick="previewFile('${esc(f.fullPath)}','${esc(f.name)}')">
+            <td class="td-icon">📄</td>
+            <td class="td-name">${esc(f.name)}</td>
+            <td class="td-size">${f.sizeLabel}</td>
+            <td class="td-date">${formatDate(f.uploadedAt)}</td>
+            <td class="td-actions" onclick="event.stopPropagation()">
+              <button class="btn-sm btn-view" onclick="previewFile('${esc(f.fullPath)}','${esc(f.name)}')">👁 Preview</button>
+              <button class="btn-sm btn-download" onclick="downloadFile('${esc(f.fullPath)}','${esc(f.name)}')">⬇</button>
+              ${userRole === 'admin' ? `<button class="btn-sm btn-delete" onclick="deleteFile('${esc(f.fullPath)}','${esc(f.name)}')">🗑</button>` : ''}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
 
   } catch(e) {
-    grid.innerHTML = '<div class="empty"><div class="e-icon">⚠️</div><h3>Failed to load files</h3></div>';
+    container.innerHTML = '<div class="empty-state"><div class="ei">⚠️</div><h3>Failed to load files</h3></div>';
   }
 }
 
-async function viewFile(fullPath, name) {
+async function previewFile(fullPath, name) {
+  // Highlight row
+  document.querySelectorAll('.file-table tbody tr').forEach(r => r.classList.remove('active'));
+  const row = document.getElementById('row-' + safeId(fullPath));
+  if (row) row.classList.add('active');
+
+  currentPreviewPath = fullPath;
+  currentPreviewName = name;
+  currentPreviewUrl  = null;
+
+  const panel = document.getElementById('previewPanel');
+  panel.classList.add('visible');
+  document.getElementById('previewName').textContent = name;
+  document.getElementById('previewContent').innerHTML = '<div class="preview-empty"><div class="pi">⏳</div><p>Loading preview…</p></div>';
+
   try {
-    // Highlight active card
-    document.querySelectorAll('.file-card').forEach(c => c.classList.remove('active'));
-    const cardId = 'card-' + fullPath.replace(/[^a-z0-9]/gi,'_');
-    const card = document.getElementById(cardId);
-    if (card) card.classList.add('active');
-
-    // Show panel with loading state
-    const panel = document.getElementById('previewPanel');
-    panel.classList.add('visible');
-    document.getElementById('previewName').textContent = name || fullPath.split('/').pop();
-    document.getElementById('previewContent').innerHTML = '<div class="preview-loading">⏳ Loading preview…</div>';
-
     const token = sessionStorage.getItem('txl_token');
-    const res  = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}&inline=true`, {
-      credentials: 'include',
-      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-    });
-    const data = await res.json();
-    if (!data.url) throw new Error('No URL returned');
-
-    document.getElementById('previewContent').innerHTML =
-      `<iframe class="preview-frame" src="${data.url}" title="${esc(name)}"></iframe>`;
+    const res   = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}&inline=true`, { credentials: 'include', headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
+    const data  = await res.json();
+    if (!data.url) throw new Error('No URL');
+    currentPreviewUrl = data.url;
+    document.getElementById('previewContent').innerHTML = `<iframe class="preview-frame" src="${data.url}" title="${esc(name)}"></iframe>`;
   } catch(e) {
-    document.getElementById('previewContent').innerHTML =
-      `<div class="preview-loading" style="color:var(--rd)">Failed to load preview: ${esc(e.message)}</div>`;
+    document.getElementById('previewContent').innerHTML = `<div class="preview-empty" style="color:var(--rd)"><div class="pi">⚠️</div><p>Could not load preview</p></div>`;
   }
+}
+
+function openFullWindow() {
+  if (currentPreviewUrl) window.open(currentPreviewUrl, '_blank');
+}
+
+function downloadCurrent() {
+  if (currentPreviewPath && currentPreviewName) downloadFile(currentPreviewPath, currentPreviewName);
 }
 
 function closePreview() {
   document.getElementById('previewPanel').classList.remove('visible');
-  document.querySelectorAll('.file-card').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.file-table tbody tr').forEach(r => r.classList.remove('active'));
+  currentPreviewPath = null; currentPreviewName = null; currentPreviewUrl = null;
 }
 
 async function downloadFile(fullPath, name) {
@@ -284,7 +302,7 @@ async function downloadFile(fullPath, name) {
     showToast('Preparing download…');
     const res  = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}`, { credentials: 'include' });
     const data = await res.json();
-    if (!data.url) throw new Error('No URL returned');
+    if (!data.url) throw new Error('No URL');
     const a = document.createElement('a');
     a.href = data.url; a.download = name; a.target = '_blank';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -297,11 +315,10 @@ async function downloadFile(fullPath, name) {
 async function deleteFile(fullPath, name) {
   if (!confirm(`Delete "${name}"?\n\nThis cannot be undone.`)) return;
   try {
-    const res = await fetch(`${API}/filesDeleteFile?path=${encodeURIComponent(fullPath)}`, {
-      method: 'DELETE', credentials: 'include'
-    });
+    const res = await fetch(`${API}/filesDeleteFile?path=${encodeURIComponent(fullPath)}`, { method: 'DELETE', credentials: 'include' });
     if (!res.ok) throw new Error('Delete failed');
     showToast('File deleted');
+    if (currentPreviewPath === fullPath) closePreview();
     loadFiles();
   } catch(e) {
     showToast('Delete failed: ' + e.message, true);
@@ -311,62 +328,39 @@ async function deleteFile(fullPath, name) {
 async function handleFiles(fileList) {
   if (!fileList || !fileList.length) return;
   const prog = document.getElementById('uploadProgress');
-  prog.style.display = 'block';
-
+  prog.style.display = 'inline';
   for (let i = 0; i < fileList.length; i++) {
     const file = fileList[i];
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      showToast(`Skipped ${file.name} — only PDFs accepted`, true);
-      continue;
-    }
-    prog.textContent = `Uploading ${i + 1} of ${fileList.length}: ${file.name}…`;
-
+    if (!file.name.toLowerCase().endsWith('.pdf')) { showToast(`Skipped ${file.name}`, true); continue; }
+    prog.textContent = `Uploading ${i+1}/${fileList.length}: ${file.name}…`;
     try {
       const b64 = await fileToBase64(file);
       const res = await fetch(`${API}/filesUploadFile`, {
-        method:      'POST',
-        headers:     { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          filename:    file.name,
-          fileBase64:  b64,
-          contentType: 'application/pdf',
-          year:        currentYear,
-          month:       currentMonth
-        })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ filename: file.name, fileBase64: b64, contentType: 'application/pdf', year: currentYear, month: currentMonth })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       showToast(`✓ Uploaded: ${file.name}`);
-    } catch(e) {
-      showToast(`Failed: ${file.name} — ${e.message}`, true);
-    }
+    } catch(e) { showToast(`Failed: ${file.name} — ${e.message}`, true); }
   }
-
   prog.style.display = 'none';
   document.getElementById('fileInput').value = '';
   loadFiles();
 }
 
-function fileToBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload  = () => res(r.result.split(',')[1]);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
+function fileToBase64(f) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(f); });
 }
 
 async function logout() {
   await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
-  sessionStorage.clear();
-  window.location.href = '/';
+  sessionStorage.clear(); window.location.href = '/';
 }
 
 function showToast(msg, isErr) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = 'toast show' + (isErr ? ' err' : '');
+  t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
   setTimeout(() => t.className = 'toast', 3000);
 }
 
@@ -375,9 +369,8 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function safeId(s) { return String(s || '').replace(/[^a-z0-9]/gi, '_'); }
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 init();
 </script>
