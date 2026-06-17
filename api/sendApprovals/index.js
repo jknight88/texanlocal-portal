@@ -1,6 +1,6 @@
-// api/sendApprovals/index.js
+\// api/sendApprovals/index.js
 // POST /api/sendApprovals
-// Fetches PDFs from blob, embeds as images in email, creates approval records 
+// Fetches PDFs from blob, embeds as images in email, creates approval records
 
 const { BlobServiceClient } = require('@azure/storage-blob');
 const { v4: uuidv4 }        = require('uuid');
@@ -54,27 +54,37 @@ async function findPdfs(container, businessName, year, month) {
   return found;
 }
 
-async function pdfToImageB64(container, blobPath) {
-  const blob   = container.getBlockBlobClient(blobPath);
+async function pdfToImageUrl(filesContainer, blobPath, blobSvc, sessionId, fileIndex) {
+  const blob   = filesContainer.getBlockBlobClient(blobPath);
   const buffer = await blob.downloadToBuffer();
   const { pdf } = await import('pdf-to-img');
   const pages  = await pdf(buffer, { scale: 1.5 });
-  const images = [];
+  const urls   = [];
+  let pageIdx  = 0;
   for await (const page of pages) {
-    images.push(page.toString('base64'));
-    if (images.length >= 1) break; // first page only per file
+    // Upload PNG to blob storage with public-readable SAS URL
+    const imgName    = `${sessionId}_${fileIndex}_${pageIdx}.png`;
+    const imgContainer = blobSvc.getContainerClient('ad-proof-images');
+    await imgContainer.createIfNotExists({ access: 'blob' }); // public blob access
+    const imgBlob    = imgContainer.getBlockBlobClient(imgName);
+    await imgBlob.upload(page, page.length, {
+      blobHTTPHeaders: { blobContentType: 'image/png' }
+    });
+    urls.push(imgBlob.url);
+    pageIdx++;
+    if (pageIdx >= 1) break; // first page only per file
   }
-  return images;
+  return urls;
 }
 
-function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId) {
-  const approveUrl = `${BASE_URL}/respond?id=${sessionId}&action=approved`;
-  const changesUrl = `${BASE_URL}/respond?id=${sessionId}&action=changes`;
+function buildEmail(client, mailingMonthLabel, deadline, imageUrlList, sessionId) {
+  const approveUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=approved`;
+  const changesUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=changes`;
   const pixelUrl   = `${BASE_URL}/api/trackApprovalOpen?id=${sessionId}`;
 
-  const images = imageB64List.map(b64 => `
+  const images = imageUrlList.map(url => `
     <div style="margin:16px 0;text-align:center">
-      <img src="data:image/png;base64,${b64}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
+      <img src="${url}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
     </div>`).join('');
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
@@ -145,6 +155,18 @@ async function saveRecord(blobSvc, record) {
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res = { status: 200, headers: CORS, body: '{}' }; context.done(); return; }
 
+  // Validate required env vars
+  const missing = [];
+  if (!process.env.TENANT_ID)             missing.push('TENANT_ID');
+  if (!process.env.GRAPH_CLIENT_ID)       missing.push('GRAPH_CLIENT_ID');
+  if (!process.env.GRAPH_CLIENT_SECRET)   missing.push('GRAPH_CLIENT_SECRET');
+  if (!process.env.AZURE_STORAGE_CONNECTION_STRING) missing.push('AZURE_STORAGE_CONNECTION_STRING');
+  if (missing.length) {
+    context.log.error('Missing env vars:', missing.join(', '));
+    context.res = { status: 500, headers: CORS, body: JSON.stringify({ error: 'Server configuration error: missing ' + missing.join(', ') }) };
+    context.done(); return;
+  }
+
   const { mailingMonth, mailingYear, deadline, clients, isResend, subject: subjectTpl } = req.body || {};
   if (!mailingMonth || !mailingYear || !clients || !clients.length) {
     context.res = { status: 400, headers: CORS, body: JSON.stringify({ error: 'Missing required fields' }) };
@@ -175,13 +197,13 @@ module.exports = async function(context, req) {
         continue;
       }
 
-      // Convert PDFs to images
+      // Convert PDFs to images and upload to blob
       const images = [];
-      for (const filePath of matchedFiles) {
+      for (let fi = 0; fi < matchedFiles.length; fi++) {
         try {
-          const imgs = await pdfToImageB64(filesContainer, filePath);
-          images.push(...imgs);
-        } catch(e) { context.log.warn('PDF convert failed:', filePath, e.message); }
+          const urls = await pdfToImageUrl(filesContainer, matchedFiles[fi], blobSvc, sessionId, fi);
+          images.push(...urls);
+        } catch(e) { context.log.warn('PDF convert failed:', matchedFiles[fi], e.message); }
       }
 
       if (!images.length) {
