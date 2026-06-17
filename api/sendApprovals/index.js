@@ -169,6 +169,7 @@ async function saveRecord(blobSvc, record) {
 }
 
 module.exports = async function(context, req) {
+  try {
   if (req.method === 'OPTIONS') { context.res = { status: 200, headers: CORS, body: '{}' }; context.done(); return; }
 
   // Validate required env vars
@@ -250,11 +251,16 @@ module.exports = async function(context, req) {
       await new Promise(r => setTimeout(r, 800));
 
     } catch(e) {
-      context.log.error('Error:', client.business, e.message);
+      context.log.error('Error for', client.business + ':', e.message, e.stack);
       results.push({ business: client.business, status: 'error', message: e.message });
     }
   }
 
+  context.log('Send complete. Results:', JSON.stringify(results));
   context.res = { status: 200, headers: CORS, body: JSON.stringify({ ok: true, results }) };
+  } catch(outerErr) {
+    context.log.error('Outer error:', outerErr.message, outerErr.stack);
+    context.res = { status: 500, headers: CORS, body: JSON.stringify({ error: outerErr.message, results }) };
+  }
   context.done();
 };
