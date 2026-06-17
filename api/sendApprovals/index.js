@@ -1,10 +1,7 @@
 // api/sendApprovals/index.js
+// Uses pre-converted JPG previews stored at upload time
 const { BlobServiceClient } = require('@azure/storage-blob');
 const { v4: uuidv4 }        = require('uuid');
-const { spawnSync }          = require('child_process');
-const fs                     = require('fs');
-const path                   = require('path');
-const os                     = require('os');
 
 const STORAGE_CONN  = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TENANT_ID     = process.env.TENANT_ID;
@@ -48,6 +45,7 @@ async function findPdfs(container, businessName, year, month) {
   const prefix = `${year}/${month}/`;
   const found  = [];
   for await (const blob of container.listBlobsFlat({ prefix })) {
+    if (blob.name.includes('/previews/')) continue; // skip preview folder
     const fname = blob.name.replace(prefix, '');
     const parts = fname.replace(/\.pdf$/i, '').split('_');
     if (normBiz(parts[0]) === norm) found.push(blob.name);
@@ -55,38 +53,30 @@ async function findPdfs(container, businessName, year, month) {
   return found;
 }
 
-// Try multiple conversion methods
-async function pdfToImageB64(container, blobPath) {
-  const blob   = container.getBlockBlobClient(blobPath);
-  const buffer = await blob.downloadToBuffer();
-  
-  const tmpDir  = os.tmpdir();
-  const tmpId   = Date.now() + '_' + Math.random().toString(36).slice(2);
-  const tmpPdf  = path.join(tmpDir, `proof_${tmpId}.pdf`);
-  
-  fs.writeFileSync(tmpPdf, buffer);
-  
-  // Try ghostscript (gs) - commonly available on Linux
-  const gsResult = spawnSync('gs', [
-    '-dNOPAUSE', '-dBATCH', '-dSAFER',
-    '-sDEVICE=jpeg', '-r150',
-    '-dFirstPage=1', '-dLastPage=1',
-    `-sOutputFile=${path.join(tmpDir, `proof_${tmpId}.jpg`)}`,
-    tmpPdf
-  ], { timeout: 30000 });
+// Get pre-converted JPG preview, fall back to on-the-fly conversion
+async function getImageB64(container, pdfPath) {
+  // Check for pre-converted preview
+  const parts      = pdfPath.split('/'); // year/month/filename.pdf
+  const previewPath = `${parts[0]}/${parts[1]}/previews/${parts[2].replace(/\.pdf$/i, '.jpg')}`;
 
-  try { fs.unlinkSync(tmpPdf); } catch(e) {}
-
-  const jpgPath = path.join(tmpDir, `proof_${tmpId}.jpg`);
-  if (gsResult.status === 0 && fs.existsSync(jpgPath)) {
-    const b64 = fs.readFileSync(jpgPath).toString('base64');
-    try { fs.unlinkSync(jpgPath); } catch(e) {}
-    return [b64];
+  try {
+    const previewBlob = container.getBlockBlobClient(previewPath);
+    const buffer      = await previewBlob.downloadToBuffer();
+    context.log('Using pre-converted preview:', previewPath);
+    return buffer.toString('base64');
+  } catch(e) {
+    // No preview exists - try live conversion
+    context.log('No preview found, trying live conversion');
   }
 
-  // If gs fails, check what tools are available
-  const which = spawnSync('which', ['gs', 'pdftoppm', 'convert', 'soffice'], { timeout: 5000 });
-  throw new Error('No PDF converter available. Tools checked: ' + (which.stdout || '').toString() + ' gs error: ' + (gsResult.stderr || '').toString().slice(0, 200));
+  // Fall back to pdf-to-img
+  const pdfBuffer = await container.getBlockBlobClient(pdfPath).downloadToBuffer();
+  const { pdf }   = await import('pdf-to-img');
+  const pages     = await pdf(pdfBuffer, { scale: 1.5 });
+  for await (const page of pages) {
+    return page.toString('base64');
+  }
+  throw new Error('No pages in PDF');
 }
 
 function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId, bodyTemplate) {
@@ -109,7 +99,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
 
   const images = imageB64List.map(b64 => `
     <div style="margin:16px 0;text-align:center">
-      <img src="data:image/jpeg;base64,${b64}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
+      <img src="data:image/png;base64,${b64}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
     </div>`).join('');
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
@@ -212,15 +202,17 @@ module.exports = async function(context, req) {
       const images = [];
       for (const filePath of matchedFiles) {
         try {
-          const imgs = await pdfToImageB64(filesContainer, filePath);
-          images.push(...imgs);
+          const b64 = await getImageB64(filesContainer, filePath);
+          images.push(b64);
         } catch(e) {
-          context.log.error('PDF convert failed:', filePath, ':', e.message);
-          results.push({ business: client.business, status: 'conversion_failed', message: e.message });
+          context.log.error('Image failed:', filePath, e.message);
         }
       }
 
-      if (!images.length) continue;
+      if (!images.length) {
+        results.push({ business: client.business, status: 'conversion_failed', message: 'No preview available — please re-upload the PDF' });
+        continue;
+      }
 
       const sessionId = uuidv4();
       const now       = new Date().toISOString();
