@@ -1,7 +1,7 @@
 // api/sendApprovals/index.js
-'use strict';
-const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
-const { v4: uuidv4 } = require('uuid');
+// Uses pre-converted JPG previews stored at upload time
+const { BlobServiceClient } = require('@azure/storage-blob');
+const { v4: uuidv4 }        = require('uuid');
 
 const STORAGE_CONN  = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const TENANT_ID     = process.env.TENANT_ID;
@@ -21,7 +21,6 @@ const CORS = {
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-// ── Graph token ───────────────────────────────────────────────────────────────
 let _token = null, _expiry = 0;
 async function getGraphToken() {
   if (_token && Date.now() < _expiry) return _token;
@@ -33,49 +32,20 @@ async function getGraphToken() {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString()
   });
   const data = await res.json();
-  if (!data.access_token) throw new Error('Graph token error: ' + JSON.stringify(data));
+  if (!data.access_token) throw new Error('Graph token error');
   _token  = data.access_token;
   _expiry = Date.now() + (data.expires_in - 60) * 1000;
   return _token;
 }
 
-// ── PDF to image - try pdf-to-img, fall back to SAS link ────────────────────
-async function pdfToImageB64(pdfBuffer, filePath) {
-  try {
-    // Try pdf-to-img (works on warm instances)
-    const { pdf } = await import('pdf-to-img');
-    const pages   = await pdf(pdfBuffer, { scale: 1.5 });
-    for await (const page of pages) {
-      return { type: 'image', data: page.toString('base64') };
-    }
-  } catch(e) {}
-
-  // Fall back to SAS URL for PDF viewing
-  try {
-    const connParts = {};
-    STORAGE_CONN.split(';').forEach(p => { const i=p.indexOf('='); if(i>-1) connParts[p.slice(0,i)]=p.slice(i+1); });
-    const sharedKey = new StorageSharedKeyCredential(connParts['AccountName'], connParts['AccountKey']);
-    const expiresOn = new Date(Date.now() + 30*24*60*60*1000);
-    const sasToken  = generateBlobSASQueryParameters(
-      { containerName: CONTAINER_FILES, blobName: filePath, permissions: BlobSASPermissions.parse('r'), expiresOn },
-      sharedKey
-    ).toString();
-    const url = `https://${connParts['AccountName']}.blob.core.windows.net/${CONTAINER_FILES}/${filePath}?${sasToken}`;
-    return { type: 'link', data: url, name: filePath.split('/').pop() };
-  } catch(e) {
-    throw new Error('Both image conversion and link generation failed: ' + e.message);
-  }
-}
-
-// ── Normalize business name ───────────────────────────────────────────────────
 function normBiz(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
-// ── Find matching PDFs ────────────────────────────────────────────────────────
 async function findPdfs(container, businessName, year, month) {
   const norm   = normBiz(businessName);
   const prefix = `${year}/${month}/`;
   const found  = [];
   for await (const blob of container.listBlobsFlat({ prefix })) {
+    if (blob.name.includes('/previews/')) continue; // skip preview folder
     const fname = blob.name.replace(prefix, '');
     const parts = fname.replace(/\.pdf$/i, '').split('_');
     if (normBiz(parts[0]) === norm) found.push(blob.name);
@@ -83,8 +53,53 @@ async function findPdfs(container, businessName, year, month) {
   return found;
 }
 
-// ── Build email HTML ──────────────────────────────────────────────────────────
-function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId, bodyTemplate) {
+// Convert PDF to image and store in blob with SAS URL for email
+async function getPdfImageUrl(container, pdfPath, sessionId, index) {
+  const { generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
+  
+  // Parse connection string
+  const connParts = {};
+  STORAGE_CONN.split(';').forEach(p => { const i=p.indexOf('='); if(i>-1) connParts[p.slice(0,i)]=p.slice(i+1); });
+  const accountName = connParts['AccountName'];
+  const accountKey  = connParts['AccountKey'];
+  const sharedKey   = new StorageSharedKeyCredential(accountName, accountKey);
+
+  // First check if a cached preview already exists
+  const blobSvc      = BlobServiceClient.fromConnectionString(STORAGE_CONN);
+  const imgContainer = blobSvc.getContainerClient('ad-proof-images');
+  await imgContainer.createIfNotExists();
+
+  const parts      = pdfPath.split('/');
+  const cachedName = `${parts[0]}_${parts[1]}_${parts[2].replace(/\.pdf$/i,'.png')}`;
+  const cachedBlob = imgContainer.getBlockBlobClient(cachedName);
+
+  let imageExists = false;
+  try { await cachedBlob.getProperties(); imageExists = true; } catch(e) {}
+
+  if (!imageExists) {
+    // Convert PDF to image
+    const pdfBuffer = await container.getBlockBlobClient(pdfPath).downloadToBuffer();
+    const { pdf }   = await import('pdf-to-img');
+    const pages     = await pdf(pdfBuffer, { scale: 1.5 });
+    for await (const page of pages) {
+      await cachedBlob.upload(page, page.length, {
+        overwrite: true,
+        blobHTTPHeaders: { blobContentType: 'image/png' }
+      });
+      break;
+    }
+  }
+
+  // Generate SAS URL valid 60 days (long enough for client to open email)
+  const expiresOn = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+  const sasToken  = generateBlobSASQueryParameters(
+    { containerName: 'ad-proof-images', blobName: cachedName, permissions: BlobSASPermissions.parse('r'), expiresOn },
+    sharedKey
+  ).toString();
+  return `https://${accountName}.blob.core.windows.net/ad-proof-images/${cachedName}?${sasToken}`;
+}
+
+function buildEmail(client, mailingMonthLabel, deadline, imageUrlList, sessionId, bodyTemplate) {
   const approveUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=approved`;
   const changesUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=changes`;
   const pixelUrl   = `${BASE_URL}/api/trackApprovalOpen?id=${sessionId}`;
@@ -94,6 +109,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
     .replace(/{BUSINESS}/g, client.business)
     .replace(/{MONTH}/g,    mailingMonthLabel)
     .replace(/{DEADLINE}/g, deadline);
+
   const bodyHtml = bodyText
     ? bodyText.split('\n').map(l => l.trim()
         ? `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 10px">${l}</p>`
@@ -101,19 +117,10 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
     : `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Hi ${client.contact || client.business},</p>
        <p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Your ad proof for the <strong>${mailingMonthLabel}</strong> mailing is ready. Please review by <strong>${deadline}</strong>.</p>`;
 
-  const images = imageB64List.map(item => {
-    if (item.type === 'image') {
-      return `<div style="margin:16px 0;text-align:center">
-        <img src="data:image/png;base64,${item.data}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
-      </div>`;
-    } else {
-      return `<div style="margin:16px 0;text-align:center">
-        <a href="${item.data}" target="_blank" style="display:inline-block;background:#f0f4ff;border:2px solid #00205B;border-radius:6px;padding:16px 32px;text-decoration:none;color:#00205B;font-family:Arial,sans-serif;font-size:14px;font-weight:700">
-          📄 View Ad Proof — ${item.name}
-        </a>
-      </div>`;
-    }
-  }).join('');
+  const images = imageUrlList.map(url => `
+    <div style="margin:16px 0;text-align:center">
+      <img src="${url}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
+    </div>`).join('');
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,sans-serif">
@@ -142,7 +149,6 @@ function buildEmail(client, mailingMonthLabel, deadline, imageB64List, sessionId
 </body></html>`;
 }
 
-// ── Send email via Graph ──────────────────────────────────────────────────────
 async function sendEmail(toEmail, toName, subject, html) {
   const token = await getGraphToken();
   const res   = await fetch(`https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/sendMail`, {
@@ -162,7 +168,6 @@ async function sendEmail(toEmail, toName, subject, html) {
   if (res.status !== 202) throw new Error('sendMail failed: ' + await res.text());
 }
 
-// ── Save approval record ──────────────────────────────────────────────────────
 async function saveRecord(blobSvc, record) {
   const c   = blobSvc.getContainerClient(CONTAINER_APPROVALS);
   await c.createIfNotExists();
@@ -172,7 +177,6 @@ async function saveRecord(blobSvc, record) {
   });
 }
 
-// ── Main handler ──────────────────────────────────────────────────────────────
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res = { status: 200, headers: CORS, body: '{}' }; context.done(); return; }
 
@@ -216,18 +220,17 @@ module.exports = async function(context, req) {
       }
 
       const images = [];
-      for (const filePath of matchedFiles) {
+      for (let fi = 0; fi < matchedFiles.length; fi++) {
         try {
-          const pdfBuffer = await filesContainer.getBlockBlobClient(filePath).downloadToBuffer();
-          const result    = await pdfToImageB64(pdfBuffer, filePath);
-          images.push(result);
+          const url = await getPdfImageUrl(filesContainer, matchedFiles[fi], sessionId, fi);
+          images.push(url);
         } catch(e) {
-          context.log.error('PDF error for', filePath, ':', e.message);
+          context.log.error('Image failed:', matchedFiles[fi], e.message);
         }
       }
 
       if (!images.length) {
-        results.push({ business: client.business, status: 'conversion_failed', message: 'Image conversion failed' });
+        results.push({ business: client.business, status: 'conversion_failed', message: 'PDF to image failed — ' + (images.lastError || '') });
         continue;
       }
 
