@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Approval Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.hdr-r{display:flex;gap:10px}
+.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+
+.main{max-width:1200px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
+
+/* Controls */
+.controls{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap}
+.ctrl-group{display:flex;align-items:center;gap:6px}
+.ctrl-group label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.6px}
+select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;font-family:inherit;background:#fff;color:#1a1a2e;outline:none;cursor:pointer}
+.btn-load{background:var(--bl);color:#fff;border:none;padding:7px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+
+/* Summary cards */
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.2rem}
+.sum-card{background:#fff;border-radius:7px;padding:1rem;text-align:center;border-top:4px solid var(--br);box-shadow:0 2px 6px rgba(0,0,0,.07)}
+.sum-card.all{border-color:var(--bl)}
+.sum-card.sent{border-color:#90a4ae}
+.sum-card.opened{border-color:var(--amber)}
+.sum-card.approved{border-color:var(--green)}
+.sum-card.changes{border-color:var(--rd)}
+.sum-num{font-size:30px;font-weight:700;color:var(--bl);margin-bottom:4px}
+.sum-lbl{font-size:10px;color:var(--md);text-transform:uppercase;letter-spacing:.6px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;background:#fff;border-radius:8px 8px 0 0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.tab{padding:.65rem 1.2rem;font-size:12px;font-weight:700;color:var(--md);cursor:pointer;border-right:1px solid var(--br);border-bottom:2px solid transparent;transition:all .15s}
+.tab:last-child{border-right:none}
+.tab.active{color:var(--bl);border-bottom-color:var(--rd);background:#f8f9ff}
+.tab-count{display:inline-block;background:var(--bg);color:var(--md);border-radius:8px;padding:1px 6px;font-size:10px;margin-left:4px}
+.tab.active .tab-count{background:var(--rd);color:#fff}
+
+/* Table */
+.table-wrap{background:#fff;border-radius:0 0 8px 8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.dash-table{width:100%;border-collapse:collapse;font-size:13px}
+.dash-table th{background:var(--bl);color:#fff;padding:9px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.dash-table td{padding:10px 14px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+.dash-table tr:last-child td{border-bottom:none}
+.dash-table tr:hover td{background:#f9fafc}
+
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-sent{background:#e8eaf0;color:#546e7a}
+.badge-opened{background:#fff3e0;color:var(--amber)}
+.badge-approved{background:#e8f5e9;color:var(--green)}
+.badge-changes{background:#ffebee;color:var(--rd)}
+
+.btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px}
+.btn-approve{background:#e8f5e9;color:var(--green);border:1px solid #a5d6a7}
+.btn-approve:hover{background:#c8e6c9}
+.btn-changes{background:#ffebee;color:var(--rd);border:1px solid #ffcdd2}
+.btn-changes:hover{background:#ffcdd2}
+.btn-resend{background:#e8eaf0;color:var(--bl);border:1px solid var(--br)}
+.btn-resend:hover{background:#dde0e6}
+
+.empty-state{padding:3rem;text-align:center;color:var(--md);font-size:14px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.err{background:var(--rd)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:8px;padding:1.6rem;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal h3{font-size:15px;font-weight:700;color:var(--bl);margin-bottom:12px}
+.modal textarea{width:100%;border:1px solid var(--br);border-radius:4px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:80px;outline:none}
+.modal textarea:focus{border-color:var(--rd)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.btn{padding:8px 16px;border-radius:4px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-primary{background:var(--bl);color:#fff}
+.btn-cancel{background:#f0f2f5;color:var(--md)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <img src="/assets/logo.png" alt="" style="height:44px" onerror="this.style.display='none'">
+    <h1>Approval Dashboard</h1>
+  </div>
+  <div class="hdr-r">
+    <a href="/approvals" class="btn-hdr">✉ Send Proofs</a>
+    <a href="/home" class="btn-hdr">← Portal Home</a>
+    <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Month</label>
+      <select id="selMonth">
+        <option value="01">January</option><option value="02">February</option>
+        <option value="03">March</option><option value="04">April</option>
+        <option value="05">May</option><option value="06">June</option>
+        <option value="07">July</option><option value="08">August</option>
+        <option value="09">September</option><option value="10">October</option>
+        <option value="11">November</option><option value="12">December</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Year</label>
+      <select id="selYear"></select>
+    </div>
+    <button class="btn-load" onclick="loadDashboard()">Load</button>
+    <button class="btn-load" style="background:var(--green);margin-left:4px" onclick="loadDashboard()">↻ Refresh</button>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-grid">
+    <div class="sum-card all"><div class="sum-num" id="s-all">—</div><div class="sum-lbl">Total Sent</div></div>
+    <div class="sum-card sent"><div class="sum-num" id="s-sent">—</div><div class="sum-lbl">Not Opened</div></div>
+    <div class="sum-card opened"><div class="sum-num" id="s-opened">—</div><div class="sum-lbl">Opened</div></div>
+    <div class="sum-card approved"><div class="sum-num" id="s-approved">—</div><div class="sum-lbl">Approved</div></div>
+    <div class="sum-card changes"><div class="sum-num" id="s-changes">—</div><div class="sum-lbl">Changes</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" id="tab-all" onclick="setTab('all')">All <span class="tab-count" id="tc-all">0</span></div>
+    <div class="tab" id="tab-sent" onclick="setTab('sent')">Not Opened <span class="tab-count" id="tc-sent">0</span></div>
+    <div class="tab" id="tab-opened" onclick="setTab('opened')">Opened <span class="tab-count" id="tc-opened">0</span></div>
+    <div class="tab" id="tab-approved" onclick="setTab('approved')">Approved <span class="tab-count" id="tc-approved">0</span></div>
+    <div class="tab" id="tab-changes" onclick="setTab('changes_requested')">Changes <span class="tab-count" id="tc-changes">0</span></div>
+  </div>
+
+  <div class="table-wrap">
+    <div id="tableContainer">
+      <div class="empty-state">Select a month and click Load</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Manual approve modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Mark as Approved</h3>
+    <p style="font-size:13px;color:var(--md);margin-bottom:10px" id="modalDesc">Add an optional note (e.g. "Verbal approval via phone")</p>
+    <textarea id="modalNotes" placeholder="Optional note…"></textarea>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalConfirm" onclick="confirmManual()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let allRecords   = [];
+let currentTab   = 'all';
+let modalSession = null;
+let modalAction  = null;
+
+async function init() {
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
+  if (!res.ok) { window.location.href = '/'; return; }
+  const user = await res.json();
+  if (user.role === 'designer') { window.location.href = '/upload'; return; }
+
+  const yearSel  = document.getElementById('selYear');
+  const thisYear = new Date().getFullYear();
+  for (let y = thisYear; y >= thisYear - 2; y--) {
+    const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o);
+  }
+  const now = new Date();
+  document.getElementById('selMonth').value = String(now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2).padStart(2,'0');
+  document.getElementById('selYear').value  = now.getFullYear();
+  loadDashboard();
+}
+
+async function loadDashboard() {
+  const month = document.getElementById('selMonth').value;
+  const year  = document.getElementById('selYear').value;
+  document.getElementById('tableContainer').innerHTML = '<div class="empty-state">Loading…</div>';
+
+  try {
+    const res  = await fetch(`${API}/getApprovalsDashboard?month=${month}&year=${year}`, { credentials: 'include' });
+    const data = await res.json();
+    allRecords  = data.records || [];
+    updateSummary();
+    renderTable();
+  } catch(e) {
+    document.getElementById('tableContainer').innerHTML = '<div class="empty-state">Failed to load: ' + e.message + '</div>';
+  }
+}
+
+function updateSummary() {
+  const sent     = allRecords.filter(r => r.status === 'sent').length;
+  const opened   = allRecords.filter(r => r.status === 'opened').length;
+  const approved = allRecords.filter(r => r.status === 'approved').length;
+  const changes  = allRecords.filter(r => r.status === 'changes_requested').length;
+  const total    = allRecords.length;
+
+  document.getElementById('s-all').textContent      = total;
+  document.getElementById('s-sent').textContent     = sent;
+  document.getElementById('s-opened').textContent   = opened;
+  document.getElementById('s-approved').textContent = approved;
+  document.getElementById('s-changes').textContent  = changes;
+
+  document.getElementById('tc-all').textContent     = total;
+  document.getElementById('tc-sent').textContent    = sent;
+  document.getElementById('tc-opened').textContent  = opened;
+  document.getElementById('tc-approved').textContent= approved;
+  document.getElementById('tc-changes').textContent = changes;
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const map = { all: 'tab-all', sent: 'tab-sent', opened: 'tab-opened', approved: 'tab-approved', changes_requested: 'tab-changes' };
+  document.getElementById(map[tab]).classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const filtered = currentTab === 'all' ? allRecords : allRecords.filter(r => r.status === currentTab);
+  const container = document.getElementById('tableContainer');
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty-state">No records ${currentTab === 'all' ? '' : 'with status: ' + currentTab}</div>`;
+    return;
+  }
+
+  container.innerHTML = `<table class="dash-table">
+    <thead><tr>
+      <th>Business</th><th>Contact</th><th>Email</th>
+      <th>Status</th><th>Sent</th><th>Opened</th><th>Responded</th><th>Notes</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${filtered.map(r => `
+      <tr>
+        <td><strong>${esc(r.business)}</strong></td>
+        <td>${esc(r.contact || '—')}</td>
+        <td style="font-size:12px;color:var(--md)">${esc(r.email)}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td style="font-size:11px;color:var(--md)">${fmt(r.sentAt)}</td>
+        <td style="font-size:11px;color:var(--md)">${r.openedAt ? fmt(r.openedAt) + (r.openCount > 1 ? ' ×'+r.openCount : '') : '—'}</td>
+        <td style="font-size:11px;color:var(--md)">${r.respondedAt ? fmt(r.respondedAt) : '—'}</td>
+        <td style="font-size:11px;color:var(--md);max-width:120px">${esc(r.notes || '—')}</td>
+        <td>
+          ${r.status !== 'approved' ? `<button class="btn-sm btn-approve" onclick="openModal('${r.sessionId}','approved','${esc(r.business)}')">✓ Approve</button>` : ''}
+          ${r.status !== 'changes_requested' ? `<button class="btn-sm btn-changes" onclick="openModal('${r.sessionId}','changes_requested','${esc(r.business)}')">✎ Changes</button>` : ''}
+          <button class="btn-sm btn-resend" onclick="resend('${r.sessionId}','${esc(r.business)}','${esc(r.email)}','${esc(r.contact||'')}','${r.mailingMonth}','${r.mailingYear}','${esc(r.deadline||'')}')">↻ Resend</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function statusBadge(s) {
+  const map = {
+    sent:              '<span class="badge badge-sent">Sent</span>',
+    opened:            '<span class="badge badge-opened">Opened</span>',
+    approved:          '<span class="badge badge-approved">✓ Approved</span>',
+    changes_requested: '<span class="badge badge-changes">✎ Changes</span>'
+  };
+  return map[s] || `<span class="badge">${s}</span>`;
+}
+
+function openModal(sessionId, action, business) {
+  modalSession = sessionId;
+  modalAction  = action;
+  document.getElementById('modalTitle').textContent = action === 'approved' ? `Mark "${business}" as Approved` : `Mark "${business}" — Changes Requested`;
+  document.getElementById('modalDesc').textContent  = action === 'approved' ? 'Add an optional note (e.g. "Verbal approval via phone call")' : 'Add an optional note about the requested changes';
+  document.getElementById('modalNotes').value = '';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  modalSession = null; modalAction = null;
+}
+
+async function confirmManual() {
+  if (!modalSession) return;
+  const notes = document.getElementById('modalNotes').value.trim();
+  try {
+    const res = await fetch(`${API}/manualApprove`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ sessionId: modalSession, action: modalAction, notes })
+    });
+    if (!res.ok) throw new Error('Failed');
+    closeModal();
+    showToast('Status updated!');
+    loadDashboard();
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+}
+
+async function resend(sessionId, business, email, contact, month, year, deadline) {
+  if (!confirm(`Resend proof to ${business}?\n\nThis will use the current month (${month}/${year}) files.`)) return;
+  try {
+    const res  = await fetch(`${API}/sendApprovals`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({
+        mailingMonth: month, mailingYear: year, deadline,
+        clients: [{ business, contact, email }],
+        isResend: true
+      })
+    });
+    const data = await res.json();
+    if (data.results && data.results[0].status === 'sent') {
+      showToast('Proof resent to ' + business);
+      loadDashboard();
+    } else {
+      showToast((data.results && data.results[0].message) || 'Resend failed', true);
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+}
+
+async function logout() {
+  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
+  sessionStorage.clear(); window.location.href = '/';
+}
+
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+init();
+</script>
+</body>
+</html>

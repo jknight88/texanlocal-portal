@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Ad Proof Response</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--green:#1a5c1a}
+body{font-family:'Source Sans 3',sans-serif;background:#f5f7fa;min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:1rem 2rem}
+.hdr h1{font-family:'Playfair Display',serif;font-size:18px;color:#fff}
+.page{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem}
+.card{background:#fff;border-radius:12px;box-shadow:0 6px 32px rgba(0,0,0,.12);max-width:480px;width:100%;overflow:hidden;text-align:center}
+.card-top{padding:2.5rem 2rem 1.5rem}
+.icon{font-size:64px;margin-bottom:16px}
+.card-top h2{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:10px}
+.card-top p{font-size:14px;color:#555;line-height:1.7}
+.card-bottom{background:#f9fafc;border-top:1px solid #eee;padding:1.2rem 2rem;font-size:12px;color:#999}
+.approved .card-top{border-top:6px solid var(--green)}
+.changes .card-top{border-top:6px solid var(--rd)}
+.mailto-btn{display:inline-block;background:var(--rd);color:#fff;padding:13px 28px;border-radius:5px;text-decoration:none;font-size:14px;font-weight:700;margin-top:20px}
+.mailto-btn:hover{background:#9e0a31}
+</style>
+</head>
+<body>
+<header class="hdr"><h1>The Texan Local — Ad Proof</h1></header>
+<div class="page">
+  <div class="card" id="card">
+    <div class="card-top">
+      <div class="icon" id="icon">⏳</div>
+      <h2 id="title">Processing…</h2>
+      <p id="message">Please wait.</p>
+      <div id="actionArea"></div>
+    </div>
+    <div class="card-bottom">
+      Questions? Contact us at <strong>josh@thetexanlocal.com</strong> or call <strong>830-214-3487</strong>
+    </div>
+  </div>
+</div>
+<script>
+const params = new URLSearchParams(window.location.search);
+const action = params.get('action');
+const id     = params.get('id');
+
+if (action === 'approved') {
+  document.getElementById('card').classList.add('approved');
+  document.getElementById('icon').textContent    = '✅';
+  document.getElementById('title').textContent   = 'Ad Approved!';
+  document.getElementById('message').textContent = 'Thank you! Your approval has been received. Your ad will run as shown in the upcoming mailing of The Texan Local.';
+  document.getElementById('actionArea').innerHTML = '<p style="margin-top:16px;font-size:12px;color:#aaa">You can close this page.</p>';
+
+} else if (action === 'changes') {
+  document.getElementById('card').classList.add('changes');
+  document.getElementById('icon').textContent  = '✏️';
+  document.getElementById('title').textContent = 'Changes Requested';
+  document.getElementById('message').innerHTML = 'Your request has been noted. Please send us an email describing the specific changes needed and we\'ll get them taken care of right away.';
+  const subject = encodeURIComponent('Ad Changes Requested' + (id ? ' — Ref: ' + id.slice(0,8) : ''));
+  const body    = encodeURIComponent('Hi Josh,\n\nI have reviewed my ad proof and would like to request the following changes:\n\n[Please describe your requested changes here]\n\nThank you!');
+  document.getElementById('actionArea').innerHTML =
+    `<a class="mailto-btn" href="mailto:josh@thetexanlocal.com?subject=${subject}&body=${body}">📧 Send Change Request Email</a>
+     <p style="margin-top:12px;font-size:12px;color:#aaa">This will open your email with a pre-filled message.</p>`;
+
+} else {
+  document.getElementById('icon').textContent    = '❓';
+  document.getElementById('title').textContent   = 'Invalid Link';
+  document.getElementById('message').textContent = 'This link appears to be invalid. Please contact us directly.';
+}
+</script>
+</body>
+</html>

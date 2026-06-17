@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Ad Approvals</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.hdr-r{display:flex;gap:10px}
+.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+
+.main{max-width:1100px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
+
+/* Steps */
+.steps{display:flex;gap:0;margin-bottom:1.5rem;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.step{flex:1;padding:.75rem 1rem;font-size:12px;font-weight:700;color:var(--md);border-right:1px solid var(--br);cursor:pointer;transition:all .15s;text-align:center}
+.step:last-child{border-right:none}
+.step.active{background:var(--bl);color:#fff}
+.step.done{background:#e8f5e9;color:var(--green)}
+.step-num{display:inline-block;width:18px;height:18px;border-radius:50%;background:currentColor;color:#fff;font-size:10px;line-height:18px;text-align:center;margin-right:6px;opacity:.7}
+.step.active .step-num{background:#fff;color:var(--bl);opacity:1}
+
+/* Panels */
+.panel{display:none;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.panel.active{display:block}
+.panel-hdr{background:var(--bl);padding:.75rem 1.4rem;border-bottom:3px solid var(--rd)}
+.panel-hdr h2{color:#fff;font-size:14px;font-weight:700;letter-spacing:.4px}
+.panel-body{padding:1.4rem}
+
+/* Form fields */
+.field{margin-bottom:1.2rem}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:none;border-bottom:2px solid var(--br);background:transparent;font-size:14px;font-family:inherit;padding:7px 2px;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-bottom-color:var(--rd)}
+.field textarea{min-height:80px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hint{font-size:11px;color:var(--md);margin-top:4px;font-style:italic}
+
+/* Client table */
+.client-table{width:100%;border-collapse:collapse;font-size:13px}
+.client-table th{background:var(--bl);color:#fff;padding:8px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.client-table td{padding:9px 12px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+.client-table tr:last-child td{border-bottom:none}
+.client-table tr:hover td{background:#f9fafc}
+.status-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-matched{background:#e8f5e9;color:var(--green)}
+.badge-no-file{background:#fff3e0;color:var(--amber)}
+.chk{width:16px;height:16px;cursor:pointer}
+
+/* Upload */
+.upload-area{border:2px dashed var(--br);border-radius:6px;padding:1.2rem;text-align:center;cursor:pointer;position:relative;transition:all .2s;margin-bottom:1rem}
+.upload-area:hover{border-color:var(--rd);background:#fff8f8}
+.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-area p{font-size:13px;color:var(--md)}
+
+/* Buttons */
+.btn{padding:9px 20px;border-radius:5px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-primary{background:var(--bl);color:#fff}
+.btn-primary:hover{background:#001844}
+.btn-secondary{background:#f0f2f5;color:var(--md);border:1px solid var(--br)}
+.btn-secondary:hover{background:#e8eaf0}
+.btn-danger{background:var(--rd);color:#fff}
+.btn-danger:hover{background:#9e0a31}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:disabled{opacity:.5;cursor:not-allowed}
+.nav-btns{display:flex;gap:10px;justify-content:space-between;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--br)}
+
+/* Progress */
+.progress-wrap{margin-top:1rem;display:none}
+.progress-bar{height:6px;background:var(--br);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.progress-fill{height:100%;background:var(--green);transition:width .3s;width:0%}
+.progress-label{font-size:12px;color:var(--md);margin-bottom:6px}
+.send-log{max-height:200px;overflow-y:auto;font-size:12px;background:#f9fafc;border:1px solid var(--br);border-radius:4px;padding:8px}
+.log-item{padding:3px 0;border-bottom:1px solid #f0f2f5;display:flex;gap:8px}
+.log-item:last-child{border-bottom:none}
+
+/* Summary cards */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.2rem}
+.sum-card{background:#fff;border-radius:6px;padding:1rem;text-align:center;border-top:3px solid var(--br);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.sum-card.sent{border-color:var(--bl)}
+.sum-card.opened{border-color:var(--amber)}
+.sum-card.approved{border-color:var(--green)}
+.sum-card.changes{border-color:var(--rd)}
+.sum-num{font-size:28px;font-weight:700;color:var(--bl);margin-bottom:4px}
+.sum-lbl{font-size:11px;color:var(--md);text-transform:uppercase;letter-spacing:.5px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.err{background:var(--rd)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <img src="/assets/logo.png" alt="" style="height:44px" onerror="this.style.display='none'">
+    <h1>Ad Approvals</h1>
+  </div>
+  <div class="hdr-r">
+    <a href="/approvals/dashboard" class="btn-hdr">📊 Dashboard</a>
+    <a href="/home" class="btn-hdr">← Portal Home</a>
+    <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1tab" onclick="goStep(1)"><span class="step-num">1</span>Setup</div>
+    <div class="step" id="step2tab" onclick="goStep(2)"><span class="step-num">2</span>Client List</div>
+    <div class="step" id="step3tab" onclick="goStep(3)"><span class="step-num">3</span>Match &amp; Preview</div>
+    <div class="step" id="step4tab" onclick="goStep(4)"><span class="step-num">4</span>Send</div>
+  </div>
+
+  <!-- Step 1: Setup -->
+  <div class="panel active" id="panel1">
+    <div class="panel-hdr"><h2>Step 1 — Mailing Setup</h2></div>
+    <div class="panel-body">
+      <div class="field-row">
+        <div class="field">
+          <label>Mailing Month</label>
+          <select id="mailingMonth">
+            <option value="01">January</option><option value="02">February</option>
+            <option value="03">March</option><option value="04">April</option>
+            <option value="05">May</option><option value="06">June</option>
+            <option value="07">July</option><option value="08">August</option>
+            <option value="09">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Mailing Year</label>
+          <select id="mailingYear"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Approval Deadline</label>
+        <input type="date" id="deadline">
+        <div class="hint">Clients must approve or request changes by this date</div>
+      </div>
+      <div class="field">
+        <label>Email Subject Line</label>
+        <input type="text" id="emailSubject" value="Your Ad Proof — {MONTH} Mailing | Please Review by {DEADLINE}">
+        <div class="hint">Placeholders: {MONTH} {DEADLINE} {BUSINESS}</div>
+      </div>
+      <div class="nav-btns">
+        <div></div>
+        <button class="btn btn-primary" onclick="goStep(2)">Next: Client List →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Client List -->
+  <div class="panel" id="panel2">
+    <div class="panel-hdr"><h2>Step 2 — Client List</h2></div>
+    <div class="panel-body">
+      <div class="upload-area" id="xlsxDrop">
+        <input type="file" id="xlsxFile" accept=".xlsx,.xls,.csv" onchange="loadExcel(this.files[0])">
+        <p>📊 Drop your client Excel/CSV file here or click to browse</p>
+        <p style="font-size:11px;margin-top:6px">Columns needed: Business Name, Contact Name, Email</p>
+      </div>
+      <div id="clientTableWrap"></div>
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(3)" id="toStep3Btn" disabled>Next: Match Files →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Match & Preview -->
+  <div class="panel" id="panel3">
+    <div class="panel-hdr"><h2>Step 3 — Match Files &amp; Preview</h2></div>
+    <div class="panel-body">
+      <div id="matchSummary" style="margin-bottom:1rem;font-size:13px;color:var(--md)">Click Match Files to find PDFs for each client.</div>
+      <div style="display:flex;gap:10px;margin-bottom:1rem">
+        <button class="btn btn-secondary" onclick="matchFiles()">🔍 Match Files</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer">
+          <input type="checkbox" id="isResend"> Resend Proof (use current month files)
+        </label>
+      </div>
+      <div id="matchTableWrap"></div>
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(4)">Next: Send →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Send -->
+  <div class="panel" id="panel4">
+    <div class="panel-hdr"><h2>Step 4 — Review &amp; Send</h2></div>
+    <div class="panel-body">
+      <div id="sendSummary" style="margin-bottom:1rem;font-size:13px;color:var(--md)"></div>
+      <div id="sendTableWrap"></div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-label" id="progressLabel">Sending…</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="send-log" id="sendLog"></div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
+        <button class="btn btn-success" id="sendBtn" onclick="sendAll()">🚀 Send Approval Emails</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script>
+const API = '/api';
+let clients     = [];
+let matchResult = [];
+let currentStep = 1;
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+async function init() {
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
+  if (!res.ok) { window.location.href = '/'; return; }
+  const user = await res.json();
+  if (user.role === 'designer') { window.location.href = '/upload'; return; }
+
+  // Set defaults
+  const now = new Date();
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  document.getElementById('mailingMonth').value = String(nextMonth.getMonth() + 1).padStart(2, '0');
+
+  const yearSel = document.getElementById('mailingYear');
+  for (let y = now.getFullYear(); y <= now.getFullYear() + 1; y++) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y; yearSel.appendChild(o);
+  }
+  document.getElementById('mailingYear').value = nextMonth.getFullYear();
+
+  // Default deadline 2 weeks out
+  const dl = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  document.getElementById('deadline').value = dl.toISOString().split('T')[0];
+}
+
+// ── Steps ─────────────────────────────────────────────────────────────────────
+function goStep(n) {
+  if (n === 3 && !clients.length) { showToast('Load a client list first', true); return; }
+  if (n === 4) buildSendPreview();
+  currentStep = n;
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i+1 === n));
+  document.querySelectorAll('.step').forEach((s,i) => {
+    s.classList.toggle('active', i+1 === n);
+    s.classList.toggle('done', i+1 < n);
+  });
+  if (n === 3 && matchResult.length === 0) matchFiles();
+}
+
+// ── Excel upload ──────────────────────────────────────────────────────────────
+function loadExcel(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb   = XLSX.read(e.target.result, { type: 'binary' });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!rows.length) { showToast('No data found in file', true); return; }
+
+    // Auto-detect columns
+    const keys = Object.keys(rows[0]).map(k => k.toLowerCase().trim());
+    const bizCol     = Object.keys(rows[0])[keys.findIndex(k => k.includes('biz') || k.includes('business') || k.includes('company') || k.includes('name'))];
+    const contactCol = Object.keys(rows[0])[keys.findIndex(k => k.includes('contact') || k.includes('first') || k.includes('person'))];
+    const emailCol   = Object.keys(rows[0])[keys.findIndex(k => k.includes('email') || k.includes('mail'))];
+
+    if (!bizCol || !emailCol) { showToast('Could not find Business Name or Email columns', true); return; }
+
+    clients = rows.map(r => ({
+      business: String(r[bizCol] || '').trim(),
+      contact:  contactCol ? String(r[contactCol] || '').trim() : '',
+      email:    String(r[emailCol] || '').trim()
+    })).filter(c => c.business && c.email && c.email.includes('@'));
+
+    renderClientTable();
+    document.getElementById('toStep3Btn').disabled = clients.length === 0;
+    matchResult = []; // reset matches
+    showToast(`Loaded ${clients.length} clients`);
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderClientTable() {
+  const wrap = document.getElementById('clientTableWrap');
+  if (!clients.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <table class="client-table">
+      <thead><tr><th>#</th><th>Business</th><th>Contact</th><th>Email</th></tr></thead>
+      <tbody>${clients.map((c,i) => `
+        <tr>
+          <td style="color:var(--md)">${i+1}</td>
+          <td><strong>${esc(c.business)}</strong></td>
+          <td>${esc(c.contact)}</td>
+          <td style="color:var(--md)">${esc(c.email)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--md);margin-top:8px">${clients.length} clients loaded</p>`;
+}
+
+// ── Match files ───────────────────────────────────────────────────────────────
+async function matchFiles() {
+  const month    = document.getElementById('mailingMonth').value;
+  const year     = document.getElementById('mailingYear').value;
+  const isResend = document.getElementById('isResend').checked;
+
+  // Determine lookup folder
+  let lookupMonth, lookupYear;
+  if (isResend) {
+    lookupMonth = month; lookupYear = year;
+  } else {
+    const d = new Date(parseInt(year), parseInt(month) - 2, 1);
+    lookupMonth = String(d.getMonth() + 1).padStart(2, '0');
+    lookupYear  = d.getFullYear().toString();
+  }
+
+  document.getElementById('matchSummary').textContent = `Looking in ${lookupMonth}/${lookupYear} folder…`;
+
+  try {
+    const res  = await fetch(`${API}/filesListFiles?year=${lookupYear}&month=${lookupMonth}`, { credentials: 'include' });
+    const data = await res.json();
+    const files = data.files || [];
+
+    // Match each client to their files
+    matchResult = clients.map(c => {
+      const norm    = normBiz(c.business);
+      const matched = files.filter(f => normBiz(f.name.replace(/\.pdf$/i,'').split('_')[0]) === norm);
+      return { ...c, files: matched, hasMatch: matched.length > 0 };
+    });
+
+    const matched   = matchResult.filter(r => r.hasMatch).length;
+    const unmatched = matchResult.filter(r => !r.hasMatch).length;
+    document.getElementById('matchSummary').innerHTML =
+      `<strong style="color:var(--green)">${matched} matched</strong> &nbsp;·&nbsp; <span style="color:var(--amber)">${unmatched} no file found</span> &nbsp;·&nbsp; Folder: ${lookupMonth}/${lookupYear}`;
+
+    renderMatchTable();
+  } catch(e) {
+    document.getElementById('matchSummary').textContent = 'Error loading files: ' + e.message;
+  }
+}
+
+function normBiz(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+function renderMatchTable() {
+  const wrap = document.getElementById('matchTableWrap');
+  if (!matchResult.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <table class="client-table">
+      <thead><tr>
+        <th><input type="checkbox" onchange="toggleAll(this)" checked></th>
+        <th>Business</th><th>Email</th><th>Files Found</th><th>Status</th>
+      </tr></thead>
+      <tbody>${matchResult.map((r,i) => `
+        <tr>
+          <td><input type="checkbox" class="chk" id="chk-${i}" ${r.hasMatch ? 'checked' : ''} ${!r.hasMatch ? 'disabled' : ''}></td>
+          <td><strong>${esc(r.business)}</strong><br><span style="font-size:11px;color:var(--md)">${esc(r.contact)}</span></td>
+          <td style="font-size:12px;color:var(--md)">${esc(r.email)}</td>
+          <td style="font-size:11px;color:var(--md)">${r.files.map(f => esc(f.name)).join('<br>') || '—'}</td>
+          <td><span class="status-badge ${r.hasMatch ? 'badge-matched' : 'badge-no-file'}">${r.hasMatch ? '✓ Ready' : '⚠ No File'}</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function toggleAll(cb) {
+  document.querySelectorAll('.chk:not(:disabled)').forEach(c => c.checked = cb.checked);
+}
+
+// ── Send preview ──────────────────────────────────────────────────────────────
+function buildSendPreview() {
+  const selected = getSelected();
+  const month    = document.getElementById('mailingMonth').value;
+  const year     = document.getElementById('mailingYear').value;
+  const deadline = document.getElementById('deadline').value;
+  const isResend = document.getElementById('isResend').checked;
+  const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthLabel = MONTHS[parseInt(month)-1] + ' ' + year;
+  const dlLabel    = deadline ? new Date(deadline + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '—';
+
+  document.getElementById('sendSummary').innerHTML =
+    `<strong>${selected.length}</strong> emails ready to send &nbsp;·&nbsp; Mailing: <strong>${monthLabel}</strong> &nbsp;·&nbsp; Deadline: <strong>${dlLabel}</strong> &nbsp;·&nbsp; ${isResend ? '<span style="color:var(--amber)">📤 Resend (using current month files)</span>' : 'Initial send (using prior month files)'}`;
+
+  document.getElementById('sendTableWrap').innerHTML = `
+    <table class="client-table">
+      <thead><tr><th>Business</th><th>Contact</th><th>Email</th><th>Files</th></tr></thead>
+      <tbody>${selected.map(r => `
+        <tr>
+          <td><strong>${esc(r.business)}</strong></td>
+          <td>${esc(r.contact)}</td>
+          <td style="font-size:12px;color:var(--md)">${esc(r.email)}</td>
+          <td style="font-size:11px;color:var(--md)">${r.files.length} file${r.files.length !== 1 ? 's' : ''}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function getSelected() {
+  return matchResult.filter((r,i) => {
+    const chk = document.getElementById('chk-' + i);
+    return chk && chk.checked && r.hasMatch;
+  });
+}
+
+// ── Send all ──────────────────────────────────────────────────────────────────
+async function sendAll() {
+  const selected = getSelected();
+  if (!selected.length) { showToast('No clients selected', true); return; }
+
+  const month    = document.getElementById('mailingMonth').value;
+  const year     = document.getElementById('mailingYear').value;
+  const deadline = document.getElementById('deadline').value;
+  const isResend = document.getElementById('isResend').checked;
+  const subject  = document.getElementById('emailSubject').value;
+  const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dlLabel  = deadline ? new Date(deadline + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
+  const subj     = subject.replace(/{MONTH}/g, MONTHS[parseInt(month)-1] + ' ' + year).replace(/{DEADLINE}/g, dlLabel);
+
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('sendBtn').textContent = '⏳ Sending…';
+  const wrap = document.getElementById('progressWrap');
+  const log  = document.getElementById('sendLog');
+  const fill = document.getElementById('progressFill');
+  wrap.style.display = 'block';
+  log.innerHTML = '';
+
+  const BATCH = 5; // send in batches of 5
+  let sent = 0;
+
+  for (let i = 0; i < selected.length; i += BATCH) {
+    const batch = selected.slice(i, i + BATCH);
+    document.getElementById('progressLabel').textContent = `Sending ${i+1}–${Math.min(i+BATCH, selected.length)} of ${selected.length}…`;
+    fill.style.width = (i / selected.length * 100) + '%';
+
+    try {
+      const res  = await fetch(`${API}/sendApprovals`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ mailingMonth: month, mailingYear: year, deadline: dlLabel, clients: batch, isResend, subject: subj })
+      });
+      const data = await res.json();
+      if (data.results) {
+        data.results.forEach(r => {
+          const icon = r.status === 'sent' ? '✅' : r.status === 'no_file' ? '⚠️' : '❌';
+          addLog(log, icon, r.business + (r.message ? ' — ' + r.message : ''));
+          if (r.status === 'sent') sent++;
+        });
+      }
+    } catch(e) {
+      batch.forEach(c => addLog(log, '❌', c.business + ' — ' + e.message));
+    }
+  }
+
+  fill.style.width = '100%';
+  document.getElementById('progressLabel').textContent = `✓ Done! ${sent} of ${selected.length} emails sent.`;
+  document.getElementById('sendBtn').textContent = '✓ Sent';
+  showToast(`${sent} emails sent successfully!`);
+}
+
+function addLog(container, icon, msg) {
+  const div = document.createElement('div');
+  div.className = 'log-item';
+  div.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+async function logout() {
+  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
+  sessionStorage.clear(); window.location.href = '/';
+}
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+init();
+</script>
+</body>
+</html>
