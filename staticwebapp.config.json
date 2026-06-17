@@ -11,7 +11,8 @@
     { "route": "/dashboard",               "rewrite": "/dashboard/index.html" },
     { "route": "/approvals", "rewrite": "/approvals/index.html" },
     { "route": "/approvals/dashboard", "rewrite": "/approvals/dashboard.html" },
-    { "route": "/respond", "rewrite": "/respond/index.html" }
+    { "route": "/respond", "rewrite": "/respond/index.html" },
+    { "route": "/clients", "rewrite": "/clients/index.html" }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
