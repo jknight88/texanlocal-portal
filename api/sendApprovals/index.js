@@ -1,4 +1,4 @@
-\// api/sendApprovals/index.js
+// api/sendApprovals/index.js
 // POST /api/sendApprovals
 // Fetches PDFs from blob, embeds as images in email, creates approval records
 
@@ -55,29 +55,47 @@ async function findPdfs(container, businessName, year, month) {
 }
 
 async function pdfToImageUrl(filesContainer, blobPath, blobSvc, sessionId, fileIndex) {
+  const { generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
   const blob   = filesContainer.getBlockBlobClient(blobPath);
   const buffer = await blob.downloadToBuffer();
   const { pdf } = await import('pdf-to-img');
   const pages  = await pdf(buffer, { scale: 1.5 });
   const urls   = [];
   let pageIdx  = 0;
+
+  // Parse connection string for SAS generation
+  const connParts = {};
+  STORAGE_CONN.split(';').forEach(part => {
+    const idx = part.indexOf('=');
+    if (idx > -1) connParts[part.slice(0, idx)] = part.slice(idx + 1);
+  });
+  const accountName = connParts['AccountName'];
+  const accountKey  = connParts['AccountKey'];
+  const sharedKey   = new StorageSharedKeyCredential(accountName, accountKey);
+
   for await (const page of pages) {
-    // Upload PNG to blob storage with public-readable SAS URL
-    const imgName    = `${sessionId}_${fileIndex}_${pageIdx}.png`;
+    const imgName      = `${sessionId}_${fileIndex}_${pageIdx}.png`;
     const imgContainer = blobSvc.getContainerClient('ad-proof-images');
-    await imgContainer.createIfNotExists({ access: 'blob' }); // public blob access
-    const imgBlob    = imgContainer.getBlockBlobClient(imgName);
+    await imgContainer.createIfNotExists();
+    const imgBlob = imgContainer.getBlockBlobClient(imgName);
     await imgBlob.upload(page, page.length, {
       blobHTTPHeaders: { blobContentType: 'image/png' }
     });
-    urls.push(imgBlob.url);
+
+    // Generate SAS URL valid for 30 days (long enough for client to open email)
+    const expiresOn = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const sasToken  = generateBlobSASQueryParameters(
+      { containerName: 'ad-proof-images', blobName: imgName, permissions: BlobSASPermissions.parse('r'), expiresOn },
+      sharedKey
+    ).toString();
+    urls.push(`https://${accountName}.blob.core.windows.net/ad-proof-images/${imgName}?${sasToken}`);
     pageIdx++;
-    if (pageIdx >= 1) break; // first page only per file
+    if (pageIdx >= 1) break;
   }
   return urls;
 }
 
-function buildEmail(client, mailingMonthLabel, deadline, imageUrlList, sessionId) {
+function buildEmail(client, mailingMonthLabel, deadline, imageUrlList, sessionId, bodyTemplate) {
   const approveUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=approved`;
   const changesUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=changes`;
   const pixelUrl   = `${BASE_URL}/api/trackApprovalOpen?id=${sessionId}`;
@@ -87,6 +105,14 @@ function buildEmail(client, mailingMonthLabel, deadline, imageUrlList, sessionId
       <img src="${url}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px">
     </div>`).join('');
 
+  // Use custom body template if provided
+  const bodyText = (bodyTemplate || '')
+    .replace(/{CONTACT}/g, client.contact || client.business)
+    .replace(/{BUSINESS}/g, client.business)
+    .replace(/{MONTH}/g, mailingMonthLabel)
+    .replace(/{DEADLINE}/g, deadline);
+  const bodyHtml = bodyText ? bodyText.split('\n').map(l => l ? `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 10px">${l}</p>` : '<br>').join('') : '';
+
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,sans-serif">
 <div style="max-width:650px;margin:0 auto;background:#fff">
@@ -94,17 +120,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageUrlList, sessionId
     <span style="font-family:Georgia,serif;font-size:22px;color:#fff;font-weight:700">The Texan Local</span>
   </div>
   <div style="padding:28px 32px">
-    <p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Hi ${client.contact || client.business},</p>
-    <p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">
-      Your ad proof for the <strong>${mailingMonthLabel}</strong> mailing is ready for review. Please check all details carefully and let us know your decision by <strong>${deadline}</strong>.
-    </p>
-    <p style="font-family:Georgia,serif;font-size:14px;color:#444;margin:0 0 6px"><strong>Please verify:</strong></p>
-    <ul style="font-family:Georgia,serif;font-size:14px;color:#444;line-height:1.8;padding-left:20px;margin:0 0 20px">
-      <li>Business name, address &amp; phone number</li>
-      <li>Website and email address</li>
-      <li>Specials, pricing, or promotional details</li>
-      <li>Overall design and layout</li>
-    </ul>
+    ${bodyHtml}
     ${images}
     <div style="text-align:center;margin:28px 0 20px">
       <a href="${approveUrl}" style="display:inline-block;background:#1a5c1a;color:#fff;padding:14px 36px;border-radius:5px;text-decoration:none;font-size:15px;font-weight:700;margin:0 8px">✓ Approve Ad</a>
@@ -167,7 +183,7 @@ module.exports = async function(context, req) {
     context.done(); return;
   }
 
-  const { mailingMonth, mailingYear, deadline, clients, isResend, subject: subjectTpl } = req.body || {};
+  const { mailingMonth, mailingYear, deadline, clients, isResend, subject: subjectTpl, bodyTemplate } = req.body || {};
   if (!mailingMonth || !mailingYear || !clients || !clients.length) {
     context.res = { status: 400, headers: CORS, body: JSON.stringify({ error: 'Missing required fields' }) };
     context.done(); return;
@@ -218,7 +234,7 @@ module.exports = async function(context, req) {
         .replace(/{DEADLINE}/g, deadline)
         .replace(/{BUSINESS}/g, client.business);
 
-      const html = buildEmail(client, mailingMonthLabel, deadline, images, sessionId);
+      const html = buildEmail(client, mailingMonthLabel, deadline, images, sessionId, bodyTemplate);
       await sendEmail(client.email, client.contact || client.business, subject, html);
 
       await saveRecord(blobSvc, {
