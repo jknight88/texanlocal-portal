@@ -165,8 +165,10 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
           <option value="">— Select saved template —</option>
         </select>
         <button class="btn-tpl btn-tpl-save" onclick="saveTemplate()">💾 Save</button>
+        <button class="btn-tpl" onclick="setDefaultTemplate()" style="background:#fff3e0;color:var(--amber);border:1px solid #ffcc80">⭐ Set Default</button>
         <button class="btn-tpl btn-tpl-delete" onclick="deleteTemplate()">🗑 Delete</button>
       </div>
+      <div id="defaultTplNote" style="font-size:11px;color:var(--md);margin-bottom:.8rem;display:none"></div>
 
       <div class="field">
         <label>Email Subject Line</label>
@@ -329,6 +331,15 @@ async function init() {
 
   // Load templates from localStorage
   loadTemplateList();
+
+  // Auto-load default template if set
+  const defaultTpl = localStorage.getItem('txl_default_template');
+  if (defaultTpl) {
+    document.getElementById('templateSelect').value = defaultTpl;
+    loadTemplate();
+  } else {
+    document.getElementById('emailBody').value = DEFAULT_BODY;
+  }
   refreshPreview();
 
   // Load clients
@@ -340,6 +351,31 @@ function getTemplates() {
   try { return JSON.parse(localStorage.getItem('txl_email_templates') || '{}'); } catch(e) { return {}; }
 }
 
+function setDefaultTemplate() {
+  const name = document.getElementById('templateSelect').value;
+  if (!name) { showToast('Select a template to set as default', true); return; }
+  localStorage.setItem('txl_default_template', name);
+  updateDefaultNote();
+  showToast(`"${name}" set as default template`);
+}
+
+function updateDefaultNote() {
+  const def  = localStorage.getItem('txl_default_template');
+  const note = document.getElementById('defaultTplNote');
+  if (def) {
+    note.style.display = 'block';
+    note.innerHTML = `⭐ Default template: <strong>${esc(def)}</strong> &nbsp;<button onclick="clearDefaultTemplate()" style="background:none;border:none;font-size:11px;color:var(--rd);cursor:pointer;text-decoration:underline">Clear</button>`;
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+function clearDefaultTemplate() {
+  localStorage.removeItem('txl_default_template');
+  updateDefaultNote();
+  showToast('Default template cleared');
+}
+
 function loadTemplateList() {
   const templates = getTemplates();
   const sel = document.getElementById('templateSelect');
@@ -349,6 +385,7 @@ function loadTemplateList() {
     const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o);
   });
   if (cur) sel.value = cur;
+  updateDefaultNote();
 }
 
 function loadTemplate() {
@@ -709,13 +746,20 @@ async function sendAll() {
         method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
         body: JSON.stringify({ mailingMonth: month, mailingYear: year, deadline, clients: batch, isResend, subject, bodyTemplate: body })
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch(e) { 
+        batch.forEach(c => addLog(log, '❌', c.business + ' — Server error (no JSON response)'));
+        continue;
+      }
       if (data.results) {
         data.results.forEach(r => {
           const icon = r.status==='sent' ? '✅' : r.status==='no_file' ? '⚠️' : '❌';
           addLog(log, icon, r.business + (r.message ? ' — '+r.message : ''));
           if (r.status==='sent') sent++;
         });
+      } else if (data.error) {
+        batch.forEach(c => addLog(log, '❌', c.business + ' — ' + data.error));
       }
     } catch(e) {
       batch.forEach(c => addLog(log, '❌', c.business + ' — ' + e.message));
