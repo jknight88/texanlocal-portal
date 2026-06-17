@@ -34,9 +34,10 @@ module.exports = async function(context, req) {
     const sharedKey   = new StorageSharedKeyCredential(accountName, accountKey);
     const expiresOn   = new Date(Date.now() + 15 * 60 * 1000);
 
+    const inline = req.query.inline === 'true';
     const sasToken = generateBlobSASQueryParameters(
       { containerName: CONTAINER, blobName: blobPath, permissions: BlobSASPermissions.parse('r'), expiresOn,
-        contentDisposition: `attachment; filename="${blobPath.split('/').pop()}"` },
+        contentDisposition: inline ? `inline; filename="${blobPath.split('/').pop()}"` : `attachment; filename="${blobPath.split('/').pop()}"` },
       sharedKey
     ).toString();
 
