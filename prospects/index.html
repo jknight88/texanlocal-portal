@@ -458,9 +458,9 @@ async function init() {
   // Extract email from JWT token if not returned by authVerify
   if (!currentUser.email) {
     try {
-      var token = sessionStorage.getItem('txl_token');
-      if (token) {
-        var payload = JSON.parse(atob(token.split('.')[1]));
+      var jwtToken = sessionStorage.getItem('txl_token');
+      if (jwtToken) {
+        var payload = JSON.parse(atob(jwtToken.split('.')[1]));
         currentUser.email = payload.email || '';
       }
     } catch(e) {}
