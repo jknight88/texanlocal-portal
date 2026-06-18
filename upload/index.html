@@ -12,6 +12,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 
 .hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
 .hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-r{display:flex;gap:10px}
 .hdr-logo{height:44px}
 .hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
 .btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit}
@@ -102,8 +103,10 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
     <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
     <h1>Upload Ad Proofs</h1>
   </div>
-  <a href="/home" class="btn-hdr">← Portal Home</a>
-  <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  <div style="display:flex;gap:10px;margin-left:auto">
+    <a href="/home" class="btn-hdr">← Portal Home</a>
+    <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  </div>
 </header>
 
 <div class="main">
