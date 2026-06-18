@@ -12,11 +12,13 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 
 .hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
 .hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
 .hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
 .hdr-r{display:flex;gap:10px}
 .btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.btn-hdr:hover{background:rgba(255,255,255,.2)}
 
-.main{max-width:1200px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
+.main{max-width:1300px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
 
 /* Controls */
 .controls{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap}
@@ -24,54 +26,59 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .ctrl-group label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.6px}
 select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;font-family:inherit;background:#fff;color:#1a1a2e;outline:none;cursor:pointer}
 .btn-load{background:var(--bl);color:#fff;border:none;padding:7px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.search-box{flex:1;max-width:260px}
+.search-box input{width:100%;padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;font-family:inherit;outline:none}
+.search-box input:focus{border-color:var(--rd)}
 
-/* Summary cards */
-.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.2rem}
-.sum-card{background:#fff;border-radius:7px;padding:1rem;text-align:center;border-top:4px solid var(--br);box-shadow:0 2px 6px rgba(0,0,0,.07)}
-.sum-card.all{border-color:var(--bl)}
-.sum-card.sent{border-color:#90a4ae}
-.sum-card.opened{border-color:var(--amber)}
-.sum-card.approved{border-color:var(--green)}
-.sum-card.changes{border-color:var(--rd)}
-.sum-num{font-size:30px;font-weight:700;color:var(--bl);margin-bottom:4px}
-.sum-lbl{font-size:10px;color:var(--md);text-transform:uppercase;letter-spacing:.6px}
+/* Summary strip */
+.summary-strip{display:flex;gap:8px;margin-bottom:1.2rem;flex-wrap:wrap}
+.sum-pill{background:#fff;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 1px 4px rgba(0,0,0,.08);cursor:pointer;border:2px solid transparent;transition:all .15s}
+.sum-pill:hover{border-color:var(--br)}
+.sum-pill.active{border-color:var(--bl)}
+.sum-pill .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-none{background:#b0bec5}
+.dot-sent{background:#ffa726}
+.dot-opened{background:#29b6f6}
+.dot-approved{background:#66bb6a}
+.dot-changes{background:#ef5350}
+.sum-pill .cnt{background:var(--bg);border-radius:8px;padding:1px 6px;font-size:11px}
 
-/* Tabs */
-.tabs{display:flex;gap:0;background:#fff;border-radius:8px 8px 0 0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07)}
-.tab{padding:.65rem 1.2rem;font-size:12px;font-weight:700;color:var(--md);cursor:pointer;border-right:1px solid var(--br);border-bottom:2px solid transparent;transition:all .15s}
-.tab:last-child{border-right:none}
-.tab.active{color:var(--bl);border-bottom-color:var(--rd);background:#f8f9ff}
-.tab-count{display:inline-block;background:var(--bg);color:var(--md);border-radius:8px;padding:1px 6px;font-size:10px;margin-left:4px}
-.tab.active .tab-count{background:var(--rd);color:#fff}
+/* Client table */
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.client-table{width:100%;border-collapse:collapse;font-size:13px}
+.client-table thead{background:var(--bl)}
+.client-table th{color:#fff;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.client-table td{padding:11px 14px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+.client-table tr:last-child td{border-bottom:none}
+.client-table tbody tr:hover td{background:#f9fafc}
 
-/* Table */
-.table-wrap{background:#fff;border-radius:0 0 8px 8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
-.dash-table{width:100%;border-collapse:collapse;font-size:13px}
-.dash-table th{background:var(--bl);color:#fff;padding:9px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.dash-table td{padding:10px 14px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
-.dash-table tr:last-child td{border-bottom:none}
-.dash-table tr:hover td{background:#f9fafc}
+/* Status indicator */
+.status-dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;flex-shrink:0}
+.status-cell{display:flex;align-items:center;white-space:nowrap}
+.status-none    .status-dot{background:#b0bec5}
+.status-sent    .status-dot{background:#ffa726}
+.status-opened  .status-dot{background:#29b6f6}
+.status-approved .status-dot{background:#66bb6a}
+.status-changes .status-dot{background:#ef5350}
+.status-none    .status-text{color:#78909c}
+.status-sent    .status-text{color:#e65100}
+.status-opened  .status-text{color:#0277bd}
+.status-approved .status-text{color:var(--green)}
+.status-changes .status-text{color:#c62828}
 
-.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700}
-.badge-sent{background:#e8eaf0;color:#546e7a}
-.badge-opened{background:#fff3e0;color:var(--amber)}
-.badge-approved{background:#e8f5e9;color:var(--green)}
-.badge-changes{background:#ffebee;color:var(--rd)}
-
-.btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px}
+/* Action buttons */
+.btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px;white-space:nowrap}
+.btn-send{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+.btn-send:hover{background:#bbdefb}
 .btn-approve{background:#e8f5e9;color:var(--green);border:1px solid #a5d6a7}
 .btn-approve:hover{background:#c8e6c9}
-.btn-changes{background:#ffebee;color:var(--rd);border:1px solid #ffcdd2}
+.btn-changes{background:#ffebee;color:#c62828;border:1px solid #ffcdd2}
 .btn-changes:hover{background:#ffcdd2}
-.btn-resend{background:#e8eaf0;color:var(--bl);border:1px solid var(--br)}
-.btn-resend:hover{background:#dde0e6}
+.btn-resend{background:#fff3e0;color:var(--amber);border:1px solid #ffcc80}
+.btn-resend:hover{background:#ffe0b2}
 
-.empty-state{padding:3rem;text-align:center;color:var(--md);font-size:14px}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
-.toast.show{opacity:1}
-.toast.err{background:var(--rd)}
+.empty-state{padding:3rem;text-align:center;color:var(--md)}
+.no-record{color:#b0bec5;font-style:italic;font-size:12px}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:center;justify-content:center}
@@ -79,18 +86,22 @@ select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:1
 .modal{background:#fff;border-radius:8px;padding:1.6rem;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
 .modal h3{font-size:15px;font-weight:700;color:var(--bl);margin-bottom:12px}
 .modal textarea{width:100%;border:1px solid var(--br);border-radius:4px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:80px;outline:none}
-.modal textarea:focus{border-color:var(--rd)}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .btn{padding:8px 16px;border-radius:4px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-primary{background:var(--bl);color:#fff}
 .btn-cancel{background:#f0f2f5;color:var(--md)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.err{background:var(--rd)}
 </style>
 </head>
 <body>
 
 <header class="hdr">
   <div class="hdr-l">
-    <img src="/assets/logo.png" alt="" style="height:44px" onerror="this.style.display='none'">
+    <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
     <h1>Approval Dashboard</h1>
   </div>
   <div class="hdr-r">
@@ -120,27 +131,35 @@ select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:1
     </div>
     <button class="btn-load" onclick="loadDashboard()">Load</button>
     <button class="btn-load" style="background:var(--green);margin-left:4px" onclick="loadDashboard()">↻ Refresh</button>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search clients…" oninput="renderTable()">
+    </div>
   </div>
 
-  <!-- Summary cards -->
-  <div class="summary-grid">
-    <div class="sum-card all"><div class="sum-num" id="s-all">—</div><div class="sum-lbl">Total Sent</div></div>
-    <div class="sum-card sent"><div class="sum-num" id="s-sent">—</div><div class="sum-lbl">Not Opened</div></div>
-    <div class="sum-card opened"><div class="sum-num" id="s-opened">—</div><div class="sum-lbl">Opened</div></div>
-    <div class="sum-card approved"><div class="sum-num" id="s-approved">—</div><div class="sum-lbl">Approved</div></div>
-    <div class="sum-card changes"><div class="sum-num" id="s-changes">—</div><div class="sum-lbl">Changes</div></div>
+  <!-- Status filter pills -->
+  <div class="summary-strip" id="summaryStrip">
+    <div class="sum-pill active" id="pill-all" onclick="setFilter('all')">
+      <span class="dot dot-none"></span> All <span class="cnt" id="cnt-all">—</span>
+    </div>
+    <div class="sum-pill" id="pill-none" onclick="setFilter('none')">
+      <span class="dot dot-none"></span> Not Sent <span class="cnt" id="cnt-none">—</span>
+    </div>
+    <div class="sum-pill" id="pill-sent" onclick="setFilter('sent')">
+      <span class="dot dot-sent"></span> Awaiting <span class="cnt" id="cnt-sent">—</span>
+    </div>
+    <div class="sum-pill" id="pill-opened" onclick="setFilter('opened')">
+      <span class="dot dot-opened"></span> Opened <span class="cnt" id="cnt-opened">—</span>
+    </div>
+    <div class="sum-pill" id="pill-approved" onclick="setFilter('approved')">
+      <span class="dot dot-approved"></span> Approved <span class="cnt" id="cnt-approved">—</span>
+    </div>
+    <div class="sum-pill" id="pill-changes" onclick="setFilter('changes_requested')">
+      <span class="dot dot-changes"></span> Changes <span class="cnt" id="cnt-changes">—</span>
+    </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <div class="tab active" id="tab-all" onclick="setTab('all')">All <span class="tab-count" id="tc-all">0</span></div>
-    <div class="tab" id="tab-sent" onclick="setTab('sent')">Not Opened <span class="tab-count" id="tc-sent">0</span></div>
-    <div class="tab" id="tab-opened" onclick="setTab('opened')">Opened <span class="tab-count" id="tc-opened">0</span></div>
-    <div class="tab" id="tab-approved" onclick="setTab('approved')">Approved <span class="tab-count" id="tc-approved">0</span></div>
-    <div class="tab" id="tab-changes" onclick="setTab('changes_requested')">Changes <span class="tab-count" id="tc-changes">0</span></div>
-  </div>
-
-  <div class="table-wrap">
+  <!-- Client table -->
+  <div class="card">
     <div id="tableContainer">
       <div class="empty-state">Select a month and click Load</div>
     </div>
@@ -148,15 +167,15 @@ select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:1
 
 </div>
 
-<!-- Manual approve modal -->
+<!-- Manual status modal -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
-    <h3 id="modalTitle">Mark as Approved</h3>
-    <p style="font-size:13px;color:var(--md);margin-bottom:10px" id="modalDesc">Add an optional note (e.g. "Verbal approval via phone")</p>
+    <h3 id="modalTitle">Update Status</h3>
+    <p style="font-size:13px;color:var(--md);margin-bottom:10px" id="modalDesc">Add an optional note</p>
     <textarea id="modalNotes" placeholder="Optional note…"></textarea>
     <div class="modal-btns">
       <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="modalConfirm" onclick="confirmManual()">Confirm</button>
+      <button class="btn btn-primary" onclick="confirmManual()">Confirm</button>
     </div>
   </div>
 </div>
@@ -165,10 +184,14 @@ select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:1
 
 <script>
 const API = '/api';
-let allRecords   = [];
-let currentTab   = 'all';
-let modalSession = null;
-let modalAction  = null;
+let allClients  = [];
+let allRecords  = {};  // keyed by business name (lowercase)
+let currentFilter = 'all';
+let modalSession  = null;
+let modalAction   = null;
+let currentMonth  = null;
+let currentYear   = null;
+let currentDeadline = null;
 
 async function init() {
   const token = sessionStorage.getItem('txl_token');
@@ -182,21 +205,41 @@ async function init() {
   for (let y = thisYear; y >= thisYear - 2; y--) {
     const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o);
   }
+
   const now = new Date();
-  document.getElementById('selMonth').value = String(now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2).padStart(2,'0');
+  const nextMonth = now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2;
+  document.getElementById('selMonth').value = String(nextMonth).padStart(2,'0');
   document.getElementById('selYear').value  = now.getFullYear();
+
+  // Load master client list
+  try {
+    const cr = await fetch(API + '/getClients', { credentials: 'include' });
+    const cd = await cr.json();
+    allClients = (cd.clients || []).filter(c => !c.group || c.group === 'active');
+  } catch(e) {}
+
   loadDashboard();
 }
 
 async function loadDashboard() {
   const month = document.getElementById('selMonth').value;
   const year  = document.getElementById('selYear').value;
+  currentMonth = month;
+  currentYear  = year;
   document.getElementById('tableContainer').innerHTML = '<div class="empty-state">Loading…</div>';
 
   try {
-    const res  = await fetch(`${API}/getApprovalsDashboard?month=${month}&year=${year}`, { credentials: 'include' });
+    const res  = await fetch(API + '/getApprovalsDashboard?month=' + month + '&year=' + year, { credentials: 'include' });
     const data = await res.json();
-    allRecords  = data.records || [];
+
+    // Index records by normalized business name
+    allRecords = {};
+    (data.records || []).forEach(function(r) {
+      allRecords[normBiz(r.business)] = r;
+      // Track deadline from most recent record
+      if (r.deadline && !currentDeadline) currentDeadline = r.deadline;
+    });
+
     updateSummary();
     renderTable();
   } catch(e) {
@@ -204,83 +247,156 @@ async function loadDashboard() {
   }
 }
 
-function updateSummary() {
-  const sent     = allRecords.filter(r => r.status === 'sent').length;
-  const opened   = allRecords.filter(r => r.status === 'opened').length;
-  const approved = allRecords.filter(r => r.status === 'approved').length;
-  const changes  = allRecords.filter(r => r.status === 'changes_requested').length;
-  const total    = allRecords.length;
+function normBiz(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
-  document.getElementById('s-all').textContent      = total;
-  document.getElementById('s-sent').textContent     = sent;
-  document.getElementById('s-opened').textContent   = opened;
-  document.getElementById('s-approved').textContent = approved;
-  document.getElementById('s-changes').textContent  = changes;
-
-  document.getElementById('tc-all').textContent     = total;
-  document.getElementById('tc-sent').textContent    = sent;
-  document.getElementById('tc-opened').textContent  = opened;
-  document.getElementById('tc-approved').textContent= approved;
-  document.getElementById('tc-changes').textContent = changes;
+function getStatus(client) {
+  const rec = allRecords[normBiz(client.business)];
+  if (!rec) return 'none';
+  return rec.status || 'none';
 }
 
-function setTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  const map = { all: 'tab-all', sent: 'tab-sent', opened: 'tab-opened', approved: 'tab-approved', changes_requested: 'tab-changes' };
-  document.getElementById(map[tab]).classList.add('active');
+function updateSummary() {
+  const counts = { none: 0, sent: 0, opened: 0, approved: 0, changes_requested: 0 };
+  allClients.forEach(function(c) {
+    const s = getStatus(c);
+    if (counts[s] !== undefined) counts[s]++;
+    else counts.none++;
+  });
+  const total = allClients.length;
+
+  document.getElementById('cnt-all').textContent     = total;
+  document.getElementById('cnt-none').textContent    = counts.none;
+  document.getElementById('cnt-sent').textContent    = counts.sent;
+  document.getElementById('cnt-opened').textContent  = counts.opened;
+  document.getElementById('cnt-approved').textContent = counts.approved;
+  document.getElementById('cnt-changes').textContent = counts.changes_requested;
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.sum-pill').forEach(function(p) { p.classList.remove('active'); });
+  const pill = document.getElementById('pill-' + (f === 'changes_requested' ? 'changes' : f));
+  if (pill) pill.classList.add('active');
   renderTable();
 }
 
 function renderTable() {
-  const filtered = currentTab === 'all' ? allRecords : allRecords.filter(r => r.status === currentTab);
-  const container = document.getElementById('tableContainer');
+  const q        = (document.getElementById('searchInput').value || '').toLowerCase();
+  let filtered   = allClients.filter(function(c) {
+    if (q && !c.business.toLowerCase().includes(q) && !(c.contact||'').toLowerCase().includes(q)) return false;
+    if (currentFilter === 'all') return true;
+    const s = getStatus(c);
+    return s === currentFilter || (currentFilter === 'none' && s === 'none');
+  });
 
   if (!filtered.length) {
-    container.innerHTML = `<div class="empty-state">No records ${currentTab === 'all' ? '' : 'with status: ' + currentTab}</div>`;
+    document.getElementById('tableContainer').innerHTML = '<div class="empty-state">No clients match</div>';
     return;
   }
 
-  container.innerHTML = `<table class="dash-table">
-    <thead><tr>
-      <th>Business</th><th>Contact</th><th>Email</th>
-      <th>Status</th><th>Sent</th><th>Opened</th><th>Responded</th><th>Notes</th><th>Actions</th>
-    </tr></thead>
-    <tbody>${filtered.map(r => `
-      <tr>
-        <td><strong>${esc(r.business)}</strong></td>
-        <td>${esc(r.contact || '—')}</td>
-        <td style="font-size:12px;color:var(--md)">${esc(r.email)}</td>
-        <td>${statusBadge(r.status)}</td>
-        <td style="font-size:11px;color:var(--md)">${fmt(r.sentAt)}</td>
-        <td style="font-size:11px;color:var(--md)">${r.openedAt ? fmt(r.openedAt) + (r.openCount > 1 ? ' ×'+r.openCount : '') : '—'}</td>
-        <td style="font-size:11px;color:var(--md)">${r.respondedAt ? fmt(r.respondedAt) : '—'}</td>
-        <td style="font-size:11px;color:var(--md);max-width:120px">${esc(r.notes || '—')}</td>
-        <td>
-          ${r.status !== 'approved' ? `<button class="btn-sm btn-approve" onclick="openModal('${r.sessionId}','approved','${esc(r.business)}')">✓ Approve</button>` : ''}
-          ${r.status !== 'changes_requested' ? `<button class="btn-sm btn-changes" onclick="openModal('${r.sessionId}','changes_requested','${esc(r.business)}')">✎ Changes</button>` : ''}
-          <button class="btn-sm btn-resend" onclick="resend('${r.sessionId}','${esc(r.business)}','${esc(r.email)}','${esc(r.contact||'')}','${r.mailingMonth}','${r.mailingYear}','${esc(r.deadline||'')}')">↻ Resend</button>
-        </td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
+  // Sort: changes first, then sent, then opened, then none, then approved
+  const order = { changes_requested: 0, sent: 1, opened: 2, none: 3, approved: 4 };
+  filtered.sort(function(a, b) {
+    return (order[getStatus(a)] || 3) - (order[getStatus(b)] || 3) || a.business.localeCompare(b.business);
+  });
+
+  document.getElementById('tableContainer').innerHTML =
+    '<table class="client-table">' +
+    '<thead><tr>' +
+    '<th>Status</th><th>Business</th><th>Contact</th><th>Email</th>' +
+    '<th>Sent</th><th>Opened</th><th>Responded</th><th>Notes</th><th style="text-align:right">Actions</th>' +
+    '</tr></thead><tbody>' +
+    filtered.map(function(c) {
+      const rec = allRecords[normBiz(c.business)];
+      const s   = getStatus(c);
+      const statusClass = 'status-' + (s === 'changes_requested' ? 'changes' : s === 'none' ? 'none' : s);
+      const statusLabel = s === 'none' ? 'Not Sent' : s === 'sent' ? 'Awaiting' : s === 'opened' ? 'Opened' :
+                          s === 'approved' ? 'Approved' : s === 'changes_requested' ? 'Changes' : s;
+
+      const sentAt      = rec ? fmt(rec.sentAt) : '—';
+      const openedAt    = rec ? (rec.openedAt ? fmt(rec.openedAt) + (rec.openCount > 1 ? ' ×'+rec.openCount : '') : '—') : '—';
+      const respondedAt = rec ? (rec.respondedAt ? fmt(rec.respondedAt) : '—') : '—';
+      const notes       = rec ? esc(rec.notes || '') : '';
+      const sessionId   = rec ? rec.sessionId : '';
+
+      const actions = [];
+      if (s === 'none') {
+        actions.push('<button class="btn-sm btn-send" onclick="sendProof(\'' + esc(c.business) + '\',\'' + esc(c.email) + '\',\'' + esc(c.contact||'') + '\')">✉ Send Proof</button>');
+      }
+      if (s !== 'none' && s !== 'approved') {
+        actions.push('<button class="btn-sm btn-approve" onclick="openModal(\'' + sessionId + '\',\'approved\',\'' + esc(c.business) + '\')">✓ Approve</button>');
+      }
+      if (s !== 'none' && s !== 'changes_requested') {
+        actions.push('<button class="btn-sm btn-changes" onclick="openModal(\'' + sessionId + '\',\'changes_requested\',\'' + esc(c.business) + '\')">✎ Changes</button>');
+      }
+      if (s !== 'none') {
+        actions.push('<button class="btn-sm btn-resend" onclick="resendProof(\'' + esc(c.business) + '\',\'' + esc(c.email) + '\',\'' + esc(c.contact||'') + '\')">↻ Resend</button>');
+      }
+
+      return '<tr>' +
+        '<td><div class="status-cell ' + statusClass + '"><span class="status-dot"></span><span class="status-text">' + statusLabel + '</span></div></td>' +
+        '<td><strong>' + esc(c.business) + '</strong></td>' +
+        '<td style="font-size:12px">' + esc((c.contact||'') + (c.lastName ? ' '+c.lastName : '')) + '</td>' +
+        '<td style="font-size:12px;color:var(--md)">' + esc(c.email||'') + '</td>' +
+        '<td style="font-size:11px;color:var(--md)">' + sentAt + '</td>' +
+        '<td style="font-size:11px;color:var(--md)">' + openedAt + '</td>' +
+        '<td style="font-size:11px;color:var(--md)">' + respondedAt + '</td>' +
+        '<td style="font-size:11px;color:var(--md);max-width:120px">' + notes + '</td>' +
+        '<td style="text-align:right;white-space:nowrap">' + actions.join('') + '</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>';
 }
 
-function statusBadge(s) {
-  const map = {
-    sent:              '<span class="badge badge-sent">Sent</span>',
-    opened:            '<span class="badge badge-opened">Opened</span>',
-    approved:          '<span class="badge badge-approved">✓ Approved</span>',
-    changes_requested: '<span class="badge badge-changes">✎ Changes</span>'
-  };
-  return map[s] || `<span class="badge">${s}</span>`;
+async function sendProof(business, email, contact) {
+  if (!confirm('Send initial proof to ' + business + '?')) return;
+  showToast('Sending…');
+  try {
+    const res  = await fetch(API + '/sendApprovals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({
+        mailingMonth: currentMonth, mailingYear: currentYear,
+        deadline: currentDeadline || '',
+        clients: [{ business, email, contact }],
+        isResend: false
+      })
+    });
+    const data = await res.json();
+    const r    = data.results && data.results[0];
+    if (r && r.status === 'sent') { showToast('Proof sent to ' + business); loadDashboard(); }
+    else showToast((r && r.message) || 'Send failed', true);
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function resendProof(business, email, contact) {
+  if (!confirm('Resend revised proof to ' + business + '?\n\nThis will use files from the current mailing month folder.')) return;
+  showToast('Resending…');
+  try {
+    const res  = await fetch(API + '/sendApprovals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({
+        mailingMonth: currentMonth, mailingYear: currentYear,
+        deadline: currentDeadline || '',
+        clients: [{ business, email, contact }],
+        isResend: true
+      })
+    });
+    const data = await res.json();
+    const r    = data.results && data.results[0];
+    if (r && r.status === 'sent') { showToast('Proof resent to ' + business); loadDashboard(); }
+    else showToast((r && r.message) || 'Resend failed', true);
+  } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
 function openModal(sessionId, action, business) {
   modalSession = sessionId;
   modalAction  = action;
-  document.getElementById('modalTitle').textContent = action === 'approved' ? `Mark "${business}" as Approved` : `Mark "${business}" — Changes Requested`;
-  document.getElementById('modalDesc').textContent  = action === 'approved' ? 'Add an optional note (e.g. "Verbal approval via phone call")' : 'Add an optional note about the requested changes';
+  document.getElementById('modalTitle').textContent = action === 'approved'
+    ? 'Mark "' + business + '" as Approved'
+    : 'Mark "' + business + '" — Changes Requested';
+  document.getElementById('modalDesc').textContent = action === 'approved'
+    ? 'Add an optional note (e.g. "Verbal approval via phone")'
+    : 'Add an optional note about changes needed';
   document.getElementById('modalNotes').value = '';
   document.getElementById('modalOverlay').classList.add('show');
 }
@@ -294,7 +410,7 @@ async function confirmManual() {
   if (!modalSession) return;
   const notes = document.getElementById('modalNotes').value.trim();
   try {
-    const res = await fetch(`${API}/manualApprove`, {
+    const res = await fetch(API + '/manualApprove', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ sessionId: modalSession, action: modalAction, notes })
     });
@@ -302,32 +418,7 @@ async function confirmManual() {
     closeModal();
     showToast('Status updated!');
     loadDashboard();
-  } catch(e) {
-    showToast('Error: ' + e.message, true);
-  }
-}
-
-async function resend(sessionId, business, email, contact, month, year, deadline) {
-  if (!confirm(`Resend proof to ${business}?\n\nThis will use the current month (${month}/${year}) files.`)) return;
-  try {
-    const res  = await fetch(`${API}/sendApprovals`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({
-        mailingMonth: month, mailingYear: year, deadline,
-        clients: [{ business, contact, email }],
-        isResend: true
-      })
-    });
-    const data = await res.json();
-    if (data.results && data.results[0].status === 'sent') {
-      showToast('Proof resent to ' + business);
-      loadDashboard();
-    } else {
-      showToast((data.results && data.results[0].message) || 'Resend failed', true);
-    }
-  } catch(e) {
-    showToast('Error: ' + e.message, true);
-  }
+  } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
 async function logout() {
@@ -343,10 +434,14 @@ function fmt(iso) {
 function showToast(msg, isErr) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
-  setTimeout(() => t.className = 'toast', 3000);
+  setTimeout(function() { t.className = 'toast'; }, 3500);
 }
 
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === e.currentTarget) closeModal();
+});
 
 init();
 </script>
