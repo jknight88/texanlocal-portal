@@ -3,72 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>The Texan Local — Portal Home</title>
+<title>The Texan Local — Portal</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
 body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
 
-/* ── Header ── */
 .hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
 .hdr-l{display:flex;align-items:center;gap:14px}
 .hdr-logo{height:44px}
 .hdr-title h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
 .hdr-title p{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
-.hdr-r{display:flex;align-items:center;gap:16px}
+.hdr-r{display:flex;align-items:center;gap:12px}
 .user-pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;font-size:12px;color:#fff}
-.btn-logout{background:transparent;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
+.role-pill{background:var(--rd);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px}
+.btn-logout{background:transparent;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit}
 .btn-logout:hover{background:rgba(255,255,255,.1);color:#fff}
 
-/* ── Main ── */
-.main{max-width:1200px;margin:0 auto;padding:2rem;flex:1}
+.main{max-width:1200px;margin:0 auto;padding:2rem;flex:1;width:100%}
 
-.welcome{margin-bottom:2rem}
+.welcome{margin-bottom:1.8rem}
 .welcome h2{font-family:'Playfair Display',serif;font-size:24px;color:var(--bl);margin-bottom:4px}
 .welcome p{font-size:14px;color:var(--md)}
 
-/* ── Module grid ── */
-.modules{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem}
+/* Module grid — auto-fit so tiles fill width regardless of count */
+.modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
 
 .module-card{background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;cursor:pointer;border:none;font-family:inherit;text-align:left}
-.module-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.module-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.13)}
 
-.module-top{padding:1rem 1rem .7rem;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.module-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.module-top{padding:1.1rem 1.1rem .7rem;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.module-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .icon-enroll{background:#e8ecf5}
 .icon-approval{background:#e8f5e9}
 .icon-files{background:#fff3e0}
 .icon-dashboard{background:#f3e5f5}
-.icon-clients{background:#e8f5e9}
+.icon-clients{background:#e3f2fd}
 .icon-upload{background:#fce4ec}
+.icon-prospects{background:#fff8e1}
 .icon-settings{background:#e0f7fa}
 
-.module-badge{background:var(--rd);color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;min-width:24px;text-align:center}
-.module-badge.zero{background:#ddd;color:#888}
+.module-badge{background:var(--rd);color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;min-width:22px;text-align:center}
+.module-badge.zero{background:#e0e3ea;color:#888}
 
-.module-info{padding:0 1rem 1rem}
-.module-info h3{font-size:13px;font-weight:700;color:var(--bl);margin-bottom:3px}
-.module-info p{font-size:11px;color:var(--md);line-height:1.4}
+.module-info{padding:0 1.1rem 1rem;flex:1}
+.module-info h3{font-size:13px;font-weight:700;color:var(--bl);margin-bottom:4px}
+.module-info p{font-size:11px;color:var(--md);line-height:1.5}
 
-.module-footer{background:var(--bg);padding:.5rem 1rem;font-size:10px;color:var(--md);border-top:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
-.module-footer span{color:var(--bl);font-weight:600}
+.module-footer{background:var(--bg);padding:.5rem 1.1rem;font-size:10px;color:var(--md);border-top:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
+.module-footer .stat{color:var(--bl);font-weight:600}
 
-/* ── Activity feed ── */
-.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--md);margin-bottom:.8rem}
+/* Activity */
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--md);margin-bottom:.8rem}
 .activity-card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
-.activity-hdr{background:var(--bl);padding:.65rem 1.2rem;display:flex;align-items:center;justify-content:space-between}
+.activity-hdr{background:var(--bl);padding:.65rem 1.2rem}
 .activity-hdr span{color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
 .activity-list{padding:.4rem 0}
-.activity-item{display:flex;align-items:center;gap:12px;padding:.6rem 1.2rem;border-bottom:1px solid #f0f2f5;font-size:12px}
+.activity-item{display:flex;align-items:center;gap:10px;padding:.55rem 1.2rem;border-bottom:1px solid #f0f2f5;font-size:12px}
 .activity-item:last-child{border-bottom:none}
 .a-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.a-dot.sent{background:var(--bl)}
-.a-dot.opened{background:var(--amber)}
-.a-dot.approved{background:var(--green)}
-.a-dot.changes{background:var(--rd)}
-.a-dot.signed{background:var(--green)}
-.a-time{color:#aaa;margin-left:auto;white-space:nowrap}
+.a-dot.sent{background:var(--bl)} .a-dot.opened{background:var(--amber)}
+.a-dot.approved{background:var(--green)} .a-dot.changes{background:var(--rd)}
+.a-dot.signed{background:var(--green)} .a-dot.upload{background:#9c27b0}
+.a-time{color:#aaa;margin-left:auto;white-space:nowrap;font-size:11px}
 .empty-feed{padding:2rem;text-align:center;color:var(--md);font-size:13px}
 </style>
 </head>
@@ -78,111 +76,28 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
   <div class="hdr-l">
     <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
     <div class="hdr-title">
-      <h1>Staff Portal</h1>
-      <p>The Texan Local — Internal Platform</p>
+      <h1>The Texan Local</h1>
+      <p>Staff Portal</p>
     </div>
   </div>
   <div class="hdr-r">
     <div class="user-pill" id="userPill">Loading…</div>
+    <div class="role-pill" id="rolePill"></div>
     <button class="btn-logout" onclick="logout()">Sign Out</button>
   </div>
 </header>
 
 <div class="main">
   <div class="welcome">
-    <h2 id="welcomeMsg">Good morning</h2>
+    <h2 id="welcomeMsg">Welcome</h2>
     <p id="welcomeDate"></p>
   </div>
 
-  <div class="modules" id="moduleGrid">
-    <!-- Enrollment & E-Sign -->
-    <button class="module-card" onclick="nav('/enrollment')">
-      <div class="module-top">
-        <div class="module-icon icon-enroll">📋</div>
-        <div class="module-badge zero" id="badge-enroll">—</div>
-      </div>
-      <div class="module-info">
-        <h3>Enrollment & E-Sign</h3>
-        <p>Send advertising enrollment agreements. Track client signing status in real time.</p>
-      </div>
-      <div class="module-footer">
-        <span id="stat-enroll">Loading…</span>
-        <span>→</span>
-      </div>
-    </button>
+  <div class="modules" id="moduleGrid"></div>
 
-    <!-- Ad Approvals -->
-    <button class="module-card" onclick="nav('/approvals')">
-      <div class="module-top">
-        <div class="module-icon icon-approval">✉️</div>
-        <div class="module-badge zero" id="badge-approvals">—</div>
-      </div>
-      <div class="module-info">
-        <h3>Ad Approvals</h3>
-        <p>Send monthly ad proof emails. Track who approved, who needs changes, who hasn't responded.</p>
-      </div>
-      <div class="module-footer">
-        <span id="stat-approvals">Loading…</span>
-        <span>→</span>
-      </div>
-    </button>
-
-    <!-- File Manager -->
-    <button class="module-card" onclick="nav('/files')">
-      <div class="module-top">
-        <div class="module-icon icon-files">📁</div>
-        <div class="module-badge zero" id="badge-files">—</div>
-      </div>
-      <div class="module-info">
-        <h3>File Manager</h3>
-        <p>Browse, download, and manage ad proof PDFs organized by mailing month.</p>
-      </div>
-      <div class="module-footer">
-        <span id="stat-files">Loading…</span>
-        <span>→</span>
-      </div>
-    </button>
-
-    <!-- Dashboard -->
-    <button class="module-card" onclick="nav('/dashboard')">
-      <div class="module-top">
-        <div class="module-icon icon-dashboard">📊</div>
-        <div class="module-badge zero" id="badge-dash">—</div>
-      </div>
-      <div class="module-info">
-        <h3>Activity Dashboard</h3>
-        <p>Combined view of enrollment and ad approval activity across all clients and months.</p>
-      </div>
-      <div class="module-footer">
-        <span id="stat-dash">All activity</span>
-        <span>→</span>
-      </div>
-    </button>
-
-    <!-- Clients -->
-    <button class="module-card" onclick="nav('/clients')">
-      <div class="module-top">
-        <div class="module-icon icon-clients">👥</div>
-        <div class="module-badge zero" id="badge-clients">—</div>
-      </div>
-      <div class="module-info">
-        <h3>Client List</h3>
-        <p>Manage your master client list. Import from CSV or add clients manually.</p>
-      </div>
-      <div class="module-footer">
-        <span id="stat-clients">Loading…</span>
-        <span>→</span>
-      </div>
-    </button>
-  </div>
-
-  <!-- Recent Activity -->
   <div class="section-title">Recent Activity</div>
   <div class="activity-card">
-    <div class="activity-hdr">
-      <span>Latest Events</span>
-      <span style="color:rgba(255,255,255,.6);font-size:11px" id="activityTime">Loading…</span>
-    </div>
+    <div class="activity-hdr"><span>Latest Updates</span></div>
     <div class="activity-list" id="activityList">
       <div class="empty-feed">Loading activity…</div>
     </div>
@@ -191,134 +106,162 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 
 <script>
 const API = '/api';
-let currentUser = null;
 
-// ── Auth check ────────────────────────────────────────────────────────────────
+// ── All available modules ─────────────────────────────────────────────────────
+// roles: which roles can see this tile
+const ALL_MODULES = [
+  {
+    id: 'enrollment',
+    icon: '📋', iconClass: 'icon-enroll',
+    title: 'Enrollment & E-Sign',
+    desc: 'Send advertising agreements. Track client signing status in real time.',
+    href: '/enrollment',
+    footer: 'Pending signatures',
+    roles: ['admin', 'rep']
+  },
+  {
+    id: 'approvals',
+    icon: '✉️', iconClass: 'icon-approval',
+    title: 'Ad Approvals',
+    desc: 'Send monthly ad proof emails. Track who approved or needs changes.',
+    href: '/approvals',
+    footer: 'Send proofs',
+    roles: ['admin']
+  },
+  {
+    id: 'approval-dashboard',
+    icon: '📊', iconClass: 'icon-dashboard',
+    title: 'Approval Dashboard',
+    desc: 'See approval status for all clients. Resend proofs and track responses.',
+    href: '/approvals/dashboard',
+    footer: 'All client statuses',
+    roles: ['admin']
+  },
+  {
+    id: 'files',
+    icon: '📁', iconClass: 'icon-files',
+    title: 'File Manager',
+    desc: 'Browse, preview, and download ad proof PDFs by mailing month.',
+    href: '/files',
+    footer: 'Browse files',
+    roles: ['admin', 'designer']
+  },
+  {
+    id: 'upload',
+    icon: '⬆️', iconClass: 'icon-upload',
+    title: 'Upload Proofs',
+    desc: 'Upload completed ad proof PDFs. Bulk upload or name individually.',
+    href: '/upload',
+    footer: 'Add new files',
+    roles: ['admin', 'designer']
+  },
+  {
+    id: 'clients',
+    icon: '👥', iconClass: 'icon-clients',
+    title: 'Client List',
+    desc: 'Manage active clients, past clients, and prospects. Import from CSV.',
+    href: '/clients',
+    footer: 'Manage clients',
+    roles: ['admin', 'rep']
+  },
+  {
+    id: 'prospects',
+    icon: '🎯', iconClass: 'icon-prospects',
+    title: 'Prospects',
+    desc: 'Track potential advertisers. Send enrollment forms to prospects.',
+    href: '/clients?group=prospect',
+    footer: 'View prospects',
+    roles: ['admin', 'rep']
+  }
+];
+
 async function init() {
-  try {
-    const token = sessionStorage.getItem('txl_token');
-    const res  = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), {
-      credentials: 'include'
-    });
-    if (!res.ok) { window.location.href = '/'; return; }
-    const user = await res.json();
-    currentUser = user;
+  // Auth
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
+  if (!res.ok) { window.location.href = '/'; return; }
+  const user = await res.json();
 
-    // Redirect designer to upload page
-    if (user.role === 'designer') { window.location.href = '/upload'; return; }
+  // Header
+  document.getElementById('userPill').textContent = user.name || user.username;
+  document.getElementById('rolePill').textContent = user.role;
 
-    document.getElementById('userPill').textContent = user.name + ' (' + user.role + ')';
+  // Welcome
+  const now  = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = (user.name || user.username).split(' ')[0];
+  document.getElementById('welcomeMsg').textContent = greeting + ', ' + firstName + '!';
+  document.getElementById('welcomeDate').textContent = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
 
-    // Welcome message
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    document.getElementById('welcomeMsg').textContent = greeting + ', ' + (user.name.split(' ')[0]) + '!';
-    document.getElementById('welcomeDate').textContent = new Date().toLocaleDateString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
+  // Render tiles for this role
+  renderModules(user.role);
 
-    loadStats();
-    loadActivity();
-  } catch(e) {
-    window.location.href = '/';
-  }
+  // Load activity
+  loadActivity(user.role);
 }
 
-// ── Load module stats ─────────────────────────────────────────────────────────
-async function loadStats() {
-  // Enrollment stats
-  try {
-    const res  = await fetch(API + '/getDashboard', { credentials: 'include' });
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      const pending = data.filter(r => r.status === 'sent' || r.status === 'opened').length;
-      document.getElementById('badge-enroll').textContent = pending || '0';
-      document.getElementById('badge-enroll').className   = 'module-badge' + (pending ? '' : ' zero');
-      document.getElementById('stat-enroll').textContent  = pending + ' pending signature' + (pending !== 1 ? 's' : '');
-    }
-  } catch(e) {}
+function renderModules(role) {
+  const grid    = document.getElementById('moduleGrid');
+  const visible = ALL_MODULES.filter(function(m) { return m.roles.indexOf(role) > -1; });
 
-  // File stats
-  const now   = new Date();
-  const year  = now.getFullYear().toString();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  try {
-    const res  = await fetch(`${API}/filesListFiles?year=${year}&month=${month}`, { credentials: 'include' });
-    const data = await res.json();
-    if (data.files) {
-      const count = data.files.length;
-      document.getElementById('badge-files').textContent = count || '0';
-      document.getElementById('badge-files').className   = 'module-badge' + (count ? '' : ' zero');
-      document.getElementById('stat-files').textContent  = count + ' file' + (count !== 1 ? 's' : '') + ' this month';
-    }
-  } catch(e) {}
-
-  // Approval stats (current month)
-  try {
-    const res  = await fetch(`${API}/getApprovalsDashboard?month=${month}&year=${year}`, { credentials: 'include' });
-    const data = await res.json();
-    if (data.records) {
-      const pending = data.records.filter(r => r.status === 'sent' || r.status === 'opened').length;
-      document.getElementById('badge-approvals').textContent = pending || '0';
-      document.getElementById('badge-approvals').className   = 'module-badge' + (pending ? '' : ' zero');
-      document.getElementById('stat-approvals').textContent  = pending + ' awaiting response';
-    }
-  } catch(e) {
-    document.getElementById('stat-approvals').textContent = 'No data yet';
-  }
-
-  // Client count
-  try {
-    const res  = await fetch(API + '/getClients', { credentials: 'include' });
-    const data = await res.json();
-    const count = (data.clients || []).length;
-    document.getElementById('badge-clients').textContent = count || '0';
-    document.getElementById('badge-clients').className   = 'module-badge' + (!count ? ' zero' : '');
-    document.getElementById('stat-clients').textContent  = count + ' active client' + (count !== 1 ? 's' : '');
-  } catch(e) {
-    document.getElementById('stat-clients').textContent = 'No data yet';
-  }
+  grid.innerHTML = visible.map(function(m) {
+    return '<button class="module-card" onclick="nav(\'' + m.href + '\')">' +
+      '<div class="module-top">' +
+        '<div class="module-icon ' + m.iconClass + '">' + m.icon + '</div>' +
+        '<div class="module-badge zero" id="badge-' + m.id + '">—</div>' +
+      '</div>' +
+      '<div class="module-info">' +
+        '<h3>' + m.title + '</h3>' +
+        '<p>' + m.desc + '</p>' +
+      '</div>' +
+      '<div class="module-footer">' +
+        '<span class="stat" id="stat-' + m.id + '">' + m.footer + '</span>' +
+        '<span>→</span>' +
+      '</div>' +
+    '</button>';
+  }).join('');
 }
 
-// ── Load recent activity ──────────────────────────────────────────────────────
-async function loadActivity() {
-  const events = [];
+async function loadActivity(role) {
+  const list = document.getElementById('activityList');
+  const items = [];
 
-  // Pull recent enrollment events
   try {
-    const res  = await fetch(API + '/getDashboard', { credentials: 'include' });
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      data.slice(0, 5).forEach(r => {
-        if (r.signedAt)   events.push({ type: 'signed',   label: r.bizName + ' signed enrollment',    time: r.signedAt });
-        else if (r.openedAt) events.push({ type: 'opened', label: r.bizName + ' opened enrollment link', time: r.openedAt });
-        else              events.push({ type: 'sent',     label: r.bizName + ' — enrollment sent',    time: r.createdAt });
+    if (role === 'admin') {
+      // Load recent approvals
+      const now   = new Date();
+      const month = String(now.getMonth() + 1).padStart(2,'0');
+      const year  = now.getFullYear();
+      const res   = await fetch(API + '/getApprovalsDashboard?month=' + month + '&year=' + year, { credentials: 'include' });
+      const data  = await res.json();
+      (data.records || []).slice(0,10).forEach(function(r) {
+        const s = r.status;
+        items.push({
+          dot: s === 'approved' ? 'approved' : s === 'changes_requested' ? 'changes' : s === 'opened' ? 'opened' : 'sent',
+          text: r.business + ' — ' + (s === 'approved' ? 'Approved' : s === 'changes_requested' ? 'Requested changes' : s === 'opened' ? 'Opened proof' : 'Proof sent'),
+          time: r.respondedAt || r.openedAt || r.sentAt
+        });
       });
     }
   } catch(e) {}
 
-  // Sort by time desc
-  events.sort((a, b) => new Date(b.time) - new Date(a.time));
-
-  const list = document.getElementById('activityList');
-  if (!events.length) {
+  if (!items.length) {
     list.innerHTML = '<div class="empty-feed">No recent activity</div>';
     return;
   }
 
-  list.innerHTML = events.slice(0, 8).map(e => `
-    <div class="activity-item">
-      <div class="a-dot ${e.type}"></div>
-      <span>${esc(e.label)}</span>
-      <span class="a-time">${timeAgo(e.time)}</span>
-    </div>
-  `).join('');
-
-  document.getElementById('activityTime').textContent = 'Updated just now';
+  items.sort(function(a,b) { return new Date(b.time) - new Date(a.time); });
+  list.innerHTML = items.slice(0,10).map(function(item) {
+    return '<div class="activity-item">' +
+      '<div class="a-dot ' + item.dot + '"></div>' +
+      '<span>' + esc(item.text) + '</span>' +
+      '<span class="a-time">' + fmtTime(item.time) + '</span>' +
+    '</div>';
+  }).join('');
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function nav(path) { window.location.href = path; }
+function nav(href) { window.location.href = href; }
 
 async function logout() {
   await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
@@ -326,20 +269,18 @@ async function logout() {
   window.location.href = '/';
 }
 
-function timeAgo(iso) {
-  if (!iso) return '—';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1)   return 'just now';
-  if (mins < 60)  return mins + 'm ago';
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24)   return hrs + 'h ago';
-  return Math.floor(hrs / 24) + 'd ago';
+function fmtTime(iso) {
+  if (!iso) return '';
+  const d   = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 60000);
+  if (diff < 1)   return 'just now';
+  if (diff < 60)  return diff + 'm ago';
+  if (diff < 1440) return Math.floor(diff/60) + 'h ago';
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
 }
 
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 init();
 </script>
