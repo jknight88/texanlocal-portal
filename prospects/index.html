@@ -18,7 +18,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
 .btn-hdr:hover{background:rgba(255,255,255,.2)}
 
-.main{max-width:1200px;margin:0 auto;padding:1.5rem;flex:1;width:100%;display:grid;grid-template-columns:340px 1fr;gap:1.2rem;align-items:start}
+.main{max-width:1300px;margin:0 auto;padding:1.5rem;flex:1;width:100%;display:grid;grid-template-columns:320px 1fr;gap:1.2rem;align-items:start}
 .main.no-detail{grid-template-columns:1fr}
 
 /* Left panel - prospect list */
@@ -33,7 +33,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .list-toolbar input:focus{border-color:var(--rd)}
 .list-toolbar select{border:1px solid var(--br);border-radius:4px;padding:5px 8px;font-size:12px;font-family:inherit;outline:none;background:#fff}
 
-.prospect-list{max-height:calc(100vh - 200px);overflow-y:auto}
+.prospect-list{max-height:calc(100vh - 180px);overflow-y:auto}
 .prospect-item{padding:.75rem 1rem;border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:10px}
 .prospect-item:hover{background:#f9fafc}
 .prospect-item.active{background:#eef2ff;border-left:3px solid var(--bl)}
@@ -248,10 +248,15 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
           </div>
         </div>
 
-        <!-- Activity History -->
-        <div style="font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem">Activity History</div>
+      </div>
+    </div>
+
+    <!-- Activity History -->
+    <div class="card">
+      <div class="card-hdr"><h3>Activity History</h3></div>
+      <div class="card-body">
         <div id="activityLog">
-          <div class="empty-state" style="padding:1rem"><p>No activity yet</p></div>
+          <div class="empty-state" style="padding:1rem"><p>No activity yet — log your first contact above</p></div>
         </div>
       </div>
     </div>
@@ -449,6 +454,24 @@ async function init() {
   if (!res.ok) { window.location.href = '/'; return; }
   currentUser = await res.json();
   if (currentUser.role === 'designer') { window.location.href = '/home'; return; }
+
+  // Extract email from JWT token if not returned by authVerify
+  if (!currentUser.email) {
+    try {
+      var token = sessionStorage.getItem('txl_token');
+      if (token) {
+        var payload = JSON.parse(atob(token.split('.')[1]));
+        currentUser.email = payload.email || '';
+      }
+    } catch(e) {}
+  }
+  // Also check stored user data
+  if (!currentUser.email) {
+    try {
+      var stored = JSON.parse(sessionStorage.getItem('txl_user') || '{}');
+      currentUser.email = stored.email || '';
+    } catch(e) {}
+  }
 
   // Set log datetime to now
   const now = new Date();
