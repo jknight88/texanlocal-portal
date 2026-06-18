@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Prospects</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.hdr-r{display:flex;gap:10px}
+.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.btn-hdr:hover{background:rgba(255,255,255,.2)}
+
+.main{max-width:1200px;margin:0 auto;padding:1.5rem;flex:1;width:100%;display:grid;grid-template-columns:340px 1fr;gap:1.2rem;align-items:start}
+.main.no-detail{grid-template-columns:1fr}
+
+/* Left panel - prospect list */
+.panel{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.panel-hdr{background:var(--bl);padding:.75rem 1.1rem;display:flex;align-items:center;justify-content:space-between}
+.panel-hdr h2{color:#fff;font-size:13px;font-weight:700;letter-spacing:.4px}
+.btn-add{background:var(--rd);color:#fff;border:none;padding:4px 12px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-add:hover{background:#a00a34}
+
+.list-toolbar{padding:.7rem 1rem;border-bottom:1px solid var(--br);display:flex;gap:8px}
+.list-toolbar input{flex:1;border:1px solid var(--br);border-radius:4px;padding:5px 8px;font-size:12px;font-family:inherit;outline:none}
+.list-toolbar input:focus{border-color:var(--rd)}
+.list-toolbar select{border:1px solid var(--br);border-radius:4px;padding:5px 8px;font-size:12px;font-family:inherit;outline:none;background:#fff}
+
+.prospect-list{max-height:calc(100vh - 200px);overflow-y:auto}
+.prospect-item{padding:.75rem 1rem;border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:10px}
+.prospect-item:hover{background:#f9fafc}
+.prospect-item.active{background:#eef2ff;border-left:3px solid var(--bl)}
+.prospect-item.active{padding-left:calc(1rem - 3px)}
+.pi-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pi-info{flex:1;min-width:0}
+.pi-biz{font-size:13px;font-weight:700;color:var(--bl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi-sub{font-size:11px;color:var(--md);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi-date{font-size:10px;color:#aaa;white-space:nowrap}
+
+/* Status colors */
+.s-new{background:#90caf9}
+.s-contacted{background:#ffa726}
+.s-interested{background:#66bb6a}
+.s-proposal{background:#ab47bc}
+.s-won{background:#1a5c1a}
+.s-lost{background:#ef5350}
+
+/* Right panel - detail */
+.detail-panel{display:flex;flex-direction:column;gap:1rem}
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.card-hdr{background:var(--bl);padding:.7rem 1.2rem;display:flex;align-items:center;justify-content:space-between}
+.card-hdr h3{color:#fff;font-size:13px;font-weight:700}
+.card-body{padding:1.2rem}
+
+/* Fields */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-bottom:1rem}
+.field-grid.three{grid-template-columns:1fr 1fr 1fr}
+.field label{display:block;font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.field input,.field select,.field textarea{width:100%;border:none;border-bottom:2px solid var(--br);background:transparent;font-size:13px;font-family:inherit;padding:5px 2px;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-bottom-color:var(--rd)}
+.field textarea{resize:vertical;min-height:60px;line-height:1.5}
+
+/* Status badge */
+.status-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;color:#fff}
+.sb-new{background:#64b5f6}
+.sb-contacted{background:#ffa726}
+.sb-interested{background:#66bb6a}
+.sb-proposal{background:#ab47bc}
+.sb-won{background:#1a5c1a}
+.sb-lost{background:#ef5350}
+
+/* Activity log */
+.activity-entry{padding:.75rem;background:#f9fafb;border:1px solid var(--br);border-radius:5px;margin-bottom:.6rem}
+.ae-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.ae-type{font-size:11px;font-weight:700;color:var(--bl);background:#e8edf8;padding:2px 8px;border-radius:10px}
+.ae-owner{font-size:11px;color:var(--md)}
+.ae-date{font-size:11px;color:#aaa;margin-left:auto}
+.ae-notes{font-size:13px;color:#333;line-height:1.5}
+.ae-followup{font-size:11px;color:var(--amber);margin-top:4px;font-weight:600}
+.ae-calendar{font-size:10px;color:var(--green);margin-top:2px}
+
+/* Quick log form */
+.log-form{background:#f0f4ff;border:1px solid #c0ccff;border-radius:6px;padding:1rem;margin-bottom:1rem}
+.log-form h4{font-size:12px;font-weight:700;color:var(--bl);margin-bottom:.8rem;text-transform:uppercase;letter-spacing:.5px}
+.log-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.voice-row{display:flex;gap:8px;align-items:flex-start}
+.voice-row textarea{flex:1;border:1px solid var(--br);border-radius:4px;padding:8px;font-size:13px;font-family:inherit;resize:none;height:72px;outline:none}
+.voice-row textarea:focus{border-color:var(--rd)}
+.btn-voice{background:#fff;border:1px solid var(--br);border-radius:4px;padding:8px;cursor:pointer;font-size:18px;flex-shrink:0;transition:all .15s}
+.btn-voice:hover{background:#fee;border-color:var(--rd)}
+.btn-voice.recording{background:#fee;border-color:var(--rd);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.followup-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.log-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* Buttons */
+.btn{padding:7px 16px;border-radius:4px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-primary{background:var(--bl);color:#fff}
+.btn-primary:hover{background:#001844}
+.btn-secondary{background:#f0f2f5;color:var(--md);border:1px solid var(--br)}
+.btn-secondary:hover{background:#e8eaf0}
+.btn-danger{background:#ffebee;color:var(--rd);border:1px solid #ffcdd2}
+.btn-danger:hover{background:#ffcdd2}
+.btn-convert{background:var(--green);color:#fff}
+.btn-convert:hover{background:#144d14}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+.empty-state{padding:2.5rem;text-align:center;color:var(--md)}
+.empty-state .ei{font-size:36px;margin-bottom:.5rem}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:8px;padding:1.6rem;max-width:560px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal h3{font-size:16px;font-weight:700;color:var(--bl);margin-bottom:1.2rem;font-family:'Playfair Display',serif}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--br)}
+
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.err{background:var(--rd)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
+    <h1>Prospects</h1>
+  </div>
+  <div class="hdr-r">
+    <a href="/home" class="btn-hdr">← Portal Home</a>
+    <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="main" id="mainGrid">
+
+  <!-- Left: Prospect List -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <h2>Prospects <span id="prospectCount" style="opacity:.6;font-weight:400"></span></h2>
+      <button class="btn-add" onclick="openAddModal()">+ Add Prospect</button>
+    </div>
+    <div class="list-toolbar">
+      <input type="text" id="searchInput" placeholder="Search…" oninput="renderList()">
+      <select id="statusFilter" onchange="renderList()">
+        <option value="">All Statuses</option>
+        <option value="new">New</option>
+        <option value="contacted">Contacted</option>
+        <option value="interested">Interested</option>
+        <option value="proposal">Proposal Sent</option>
+        <option value="won">Won</option>
+        <option value="lost">Lost</option>
+      </select>
+    </div>
+    <div class="prospect-list" id="prospectList">
+      <div class="empty-state"><div class="ei">🎯</div><p>Loading prospects…</p></div>
+    </div>
+  </div>
+
+  <!-- Right: Detail Panel -->
+  <div class="detail-panel" id="detailPanel" style="display:none">
+
+    <!-- Prospect Info Card -->
+    <div class="card">
+      <div class="card-hdr">
+        <h3 id="detailBiz">Prospect</h3>
+        <div style="display:flex;gap:6px">
+          <span class="status-badge" id="detailStatusBadge"></span>
+          <button class="btn btn-sm btn-convert" onclick="openConvertModal()" title="Convert to active client">✓ Convert to Client</button>
+          <button class="btn btn-sm btn-secondary" onclick="openEditModal()">✎ Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteProspect()">🗑</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field-grid">
+          <div><label>Contact</label><div id="di-contact" style="font-size:13px;padding:5px 0"></div></div>
+          <div><label>Phone</label><div id="di-phone" style="font-size:13px;padding:5px 0"></div></div>
+          <div><label>Email</label><div id="di-email" style="font-size:13px;padding:5px 0"></div></div>
+          <div><label>Source</label><div id="di-source" style="font-size:13px;padding:5px 0"></div></div>
+          <div><label>Lead Owner</label><div id="di-owner" style="font-size:13px;padding:5px 0"></div></div></div><div class="field-grid" style="margin-top:.5rem"><div><label>Change Status</label><select id="quickStatus" onchange="quickChangeStatus(this.value)" style="font-size:13px;padding:5px 2px;border:none;border-bottom:2px solid var(--br);width:100%;background:transparent;font-family:inherit;outline:none;cursor:pointer"><option value="">— Change status —</option><option value="new">New Lead</option><option value="contacted">Contacted</option><option value="interested">Interested</option><option value="proposal">Proposal Sent</option><option value="won">✓ Won — Convert to Client</option><option value="lost">✗ Lost</option></select></div
+          <div><label>Added</label><div id="di-added" style="font-size:13px;padding:5px 0"></div></div>
+        </div>
+        <div id="di-address" style="font-size:12px;color:var(--md);margin-top:4px"></div>
+        <div id="di-notes" style="font-size:13px;color:#333;margin-top:8px;padding-top:8px;border-top:1px solid var(--br);line-height:1.6;white-space:pre-wrap"></div>
+      </div>
+    </div>
+
+    <!-- Quick Log Contact -->
+    <div class="card">
+      <div class="card-hdr"><h3>Log Contact</h3></div>
+      <div class="card-body">
+        <div class="log-form" id="logForm">
+          <div class="log-row">
+            <div class="field">
+              <label>Contact Type</label>
+              <select id="logType">
+                <option value="Call">📞 Phone Call</option>
+                <option value="Text">💬 Text Message</option>
+                <option value="Email">✉️ Email</option>
+                <option value="In Person">🤝 In Person</option>
+                <option value="Left Message">📭 Left Message</option>
+                <option value="Social">📱 Social Media</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Date &amp; Time</label>
+              <input type="datetime-local" id="logDateTime">
+            </div>
+          </div>
+          <div class="voice-row">
+            <textarea id="logNotes" placeholder="Notes about this contact… (or tap mic to dictate)"></textarea>
+            <button class="btn-voice" id="voiceBtn" onclick="toggleVoice()" title="Voice input">🎤</button>
+          </div>
+          <div style="margin:10px 0 6px;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px">Follow-up Reminder (optional)</div>
+          <div class="followup-row">
+            <div class="field">
+              <label>Follow-up Date</label>
+              <input type="date" id="followupDate">
+            </div>
+            <div class="field">
+              <label>Follow-up Time</label>
+              <input type="time" id="followupTime" value="09:00">
+            </div>
+            <div class="field">
+              <label>Update Status To</label>
+              <select id="logStatus">
+                <option value="">— No change —</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="interested">Interested</option>
+                <option value="proposal">Proposal Sent</option>
+                <option value="won">Won</option>
+                <option value="lost">Lost</option>
+              </select>
+            </div>
+          </div>
+          <div class="log-actions">
+            <button class="btn btn-secondary" onclick="clearLog()">Clear</button>
+            <button class="btn btn-primary" onclick="submitLog()">💾 Log Contact</button>
+          </div>
+        </div>
+
+        <!-- Activity History -->
+        <div style="font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem">Activity History</div>
+        <div id="activityLog">
+          <div class="empty-state" style="padding:1rem"><p>No activity yet</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Convert Modal -->
+<div class="overlay" id="convertOverlay">
+  <div class="modal" style="max-width:460px">
+    <h3>Convert to Client</h3>
+    <p style="font-size:13px;color:var(--md);margin-bottom:1rem;line-height:1.6">
+      <strong id="convertBizName"></strong> will be added to your active client list.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.2rem">
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:.8rem;border:2px solid var(--br);border-radius:6px;cursor:pointer" id="opt-convert-only">
+        <input type="radio" name="convertOpt" value="convert_only" checked onchange="selectConvertOpt(this)" style="margin-top:2px;flex-shrink:0">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--bl)">Convert to Client Only</div>
+          <div style="font-size:11px;color:var(--md);margin-top:2px">Adds to active client list. You can send enrollment form later.</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:.8rem;border:2px solid var(--br);border-radius:6px;cursor:pointer" id="opt-convert-enroll">
+        <input type="radio" name="convertOpt" value="convert_enroll" onchange="selectConvertOpt(this)" style="margin-top:2px;flex-shrink:0">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--bl)">Convert + Send Enrollment Form</div>
+          <div style="font-size:11px;color:var(--md);margin-top:2px">Adds to client list AND opens the enrollment form pre-filled with their info.</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:.8rem;border:2px solid var(--br);border-radius:6px;cursor:pointer" id="opt-enroll-only">
+        <input type="radio" name="convertOpt" value="enroll_only" onchange="selectConvertOpt(this)" style="margin-top:2px;flex-shrink:0">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--bl)">Send Enrollment Form Only</div>
+          <div style="font-size:11px;color:var(--md);margin-top:2px">Opens enrollment form pre-filled with their info. Status stays as prospect until you manually convert.</div>
+        </div>
+      </label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeConvertModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmConvert()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Add Prospect</h3>
+    <div class="field-grid">
+      <div class="field"><label>Business Name *</label><input type="text" id="mBiz" placeholder="Acme Plumbing"></div>
+      <div class="field"><label>Contact First Name</label><input type="text" id="mContact" placeholder="John"></div>
+      <div class="field"><label>Last Name</label><input type="text" id="mLastName" placeholder="Smith"></div>
+      <div class="field"><label>Phone</label><input type="text" id="mPhone" placeholder="830-555-0100"></div>
+      <div class="field"><label>Email</label><input type="email" id="mEmail" placeholder="john@acme.com"></div>
+      <div class="field"><label>Source</label>
+        <select id="mSource">
+          <option value="Cold Call">Cold Call</option>
+          <option value="Referral">Referral</option>
+          <option value="Walk-in">Walk-in</option>
+          <option value="Social Media">Social Media</option>
+          <option value="Website">Website</option>
+          <option value="Event">Event</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-grid three">
+      <div class="field"><label>Address</label><input type="text" id="mAddress" placeholder="123 Main St"></div>
+      <div class="field"><label>City</label><input type="text" id="mCity" placeholder="Canyon Lake"></div>
+      <div class="field"><label>State</label><input type="text" id="mState" placeholder="TX" value="TX"></div>
+    </div>
+    <div class="field-grid">
+      <div class="field"><label>Status</label>
+        <select id="mStatus">
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="interested">Interested</option>
+          <option value="proposal">Proposal Sent</option>
+          <option value="won">Won</option>
+          <option value="lost">Lost</option>
+        </select>
+      </div>
+      <div class="field"><label>Lead Owner</label><input type="text" id="mOwner" placeholder="Josh Knight"></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="mNotes" rows="3" placeholder="Initial notes about this prospect…"></textarea></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProspect()">Save Prospect</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let prospects    = [];
+let currentId    = null;
+let currentUser  = null;
+let editingId    = null;
+let recognition  = null;
+let isRecording  = false;
+
+const STATUS_LABELS = { new:'New', contacted:'Contacted', interested:'Interested', proposal:'Proposal Sent', won:'Won', lost:'Lost' };
+const STATUS_COLORS = { new:'s-new', contacted:'s-contacted', interested:'s-interested', proposal:'s-proposal', won:'s-won', lost:'s-lost' };
+const STATUS_BADGE  = { new:'sb-new', contacted:'sb-contacted', interested:'sb-interested', proposal:'sb-proposal', won:'sb-won', lost:'sb-lost' };
+
+function openConvertModal() {
+  if (!currentId) return;
+  var p = prospects.find(function(x) { return x.id === currentId; });
+  if (!p) return;
+  document.getElementById('convertBizName').textContent = p.business;
+  document.querySelectorAll('[name="convertOpt"]')[0].checked = true;
+  selectConvertOpt({ value: 'convert_only' });
+  document.getElementById('convertOverlay').classList.add('show');
+}
+
+function closeConvertModal() {
+  document.getElementById('convertOverlay').classList.remove('show');
+}
+
+function selectConvertOpt(radio) {
+  document.querySelectorAll('#convertOverlay label').forEach(function(l) {
+    l.style.borderColor = 'var(--br)';
+  });
+  var checked = document.querySelector('[name="convertOpt"]:checked');
+  if (checked) {
+    var label = checked.closest('label');
+    if (label) label.style.borderColor = 'var(--bl)';
+  }
+}
+
+async function confirmConvert() {
+  if (!currentId) return;
+  var opt = document.querySelector('[name="convertOpt"]:checked');
+  if (!opt) return;
+  var p   = prospects.find(function(x) { return x.id === currentId; });
+  if (!p) return;
+  var action = opt.value;
+  closeConvertModal();
+
+  if (action === 'convert_only' || action === 'convert_enroll') {
+    // Add to client list
+    try {
+      var res = await fetch(API + '/saveClient', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({
+          business: p.business, contact: p.contact, lastName: p.lastName,
+          phone: p.phone, email: p.email, address: p.address,
+          city: p.city, state: p.state, notes: p.notes, group: 'active'
+        })
+      });
+      if (!res.ok) throw new Error('Client save failed');
+    } catch(e) { showToast('Error adding to client list: ' + e.message, true); return; }
+
+    // Update prospect status to won
+    await fetch(API + '/saveProspect', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ id: currentId, status: 'won' })
+    });
+    showToast(p.business + ' converted to active client! 🎉');
+    await loadProspects();
+  }
+
+  if (action === 'convert_enroll' || action === 'enroll_only') {
+    // Store prospect data in sessionStorage and open enrollment form
+    sessionStorage.setItem('txl_prefill_prospect', JSON.stringify(p));
+    window.open('/enrollment', '_blank');
+  }
+}
+
+async function quickChangeStatus(newStatus) {
+  if (!currentId || !newStatus) return;
+  document.getElementById('quickStatus').value = '';
+
+  if (newStatus === 'won') {
+    openConvertModal();
+    return;
+  }
+
+  try {
+    await fetch(API + '/saveProspect', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ id: currentId, status: newStatus })
+    });
+    showToast('Status updated to: ' + STATUS_LABELS[newStatus]);
+    await loadProspects();
+    showDetail(currentId);
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function init() {
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
+  if (!res.ok) { window.location.href = '/'; return; }
+  currentUser = await res.json();
+  if (currentUser.role === 'designer') { window.location.href = '/home'; return; }
+
+  // Set log datetime to now
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('logDateTime').value = now.toISOString().slice(0,16);
+
+  await loadProspects();
+  initVoice();
+}
+
+async function loadProspects() {
+  try {
+    const res  = await fetch(API + '/getProspects', { credentials: 'include' });
+    const data = await res.json();
+    prospects  = data.prospects || [];
+    renderList();
+    if (currentId) showDetail(currentId);
+  } catch(e) {
+    showToast('Failed to load prospects', true);
+  }
+}
+
+function renderList() {
+  const q      = (document.getElementById('searchInput').value || '').toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const filtered = prospects.filter(function(p) {
+    if (status && p.status !== status) return false;
+    if (q && !p.business.toLowerCase().includes(q) && !(p.contact||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  document.getElementById('prospectCount').textContent = '(' + filtered.length + ')';
+
+  if (!filtered.length) {
+    document.getElementById('prospectList').innerHTML =
+      '<div class="empty-state"><div class="ei">🎯</div><p>No prospects found</p></div>';
+    return;
+  }
+
+  // Sort by last activity or created date
+  filtered.sort(function(a, b) {
+    const aDate = a.lastActivity || a.createdAt || '';
+    const bDate = b.lastActivity || b.createdAt || '';
+    return bDate.localeCompare(aDate);
+  });
+
+  document.getElementById('prospectList').innerHTML = filtered.map(function(p) {
+    const lastAct = p.activity && p.activity.length
+      ? p.activity[p.activity.length-1]
+      : null;
+    const sub = lastAct ? lastAct.type + ': ' + (lastAct.notes||'').slice(0,40) : (p.contact || p.phone || p.email || '');
+    const nextFollowup = p.activity ? p.activity.slice().reverse().find(function(a) { return a.followupDate; }) : null;
+    return '<div class="prospect-item' + (p.id === currentId ? ' active' : '') + '" onclick="showDetail(\'' + p.id + '\')">' +
+      '<div class="pi-dot ' + (STATUS_COLORS[p.status] || 's-new') + '"></div>' +
+      '<div class="pi-info">' +
+        '<div class="pi-biz">' + esc(p.business) + '</div>' +
+        '<div class="pi-sub">' + esc(sub) + '</div>' +
+        (nextFollowup ? '<div style="font-size:10px;color:var(--amber)">⏰ ' + fmtDate(nextFollowup.followupDate) + '</div>' : '') +
+      '</div>' +
+      '<div class="pi-date">' + fmtRelative(p.lastActivity || p.createdAt) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function showDetail(id) {
+  currentId = id;
+  const p   = prospects.find(function(x) { return x.id === id; });
+  if (!p) return;
+
+  document.getElementById('detailPanel').style.display = 'flex';
+  document.getElementById('detailBiz').textContent = p.business;
+
+  const badge = document.getElementById('detailStatusBadge');
+  badge.textContent  = STATUS_LABELS[p.status] || p.status;
+  badge.className    = 'status-badge ' + (STATUS_BADGE[p.status] || 'sb-new');
+
+  document.getElementById('di-contact').textContent = [p.contact, p.lastName].filter(Boolean).join(' ') || '—';
+  document.getElementById('di-phone').textContent   = p.phone   || '—';
+  document.getElementById('di-email').textContent   = p.email   || '—';
+  document.getElementById('di-source').textContent  = p.source  || '—';
+  document.getElementById('di-owner').textContent   = p.owner   || '—';
+  document.getElementById('di-added').textContent   = fmtDate(p.createdAt);
+
+  const addr = [p.address, p.city, p.state].filter(Boolean).join(', ');
+  document.getElementById('di-address').textContent = addr;
+  document.getElementById('di-notes').textContent   = p.notes || '';
+
+  renderActivity(p.activity || []);
+  renderList();
+
+  // Reset log form
+  document.getElementById('logNotes').value  = '';
+  document.getElementById('followupDate').value = '';
+  document.getElementById('logStatus').value = '';
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('logDateTime').value = now.toISOString().slice(0,16);
+}
+
+function renderActivity(activities) {
+  const el = document.getElementById('activityLog');
+  if (!activities.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:1rem"><p>No activity yet — log your first contact above</p></div>';
+    return;
+  }
+  el.innerHTML = activities.slice().reverse().map(function(a) {
+    return '<div class="activity-entry">' +
+      '<div class="ae-header">' +
+        '<span class="ae-type">' + esc(a.type) + '</span>' +
+        '<span class="ae-owner">by ' + esc(a.owner || '') + '</span>' +
+        '<span class="ae-date">' + fmtDateTime(a.dateTime) + '</span>' +
+      '</div>' +
+      (a.notes ? '<div class="ae-notes">' + esc(a.notes) + '</div>' : '') +
+      (a.followupDate ? '<div class="ae-followup">⏰ Follow-up: ' + fmtDate(a.followupDate) + ' at ' + (a.followupTime||'9:00 AM') + '</div>' : '') +
+      (a.calendarCreated ? '<div class="ae-calendar">📅 Calendar event created</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+async function submitLog() {
+  if (!currentId) return;
+  const notes       = document.getElementById('logNotes').value.trim();
+  const type        = document.getElementById('logType').value;
+  const dateTime    = document.getElementById('logDateTime').value;
+  const followupDate = document.getElementById('followupDate').value;
+  const followupTime = document.getElementById('followupTime').value;
+  const newStatus   = document.getElementById('logStatus').value;
+
+  if (!notes && !followupDate) {
+    showToast('Add notes or a follow-up date', true);
+    return;
+  }
+
+  const entry = {
+    id:           Date.now().toString(),
+    type,
+    dateTime:     dateTime || new Date().toISOString(),
+    notes,
+    followupDate,
+    followupTime,
+    owner:        currentUser.name || currentUser.username,
+    ownerEmail:   currentUser.email || '',
+    calendarCreated: false
+  };
+
+  try {
+    const res  = await fetch(API + '/logProspectActivity', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ prospectId: currentId, entry, newStatus: newStatus || undefined })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    if (data.calendarCreated) showToast('Contact logged + calendar event created! 📅');
+    else if (followupDate)    showToast('Contact logged (calendar requires M365 account)');
+    else                      showToast('Contact logged!');
+
+    clearLog();
+    await loadProspects();
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+}
+
+function clearLog() {
+  document.getElementById('logNotes').value     = '';
+  document.getElementById('followupDate').value = '';
+  document.getElementById('logStatus').value    = '';
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('logDateTime').value  = now.toISOString().slice(0,16);
+}
+
+// ── Voice input ───────────────────────────────────────────────────────────────
+function initVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    document.getElementById('voiceBtn').style.display = 'none';
+    return;
+  }
+  const SR    = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.continuous     = false;
+  recognition.interimResults = false;
+  recognition.lang           = 'en-US';
+  recognition.onresult = function(e) {
+    const transcript = e.results[0][0].transcript;
+    const ta = document.getElementById('logNotes');
+    ta.value = (ta.value ? ta.value + ' ' : '') + transcript;
+    stopRecording();
+  };
+  recognition.onerror = function() { stopRecording(); };
+  recognition.onend   = function() { stopRecording(); };
+}
+
+function toggleVoice() {
+  if (isRecording) { recognition.stop(); stopRecording(); }
+  else { recognition.start(); startRecording(); }
+}
+
+function startRecording() {
+  isRecording = true;
+  document.getElementById('voiceBtn').classList.add('recording');
+  document.getElementById('voiceBtn').textContent = '⏹';
+}
+
+function stopRecording() {
+  isRecording = false;
+  document.getElementById('voiceBtn').classList.remove('recording');
+  document.getElementById('voiceBtn').textContent = '🎤';
+}
+
+// ── Add/Edit Modal ────────────────────────────────────────────────────────────
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Add Prospect';
+  document.getElementById('mBiz').value      = '';
+  document.getElementById('mContact').value  = '';
+  document.getElementById('mLastName').value = '';
+  document.getElementById('mPhone').value    = '';
+  document.getElementById('mEmail').value    = '';
+  document.getElementById('mSource').value   = 'Cold Call';
+  document.getElementById('mAddress').value  = '';
+  document.getElementById('mCity').value     = '';
+  document.getElementById('mState').value    = 'TX';
+  document.getElementById('mStatus').value   = 'new';
+  document.getElementById('mOwner').value    = currentUser.name || currentUser.username;
+  document.getElementById('mNotes').value    = '';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function openEditModal() {
+  if (!currentId) return;
+  const p = prospects.find(function(x) { return x.id === currentId; });
+  if (!p) return;
+  editingId = currentId;
+  document.getElementById('modalTitle').textContent = 'Edit Prospect';
+  document.getElementById('mBiz').value      = p.business || '';
+  document.getElementById('mContact').value  = p.contact  || '';
+  document.getElementById('mLastName').value = p.lastName || '';
+  document.getElementById('mPhone').value    = p.phone    || '';
+  document.getElementById('mEmail').value    = p.email    || '';
+  document.getElementById('mSource').value   = p.source   || 'Cold Call';
+  document.getElementById('mAddress').value  = p.address  || '';
+  document.getElementById('mCity').value     = p.city     || '';
+  document.getElementById('mState').value    = p.state    || 'TX';
+  document.getElementById('mStatus').value   = p.status   || 'new';
+  document.getElementById('mOwner').value    = p.owner    || '';
+  document.getElementById('mNotes').value    = p.notes    || '';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  editingId = null;
+}
+
+async function saveProspect() {
+  const biz = document.getElementById('mBiz').value.trim();
+  if (!biz) { showToast('Business name is required', true); return; }
+
+  const prospect = {
+    business: biz,
+    contact:  document.getElementById('mContact').value.trim(),
+    lastName: document.getElementById('mLastName').value.trim(),
+    phone:    document.getElementById('mPhone').value.trim(),
+    email:    document.getElementById('mEmail').value.trim(),
+    source:   document.getElementById('mSource').value,
+    address:  document.getElementById('mAddress').value.trim(),
+    city:     document.getElementById('mCity').value.trim(),
+    state:    document.getElementById('mState').value.trim(),
+    status:   document.getElementById('mStatus').value,
+    owner:    document.getElementById('mOwner').value.trim(),
+    notes:    document.getElementById('mNotes').value.trim()
+  };
+  if (editingId) prospect.id = editingId;
+
+  try {
+    const res  = await fetch(API + '/saveProspect', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify(prospect)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Save failed');
+    closeModal();
+    showToast(editingId ? 'Prospect updated!' : 'Prospect added!');
+    currentId = data.id || currentId;
+    await loadProspects();
+    if (currentId) showDetail(currentId);
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+}
+
+async function deleteProspect() {
+  if (!currentId) return;
+  const p = prospects.find(function(x) { return x.id === currentId; });
+  if (!confirm('Delete ' + (p ? p.business : 'this prospect') + '?')) return;
+  try {
+    const res = await fetch(API + '/deleteProspect', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ id: currentId })
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    currentId = null;
+    document.getElementById('detailPanel').style.display = 'none';
+    showToast('Prospect deleted');
+    await loadProspects();
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+}
+
+
+
+async function logout() {
+  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso + (iso.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+}
+
+function fmtRelative(iso) {
+  if (!iso) return '';
+  const d    = new Date(iso);
+  const diff = Math.floor((Date.now() - d) / 60000);
+  if (diff < 1)    return 'just now';
+  if (diff < 60)   return diff + 'm ago';
+  if (diff < 1440) return Math.floor(diff/60) + 'h ago';
+  if (diff < 10080) return Math.floor(diff/1440) + 'd ago';
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show' + (isErr ? ' err' : '');
+  setTimeout(function() { t.className = 'toast'; }, 3500);
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === e.currentTarget) closeModal();
+});
+document.getElementById('convertOverlay').addEventListener('click', function(e) {
+  if (e.target === e.currentTarget) closeConvertModal();
+});
+
+init();
+</script>
+</body>
+</html>
