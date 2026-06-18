@@ -52,8 +52,6 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
       <p>Texan Local internal portal</p>
     </div>
     <div class="login-body">
-
-      <!-- Staff login -->
       <form onsubmit="simpleLogin(event)">
         <div class="field">
           <label>Username</label>
@@ -61,12 +59,14 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
         </div>
         <div class="field">
           <label>Password</label>
-          <div style="position:relative"><input type="password" id="password" placeholder="Enter password" autocomplete="current-password" style="width:100%;padding-right:40px"><button type="button" onclick="togglePwd()" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#888;font-size:13px">👁</button></div>
+          <div style="position:relative">
+            <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" style="width:100%;padding-right:40px">
+            <button type="button" onclick="togglePwd()" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#888;font-size:13px">👁</button>
+          </div>
         </div>
         <div id="msg" class="msg"></div>
         <button type="submit" class="btn-login" id="loginBtn">Sign In</button>
       </form>
-
     </div>
   </div>
 </div>
@@ -74,21 +74,15 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 <div class="ftr">The Texan Local &nbsp;·&nbsp; Internal Use Only</div>
 
 <script>
-const TENANT_ID = '0e65dbc2-40cd-4dd9-a71f-9ce087852341';
-const CLIENT_ID = 'f6c0d6df-40f2-4866-a8a2-003d1ebef5ac';
-const BASE_URL  = window.location.origin;
+const BASE_URL = window.location.origin;
 
-// ── Check if already logged in ───────────────────────────────────────────────
 async function checkAuth() {
   try {
     const token = sessionStorage.getItem('txl_token');
     if (!token) return;
-    const res = await fetch('/api/authVerify' + (token ? '?token=' + token : ''), {
-      credentials: 'include'
-    });
+    const res = await fetch('/api/authVerify?token=' + token, { credentials: 'include' });
     if (res.ok) {
-      const data = await res.json();
-      redirectByRole(data.role);
+      redirectByRole((await res.json()).role);
     } else {
       sessionStorage.removeItem('txl_token');
       sessionStorage.removeItem('txl_user');
@@ -97,76 +91,60 @@ async function checkAuth() {
 }
 
 function redirectByRole(role) {
-    window.location.href = '/home';
-  } else {
-    window.location.href = '/home';
-  }
+  window.location.href = '/home';
 }
 
-// ── Microsoft 365 login ───────────────────────────────────────────────────────
-function msLogin() {
-  const params = new URLSearchParams({
-    client_id:     CLIENT_ID,
-    response_type: 'code',
-    redirect_uri:  BASE_URL + '/api/auth/ms-callback',
-    scope:         'openid profile email User.Read',
-    response_mode: 'query',
-    prompt:        'select_account'
-  });
-  window.location.href = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize?${params}`;
-}
-
-// ── Simple login (designer) ───────────────────────────────────────────────────
 async function simpleLogin(e) {
   e.preventDefault();
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
   const btn      = document.getElementById('loginBtn');
-  const msg      = document.getElementById('msg');
 
-  if (!username || !password) {
-    showMsg('Please enter your username and password.', 'err');
-    return;
-  }
+  if (!username || !password) { showMsg('Please enter your username and password.', 'err'); return; }
 
-  btn.disabled    = true;
+  btn.disabled = true;
   btn.textContent = 'Signing in…';
-  msg.className   = 'msg';
-  msg.style.display = 'none';
+  hideMsg();
 
   try {
     const res  = await fetch('/api/authLogin', {
-      method:      'POST',
-      headers:     { 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body:        JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password })
     });
     const data = await res.json();
-
     if (!res.ok) {
       showMsg(data.error || 'Invalid username or password.', 'err');
     } else {
-      // Store token in sessionStorage as backup
       sessionStorage.setItem('txl_token', data.token);
-      sessionStorage.setItem('txl_user',  JSON.stringify({ name: data.name, role: data.role, username: data.username }));
+      sessionStorage.setItem('txl_user', JSON.stringify({ name: data.name, role: data.role, username: data.username }));
       redirectByRole(data.role);
     }
   } catch(err) {
-    showMsg('Connection error. Make sure you are online.', 'err');
+    showMsg('Connection error. Please try again.', 'err');
   }
 
-  btn.disabled    = false;
+  btn.disabled = false;
   btn.textContent = 'Sign In';
 }
 
 function showMsg(text, type) {
-  const msg = document.getElementById('msg');
-  msg.textContent  = text;
-  msg.className    = 'msg ' + type;
-  msg.style.display = 'block';
+  const m = document.getElementById('msg');
+  m.textContent = text;
+  m.className = 'msg ' + type;
 }
 
-function togglePwd() { const p = document.getElementById('password'); p.type = p.type === 'password' ? 'text' : 'password'; }
+function hideMsg() {
+  const m = document.getElementById('msg');
+  m.className = 'msg';
+}
+
+function togglePwd() {
+  const p = document.getElementById('password');
+  p.type = p.type === 'password' ? 'text' : 'password';
+}
+
 checkAuth();
 </script>
 </body>
