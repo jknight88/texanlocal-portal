@@ -166,7 +166,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageUrls, sessionId, b
     '<body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,sans-serif">' +
     '<div style="max-width:650px;margin:0 auto;background:#fff">' +
     '<div style="background:#00205B;padding:16px 32px;border-bottom:4px solid #BF0D3E">' +
-    (process.env.LOGO_URL_WHITE ? '<img src="' + process.env.LOGO_URL_WHITE + '" alt="The Texan Local" style="width:220px;height:auto;display:block">' : '<span style="font-family:Georgia,serif;font-size:22px;color:#fff;font-weight:700">The Texan Local</span>') +
+    (process.env.LOGO_URL_WHITE ? '<img src="' + process.env.LOGO_URL_WHITE + '" alt="The Texan Local" style="width:560px;max-width:100%;height:auto;display:block">' : '<span style="font-family:Georgia,serif;font-size:22px;color:#fff;font-weight:700">The Texan Local</span>') +
     '</div>' +
     '<div style="padding:28px 32px">' + bodyHtml + proofs +
     '<div style="text-align:center;margin:28px 0 20px">' +
