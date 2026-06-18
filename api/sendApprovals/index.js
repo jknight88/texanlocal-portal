@@ -21,7 +21,6 @@ const CORS = {
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-// ── Graph token ───────────────────────────────────────────────────────────────
 let _token = null, _expiry = 0;
 async function getGraphToken() {
   if (_token && Date.now() < _expiry) return _token;
@@ -39,14 +38,12 @@ async function getGraphToken() {
   return _token;
 }
 
-// ── Parse connection string ───────────────────────────────────────────────────
 function parseConn() {
   const p = {};
   STORAGE_CONN.split(';').forEach(s => { const i = s.indexOf('='); if (i > -1) p[s.slice(0,i)] = s.slice(i+1); });
   return p;
 }
 
-// ── Get SAS URL ───────────────────────────────────────────────────────────────
 function getSasUrl(accountName, accountKey, container, blobName, days) {
   const sharedKey = new StorageSharedKeyCredential(accountName, accountKey);
   const expiresOn = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
@@ -57,57 +54,42 @@ function getSasUrl(accountName, accountKey, container, blobName, days) {
   return `https://${accountName}.blob.core.windows.net/${container}/${blobName}?${token}`;
 }
 
-// ── Convert PDF to hosted image ───────────────────────────────────────────────
-async function getPdfImage(filesContainer, pdfPath) {
-  const conn  = parseConn();
-  const acct  = conn['AccountName'];
-  const key   = conn['AccountKey'];
-  const blobSvc    = BlobServiceClient.fromConnectionString(STORAGE_CONN);
-  const imgContainer = blobSvc.getContainerClient(CONTAINER_IMAGES);
-  await imgContainer.createIfNotExists();
+// Convert PDF first page to image using OneDrive thumbnail
+async function getPdfImageData(filesContainer, pdfPath) {
+  const token     = await getGraphToken();
+  const pdfBuffer = await filesContainer.getBlockBlobClient(pdfPath).downloadToBuffer();
+  const filename  = pdfPath.split('/').pop();
+  const uploadPath = `ProofPreviews/${Date.now()}_${filename}`;
 
-  // Cached image name
-  const safe       = pdfPath.replace(/[^a-z0-9._-]/gi, '_').replace(/\.pdf$/i, '.png');
-  const cachedName = safe;
-  const cachedBlob = imgContainer.getBlockBlobClient(cachedName);
+  // Upload to OneDrive
+  const uploadRes = await fetch(
+    `https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/drive/root:/${uploadPath}:/content`,
+    { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/pdf' }, body: pdfBuffer }
+  );
+  if (!uploadRes.ok) throw new Error('OneDrive upload failed: ' + uploadRes.status + ' ' + await uploadRes.text());
+  const { id: itemId } = await uploadRes.json();
 
-  // Check if cached image exists
   try {
-    await cachedBlob.getProperties();
-    // Exists — return SAS URL
-    return { type: 'image', url: getSasUrl(acct, key, CONTAINER_IMAGES, cachedName, 60) };
-  } catch(e) {
-    // Not cached — convert now
+    // Get thumbnail as binary image
+    const thumbRes = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/drive/items/${itemId}/thumbnails/0/large/content`,
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    if (!thumbRes.ok) throw new Error('Thumbnail failed: ' + thumbRes.status + ' ' + await thumbRes.text());
+    const imgBuffer = Buffer.from(await thumbRes.arrayBuffer());
+    return { buffer: imgBuffer, contentType: 'image/jpeg' };
+  } finally {
+    try {
+      await fetch(
+        `https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/drive/items/${itemId}`,
+        { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }
+      );
+    } catch(e) {}
   }
-
-  // Get temp SAS URL for the PDF (for conversion API)
-  const pdfUrl = getSasUrl(acct, key, CONTAINER_FILES, pdfPath, 1);
-
-  // Try CloudConvert free API
-  try {
-    const importRes = await fetch('https://api.cloudconvert.com/v2/convert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9' },
-      body: JSON.stringify({
-        tasks: {
-          'import-pdf': { operation: 'import/url', url: pdfUrl, filename: 'proof.pdf' },
-          'convert': { operation: 'convert', input: 'import-pdf', output_format: 'png', pages: '1', density: 150 },
-          'export': { operation: 'export/url', input: 'convert' }
-        }
-      })
-    });
-    // CloudConvert needs an API key so this will fail without one
-    // Fall through to next method
-  } catch(e) {}
-
-  // Fallback — return PDF link
-  return { type: 'link', url: getSasUrl(acct, key, CONTAINER_FILES, pdfPath, 30), name: pdfPath.split('/').pop() };
 }
 
-// ── Normalize business name ───────────────────────────────────────────────────
 function normBiz(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
-// ── Find matching PDFs ────────────────────────────────────────────────────────
 async function findPdfs(container, businessName, year, month) {
   const norm   = normBiz(businessName);
   const prefix = `${year}/${month}/`;
@@ -121,8 +103,7 @@ async function findPdfs(container, businessName, year, month) {
   return found;
 }
 
-// ── Build email HTML ──────────────────────────────────────────────────────────
-function buildEmail(client, mailingMonthLabel, deadline, items, sessionId, bodyTemplate) {
+function buildEmail(client, mailingMonthLabel, deadline, items, sessionId, bodyTemplate) { // items: [{type:'cid',cid,name} | {type:'link',url}]
   const approveUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=approved`;
   const changesUrl = `${BASE_URL}/api/trackResponse?id=${sessionId}&action=changes`;
   const pixelUrl   = `${BASE_URL}/api/trackApprovalOpen?id=${sessionId}`;
@@ -140,8 +121,8 @@ function buildEmail(client, mailingMonthLabel, deadline, items, sessionId, bodyT
     : `<p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Hi ${client.contact || client.business},</p>
        <p style="font-family:Georgia,serif;font-size:15px;line-height:1.7;color:#1a1a1a;margin:0 0 12px">Your ad proof for the <strong>${mailingMonthLabel}</strong> mailing is ready. Please review by <strong>${deadline}</strong>.</p>`;
 
-  const proofs = items.map(item => item.type === 'image'
-    ? `<div style="margin:16px 0;text-align:center"><img src="${item.url}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px"></div>`
+  const proofs = items.map((item, i) => item.type === 'cid'
+    ? `<div style="margin:16px 0;text-align:center"><img src="cid:${item.cid}" alt="Ad Proof" style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px"></div>`
     : `<div style="margin:16px 0;text-align:center"><a href="${item.url}" target="_blank" style="display:inline-block;background:#f0f4ff;border:2px solid #00205B;border-radius:6px;padding:16px 32px;text-decoration:none;color:#00205B;font-family:Arial,sans-serif;font-size:14px;font-weight:700">📄 View Ad Proof</a></div>`
   ).join('');
 
@@ -170,26 +151,23 @@ function buildEmail(client, mailingMonthLabel, deadline, items, sessionId, bodyT
 </body></html>`;
 }
 
-// ── Send email ────────────────────────────────────────────────────────────────
-async function sendEmail(toEmail, toName, subject, html) {
+async function sendEmail(toEmail, toName, subject, html, attachments) {
   const token = await getGraphToken();
-  const res   = await fetch(`https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/sendMail`, {
+  const message = {
+    subject, body: { contentType: 'HTML', content: html },
+    toRecipients: [{ emailAddress: { address: toEmail, name: toName || toEmail } }],
+    from: { emailAddress: { address: FROM_EMAIL, name: 'Josh Knight — The Texan Local' } },
+    replyTo: [{ emailAddress: { address: FROM_EMAIL } }]
+  };
+  if (attachments && attachments.length) message.attachments = attachments;
+  const res = await fetch(`https://graph.microsoft.com/v1.0/users/${FROM_EMAIL}/sendMail`, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message: {
-        subject, body: { contentType: 'HTML', content: html },
-        toRecipients: [{ emailAddress: { address: toEmail, name: toName || toEmail } }],
-        from: { emailAddress: { address: FROM_EMAIL, name: 'Josh Knight — The Texan Local' } },
-        replyTo: [{ emailAddress: { address: FROM_EMAIL } }]
-      },
-      saveToSentItems: true
-    })
+    body: JSON.stringify({ message, saveToSentItems: true })
   });
   if (res.status !== 202) throw new Error('sendMail failed: ' + await res.text());
 }
 
-// ── Save record ───────────────────────────────────────────────────────────────
 async function saveRecord(blobSvc, record) {
   const c   = blobSvc.getContainerClient(CONTAINER_APPROVALS);
   await c.createIfNotExists();
@@ -199,7 +177,6 @@ async function saveRecord(blobSvc, record) {
   });
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res = { status: 200, headers: CORS, body: '{}' }; context.done(); return; }
 
@@ -242,20 +219,35 @@ module.exports = async function(context, req) {
         continue;
       }
 
-      const items = [];
-      for (const filePath of matchedFiles) {
+      const items       = [];
+      const attachments = [];
+      for (let fi = 0; fi < matchedFiles.length; fi++) {
+        const filePath = matchedFiles[fi];
         try {
-          const item = await getPdfImage(filesContainer, filePath);
-          items.push(item);
+          const imgData = await getPdfImageData(filesContainer, filePath);
+          const cid     = `proof_${fi}_${sessionId.slice(0,8)}@thetexanlocal.com`;
+          const name    = filePath.split('/').pop().replace(/\.pdf$/i, '.jpg');
+          // CID inline attachment for Graph API
+          attachments.push({
+            '@odata.type': '#microsoft.graph.fileAttachment',
+            name,
+            contentType: imgData.contentType,
+            contentBytes: imgData.buffer.toString('base64'),
+            isInline: true,
+            contentId: cid
+          });
+          items.push({ type: 'cid', cid, name });
+          context.log('CID attachment created:', cid);
         } catch(e) {
-          context.log.error('Image error:', filePath, e.message);
+          context.log.error('Image error for', filePath, ':', e.message);
+          // Fallback to PDF link
+          const conn = parseConn();
+          const url  = getSasUrl(conn['AccountName'], conn['AccountKey'], CONTAINER_FILES, filePath, 30);
+          items.push({ type: 'link', url });
         }
       }
 
-      if (!items.length) {
-        results.push({ business: client.business, status: 'error', message: 'Could not process files' });
-        continue;
-      }
+      if (!items.length) continue;
 
       const sessionId = uuidv4();
       const now       = new Date().toISOString();
@@ -263,7 +255,7 @@ module.exports = async function(context, req) {
         .replace(/{MONTH}/g, mailingMonthLabel).replace(/{DEADLINE}/g, deadline).replace(/{BUSINESS}/g, client.business);
 
       const html = buildEmail(client, mailingMonthLabel, deadline, items, sessionId, bodyTemplate);
-      await sendEmail(client.email, client.contact || client.business, subject, html);
+      await sendEmail(client.email, client.contact || client.business, subject, html, attachments);
       await saveRecord(blobSvc, {
         sessionId, business: client.business, contact: client.contact || '',
         email: client.email, mailingMonth: String(mailingMonth).padStart(2,'0'),
