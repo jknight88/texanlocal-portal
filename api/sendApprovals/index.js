@@ -176,7 +176,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageUrls, sessionId, b
     '</div>' +
     '<div style="border-top:3px solid #BF0D3E;padding:20px 32px">' +
     '<div style="font-size:14px;color:#1a1a1a;margin-bottom:8px"><strong>Josh Knight</strong>, Publisher</div>' +
-    (process.env.LOGO_URL ? '<img src="' + process.env.LOGO_URL + '" alt="The Texan Local" style="width:220px;height:auto;display:block;margin:8px 0">' : '<div style="font-family:Georgia,serif;font-size:18px;color:#BF0D3E;font-weight:700;margin:8px 0">The Texan Local</div>') +
+    (process.env.LOGO_URL ? '<img src="' + process.env.LOGO_URL + '" alt="The Texan Local" style="width:280px;height:auto;display:block;margin:8px 0">' : '<div style="font-family:Georgia,serif;font-size:18px;color:#BF0D3E;font-weight:700;margin:8px 0">The Texan Local</div>') +
     '<div style="font-size:13px;color:#333;margin-top:4px">Where Local Residents Find Local Businesses</div>' +
     '<div style="font-size:13px;color:#333">Mobile: 830-214-3487</div>' +
     '</div></div>' +
