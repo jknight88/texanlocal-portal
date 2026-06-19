@@ -54,6 +54,27 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .btn-move{background:#f0f2f5;color:var(--md);border:1px solid var(--br);padding:3px 8px;border-radius:3px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-move:hover{background:#e8eaf0}
 
+
+/* Detail panel */
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:50;display:none}
+.detail-overlay.show{display:block}
+.detail-panel{position:fixed;top:0;right:-420px;width:420px;height:100vh;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:51;transition:right .25s;display:flex;flex-direction:column;overflow:hidden}
+.detail-panel.open{right:0}
+.detail-hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.detail-hdr h2{color:#fff;font-size:15px;font-family:'Playfair Display',serif}
+.detail-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0 4px}
+.detail-body{padding:1.2rem;overflow-y:auto;flex:1}
+.detail-section{margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--br)}
+.detail-section:last-child{border-bottom:none}
+.detail-section h3{font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.7px;margin-bottom:.7rem}
+.detail-row{display:flex;gap:8px;margin-bottom:.5rem}
+.detail-label{font-size:11px;font-weight:700;color:var(--md);width:90px;flex-shrink:0;padding-top:1px}
+.detail-val{font-size:13px;color:#1a1a2e;flex:1}
+.detail-actions{display:flex;gap:8px;padding:1rem 1.2rem;border-top:1px solid var(--br);flex-shrink:0;flex-wrap:wrap}
+.detail-actions .btn{flex:1;justify-content:center;text-align:center}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:#f0f4ff !important}
+
 .btn-sm{padding:5px 12px;border-radius:4px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-merge{background:#e8f5e9;color:var(--green);border:1px solid #a5d6a7}
 .btn-replace{background:#ffebee;color:var(--rd);border:1px solid #ffcdd2}
@@ -197,6 +218,8 @@ let importBuffer = null;
 let sortCol = 'business';
 let sortDir = 1;
 let currentGroup = 'active';
+let currentDetailId = null;
+let currentDetailBiz = '';
 
 async function init() {
   const token = sessionStorage.getItem('txl_token');
@@ -254,6 +277,74 @@ async function moveClient(id, newGroup, selectEl) {
   } catch(e) {
     showToast('Error: ' + e.message, true);
   }
+}
+
+
+function showDetail(id) {
+  const c = allClients.find(x => x.id === id);
+  if (!c) return;
+  currentDetailId  = id;
+  currentDetailBiz = c.business;
+
+  document.getElementById('detailBiz').textContent = c.business;
+
+  const group  = c.group || 'active';
+  const badge  = group === 'active' ? '<span class="badge-active">Active</span>'
+               : group === 'past'   ? '<span class="badge-past">Past Client</span>'
+               :                      '<span class="badge-prospect">Prospect</span>';
+
+  const addr = [c.address, c.city, (c.state||''), c.zip].filter(Boolean).join(', ');
+
+  function row(label, val) {
+    if (!val) return '';
+    return '<div class="detail-row"><span class="detail-label">' + label + '</span><span class="detail-val">' + esc(val) + '</span></div>';
+  }
+
+  document.getElementById('detailBody').innerHTML = `
+    <div class="detail-section">
+      <h3>Status</h3>
+      ${badge}
+    </div>
+    <div class="detail-section">
+      <h3>Business Info</h3>
+      ${row('Business', c.business)}
+      ${row('Contact', [c.contact, c.lastName].filter(Boolean).join(' '))}
+    </div>
+    <div class="detail-section">
+      <h3>Contact Info</h3>
+      ${row('Phone', c.phone)}
+      ${row('Email', c.email)}
+    </div>
+    ${addr ? '<div class="detail-section"><h3>Address</h3>' + row('', addr) + '</div>' : ''}
+    ${c.notes ? '<div class="detail-section"><h3>Notes</h3><div style="font-size:13px;color:#333;line-height:1.6;white-space:pre-wrap">' + esc(c.notes) + '</div></div>' : ''}
+    <div class="detail-section">
+      <h3>Record</h3>
+      ${row('Added', c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '')}
+      ${row('Updated', c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '')}
+    </div>
+  `;
+
+  // Update move dropdown - hide current group option
+  const sel = document.getElementById('detailMove');
+  sel.innerHTML = '<option value="">Move to…</option>';
+  if (group !== 'active')   sel.innerHTML += '<option value="active">→ Active Client</option>';
+  if (group !== 'past')     sel.innerHTML += '<option value="past">→ Past Client</option>';
+  if (group !== 'prospect') sel.innerHTML += '<option value="prospect">→ Prospect</option>';
+
+  document.getElementById('detailPanel').classList.add('open');
+  document.getElementById('detailOverlay').classList.add('show');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('detailOverlay').classList.remove('show');
+}
+
+async function moveFromDetail(newGroup) {
+  if (!newGroup || !currentDetailId) return;
+  document.getElementById('detailMove').value = '';
+  await moveClient(currentDetailId, newGroup, { value: '' });
+  closeDetail();
 }
 
 function setSort(col) {
@@ -326,7 +417,7 @@ function renderTable() {
         <th>Phone</th><th>Address</th><th>Status</th><th style="text-align:right">Actions</th>
       </tr></thead>
       <tbody>${filtered.map(c => `
-        <tr>
+        <tr class='clickable' onclick="showDetail('${c.id}')">
           <td class="td-biz">${esc(c.business)}</td>
           <td>${esc(c.contact || '')}${c.lastName ? ' ' + esc(c.lastName) : ''||'—'}</td>
           <td class="td-email">${esc(c.email || '—')}</td>
@@ -334,14 +425,14 @@ function renderTable() {
           <td style="font-size:12px;color:var(--md)">${c.address ? esc(c.address) + (c.city ? ', '+esc(c.city) : '') : '—'}</td>
           <td>${c.group && c.group !== 'active' ? `<span class="badge-${esc(c.group)}">${c.group === 'past' ? 'Past' : 'Prospect'}</span>` : ''}</td>
           <td class="td-actions">
-            <select class="btn-move" onchange="moveClient('${c.id}', this.value, this)" title="Move to...">
+            <select class="btn-move" onchange="event.stopPropagation();moveClient('${c.id}', this.value, this)" title="Move to...">
               <option value="">Move to…</option>
               ${(c.group||'active') !== 'active'   ? '<option value="active">→ Active Client</option>' : ''}
               ${(c.group||'active') !== 'past'     ? '<option value="past">→ Past Client</option>' : ''}
               ${(c.group||'active') !== 'prospect' ? '<option value="prospect">→ Prospect</option>' : ''}
             </select>
-            <button class="btn-sm btn-edit" onclick="openModal('${c.id}')">✏ Edit</button>
-            <button class="btn-sm btn-del" onclick="deleteClient('${c.id}','${esc(c.business)}')">🗑</button>
+            <button class="btn-sm btn-edit" onclick="event.stopPropagation();openModal('${c.id}')">✏ Edit</button>
+            <button class="btn-sm btn-del" onclick="event.stopPropagation();deleteClient('${c.id}','${esc(c.business)}')">🗑</button>
           </td>
         </tr>`).join('')}
       </tbody>
@@ -516,5 +607,26 @@ document.getElementById('modalOverlay').addEventListener('click', e => { if (e.t
 
 init();
 </script>
+
+<!-- Client Detail Panel -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-hdr">
+    <h2 id="detailBiz">Client</h2>
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+  <div class="detail-actions">
+    <button class="btn btn-secondary" onclick="closeDetail();openModal(currentDetailId)">✏ Edit</button>
+    <select class="btn-move" id="detailMove" onchange="moveFromDetail(this.value)" style="flex:1;padding:8px 10px;font-size:12px">
+      <option value="">Move to…</option>
+      <option value="active">→ Active Client</option>
+      <option value="past">→ Past Client</option>
+      <option value="prospect">→ Prospect</option>
+    </select>
+    <button class="btn btn-danger" onclick="closeDetail();deleteClient(currentDetailId,currentDetailBiz)" style="flex:none">🗑</button>
+  </div>
+</div>
+
 </body>
 </html>
