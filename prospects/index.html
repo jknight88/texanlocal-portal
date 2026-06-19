@@ -404,9 +404,11 @@ async function confirmConvert() {
       var res = await fetch(API + '/saveClient', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
-          business: p.business, contact: p.contact, lastName: p.lastName,
-          phone: p.phone, email: p.email, address: p.address,
-          city: p.city, state: p.state, notes: p.notes, group: 'active'
+          client: {
+            business: p.business, contact: p.contact, lastName: p.lastName,
+            phone: p.phone, email: p.email, address: p.address,
+            city: p.city, state: p.state, notes: p.notes, group: 'active'
+          }
         })
       });
       if (!res.ok) throw new Error('Client save failed');
