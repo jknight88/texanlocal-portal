@@ -252,6 +252,12 @@ canvas.sp{display:block;touch-action:none;width:100%;height:75px;cursor:crosshai
 .portal-nav-r{display:flex;gap:10px}
 .portal-nav-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
 .portal-nav-btn:hover{background:rgba(255,255,255,.2)}
+
+#prospect-banner{background:#e8f0fe;border-bottom:2px solid #00205B;padding:.6rem 1.5rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#prospect-banner label{font-size:12px;font-weight:700;color:#00205B;white-space:nowrap}
+#prospect-banner select{flex:1;min-width:200px;max-width:360px;padding:5px 10px;border:1px solid #c0ccff;border-radius:4px;font-size:13px;font-family:inherit;outline:none;background:#fff;cursor:pointer}
+#fill-status{font-size:12px;color:#1a5c1a;font-weight:600}
+#clear-fill-btn{padding:4px 10px;border:1px solid #c0ccff;border-radius:4px;background:#fff;font-size:11px;cursor:pointer;color:#00205B;display:none}
 </style>
 </head>
 <body>
@@ -265,6 +271,14 @@ canvas.sp{display:block;touch-action:none;width:100%;height:75px;cursor:crosshai
     <button class="portal-nav-btn" onclick="sessionStorage.clear();window.location.href='/'">Sign Out</button>
   </div>
 </nav>
+<div id="prospect-banner">
+  <label>🎯 Fill from Prospect:</label>
+  <select id="prospectSelect" onchange="fillFromSelected()">
+    <option value="">— Select a prospect to pre-fill —</option>
+  </select>
+  <span id="fill-status"></span>
+  <button id="clear-fill-btn" onclick="clearProspectFill()">✕ Clear</button>
+</div>
 
 <div class="wrap">
 <div class="pglbl">PAGE 1 &mdash; ENROLLMENT FORM</div>
@@ -1258,6 +1272,75 @@ function savePDF(){
   window.print();
   setTimeout(function(){sb.style.display='flex';},1500);
 }
+
+var _prospects = [];
+
+async function initProspectFill() {
+  try {
+    var res  = await fetch('/api/getProspects', { credentials: 'include' });
+    var data = await res.json();
+    _prospects = (data.prospects || []).filter(function(p) {
+      return p.status !== 'lost';
+    });
+    var sel = document.getElementById('prospectSelect');
+    _prospects.forEach(function(p) {
+      var o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = p.business + (p.contact ? ' — ' + p.contact + (p.lastName ? ' ' + p.lastName : '') : '');
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+
+  // Check sessionStorage for pre-fill from prospects page
+  var stored = sessionStorage.getItem('txl_prefill_prospect');
+  if (stored) {
+    try {
+      var p = JSON.parse(stored);
+      sessionStorage.removeItem('txl_prefill_prospect');
+      fillFromProspect(p);
+      var sel = document.getElementById('prospectSelect');
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === p.id) { sel.value = p.id; break; }
+      }
+    } catch(e) {}
+  }
+}
+
+function fillFromSelected() {
+  var id = document.getElementById('prospectSelect').value;
+  if (!id) { clearProspectFill(); return; }
+  var p = _prospects.find(function(x) { return x.id === id; });
+  if (p) fillFromProspect(p);
+}
+
+function fillFromProspect(p) {
+  if (document.getElementById('biz-name')     && p.business) document.getElementById('biz-name').value     = p.business;
+  if (document.getElementById('f-contact')    && p.contact)  document.getElementById('f-contact').value    = p.contact + (p.lastName ? ' ' + p.lastName : '');
+  if (document.getElementById('client-email') && p.email)    document.getElementById('client-email').value  = p.email;
+  if (document.getElementById('f-phone')      && p.phone)    document.getElementById('f-phone').value       = p.phone;
+  if (document.getElementById('f-addr')       && p.address)  document.getElementById('f-addr').value        = p.address;
+  if (document.getElementById('f-city')       && p.city)     document.getElementById('f-city').value        = p.city;
+  if (document.getElementById('f-state')      && p.state)    document.getElementById('f-state').value       = p.state;
+  if (document.getElementById('f-zip')        && p.zip)      document.getElementById('f-zip').value         = p.zip;
+
+  document.getElementById('fill-status').textContent = '✓ Filled from: ' + p.business;
+  document.getElementById('clear-fill-btn').style.display = 'inline-block';
+}
+
+function clearProspectFill() {
+  ['biz-name','f-contact','client-email','f-phone','f-addr','f-city','f-zip'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  var state = document.getElementById('f-state');
+  if (state) state.value = 'TX';
+  document.getElementById('prospectSelect').value = '';
+  document.getElementById('fill-status').textContent = '';
+  document.getElementById('clear-fill-btn').style.display = 'none';
+}
+
+initProspectFill();
+
 </script>
 
 <!-- IN-PERSON SIGNING MODAL (pre-flight) -->
