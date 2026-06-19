@@ -281,15 +281,15 @@ function renderTable() {
 }
 
 function viewDoc(sid) {
-  window.open('/sign?id=' + sid + '&preview=1', '_blank');
+  window.open('/api/getPdf?id=' + sid + '&token=' + encodeURIComponent(dashKey), '_blank');
 }
 
 function getPdf(sid) {
-  window.open('/api/getPdf?id=' + sid + '&key=' + encodeURIComponent(dashKey), '_blank');
+  window.open('/api/getPdf?id=' + sid + '&token=' + encodeURIComponent(dashKey), '_blank');
 }
 
 function countersign(sid) {
-  window.open('/countersign?id=' + sid + '&key=' + encodeURIComponent(dashKey), '_blank');
+  window.open('/countersign?id=' + sid + '&token=' + encodeURIComponent(dashKey), '_blank');
 }
 
 async function resend(sid, btn) {
