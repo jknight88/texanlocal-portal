@@ -311,13 +311,22 @@ function showMsg(text, type){
 }
 
 function doLogin(){
-  var key = document.getElementById('dash-key').value.trim();
-  if(!key){ showMsg('Please enter your dashboard password.','err'); return; }
-  DASH_KEY = key;
-  var btn = document.getElementById('login-btn');
-  btn.disabled = true; btn.textContent = 'Connecting…';
-  showMsg('Connecting…','info');
-  loadData();
+  // Use portal JWT token instead of dashboard password
+  var token = sessionStorage.getItem('txl_token') || '';
+  fetch('/api/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' })
+    .then(function(r){ return r.json(); })
+    .then(function(user){
+      if(!user || user.role !== 'admin'){
+        document.getElementById('login-gate').innerHTML =
+          '<div style="text-align:center;padding:3rem;color:#c62828;font-size:14px;">Access denied. Admin login required.<br><a href="/" style="color:#00205B;font-weight:700;margin-top:12px;display:inline-block;">← Sign In</a></div>';
+        return;
+      }
+      DASH_KEY = token; // reuse DASH_KEY variable to pass token
+      loadData();
+    })
+    .catch(function(){
+      window.location.href = '/';
+    });
 }
 
 function loadData(){
@@ -333,7 +342,7 @@ function loadData(){
       showMsg(attempt > 1 ? 'Server waking up, retrying…' : 'Connecting…', 'info');
     }
 
-    fetch('/api/getDashboard?key='+encodeURIComponent(DASH_KEY))
+    fetch('/api/getDashboard', { headers: { 'Authorization': 'Bearer ' + DASH_KEY }, credentials: 'include' })
       .then(function(r){ return r.text().then(function(t){ return {status:r.status, text:t}; }); })
       .then(function(result){
         if(btn){ btn.disabled=false; btn.textContent='Access Dashboard'; }
@@ -465,6 +474,7 @@ function renderTable(){
     if(isSigned) actions+='<button class="btn-sm btn-view" data-sid="'+sid+'" data-act="view"    onclick="handleBtn(this)">&#128196; View</button>';
     if(isAwait)  actions+='<button class="btn-sm" style="background:#f5a623;color:#fff;" data-sid="'+sid+'" data-act="countersign" onclick="handleBtn(this)">&#9998; Countersign</button>';
     if(isSigned) actions+='<button class="btn-sm" style="background:var(--green);color:#fff;" data-sid="'+sid+'" data-act="pdf" onclick="handleBtn(this)">&#128438; PDF</button>';
+    if(!isSigned && !isAwait) actions+='<button class="btn-sm" style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;" data-sid="'+sid+'" data-act="resend" onclick="handleBtn(this)">&#8635; Resend</button>';
     actions+='<button class="btn-sm btn-edit" data-sid="'+sid+'" data-act="edit" onclick="handleBtn(this)">&#9998;</button>';
     actions+='<button class="btn-sm btn-del"  data-sid="'+sid+'" data-biz="'+bname+'" data-signed="'+(isSigned?'1':'0')+'" data-act="del" onclick="handleBtn(this)">&#128465;</button>';
     actions+='</div>';
@@ -556,6 +566,37 @@ function handleBtn(el){
   else if(action==='countersign') window.open('/countersign?id='+sid+'&key='+encodeURIComponent(DASH_KEY),'_blank');
   else if(action==='edit')   editForm(sid);
   else if(action==='del')    deleteForm(sid,biz,el.getAttribute('data-signed'));
+  else if(action==='resend') resendForm(sid, el);
+}
+
+async function resendForm(sid, btn) {
+  var r = DASH_DATA.find(function(x){ return x.sessionId===sid; });
+  if(!r) return;
+  if(!confirm('Resend the enrollment form to ' + (r.bizName||r.formData&&r.formData.bizName||sid) + '?')) return;
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    var res = await fetch('/api/saveForm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({}, r.formData, { resend: true, existingId: sid }))
+    });
+    var data = await res.json();
+    if(res.ok && data.ok) {
+      btn.textContent = '✓ Sent';
+      btn.style.background = '#e8f5e9';
+      btn.style.color = '#1a5c1a';
+      setTimeout(function(){ loadData(); }, 1500);
+    } else {
+      btn.disabled = false;
+      btn.textContent = '↻ Resend';
+      alert('Resend failed: ' + (data.error||'Unknown error'));
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '↻ Resend';
+    alert('Error: ' + e.message);
+  }
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
@@ -817,6 +858,7 @@ function callApi(url, payload, callback){
 
 // Auto-refresh every 60s
 setInterval(function(){ if(DASH_KEY&&document.getElementById('dashboard').style.display!=='none') loadData(); },60000);
+doLogin();
 </script>
 </body>
 </html>
