@@ -647,22 +647,28 @@ function buildSummary(d){
   var val = function(v,sz){ return '<div style="font-size:'+(sz||'12px')+';color:#1a1a2e;margin-bottom:7px;">'+esc(v)+'</div>'; };
 
   // ── CLIENT INFO SECTION ───────────────────────────────────────────────
+  // Business name + DBA combined, address stacked
+  var bizDisplay = (d.bizName||'');
+  if(d.dba && d.dba.trim()) bizDisplay += ' dba ' + d.dba.trim();
+
+  var addrLine1 = d.addr||'';
+  var addrLine2 = [d.city, (d.state||'').toUpperCase(), d.zip].filter(Boolean).join(', ');
+
   var leftCI = '<div style="flex:1;min-width:0;">';
   leftCI += lbl('Business Name');
-  leftCI += val(d.bizName||'','13px');
-  leftCI += lbl('DBA / Trade Name');
-  leftCI += val(d.dba||'—');
+  leftCI += val(bizDisplay,'13px');
+  leftCI += '<div style="margin-top:8px;"></div>';
   leftCI += lbl('Address');
-  leftCI += val((d.addr||'')+(d.city?', '+d.city:'')+(d.state?' '+d.state:'')+(d.zip?' '+d.zip:''));
+  leftCI += val(addrLine1);
+  if(addrLine2) leftCI += val(addrLine2);
   leftCI += '</div>';
 
   var rightCI = '<div style="min-width:160px;">';
-  rightCI += lbl('Contact');
+  rightCI += lbl('Contact Name');
   rightCI += val(d.contact||'—');
   rightCI += lbl('Phone');
   rightCI += val(d.phone||'—');
-  rightCI += lbl('Cell');
-  rightCI += val(d.cell||'—');
+  if(d.cell) { rightCI += lbl('Cell'); rightCI += val(d.cell); }
   rightCI += lbl('Email');
   rightCI += val(d.email||'—');
   rightCI += '</div>';
