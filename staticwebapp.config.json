@@ -3,16 +3,16 @@
     { "route": "/",                        "rewrite": "/index.html" },
     { "route": "/home",                    "rewrite": "/home.html" },
     { "route": "/enrollment",              "rewrite": "/enrollment/index.html" },
-    { "route": "/enrollment/sign*",        "rewrite": "/enrollment/sign.html" },
+    { "route": "/sign*",                   "rewrite": "/sign.html" },
     { "route": "/enrollment/inperson",     "rewrite": "/enrollment/inperson.html" },
-    { "route": "/enrollment/countersign*", "rewrite": "/enrollment/countersign.html" },
+    { "route": "/countersign*",            "rewrite": "/countersign.html" },
     { "route": "/files",                   "rewrite": "/files/index.html" },
     { "route": "/upload",                  "rewrite": "/upload/index.html" },
-    { "route": "/dashboard",               "rewrite": "/dashboard/index.html" },
-    { "route": "/approvals", "rewrite": "/approvals/index.html" },
-    { "route": "/approvals/dashboard", "rewrite": "/approvals/dashboard.html" },
-    { "route": "/respond", "rewrite": "/respond/index.html" },
-    { "route": "/clients", "rewrite": "/clients/index.html" }
+    { "route": "/approvals",               "rewrite": "/approvals/index.html" },
+    { "route": "/approvals/dashboard",     "rewrite": "/approvals/dashboard.html" },
+    { "route": "/clients",                 "rewrite": "/clients/index.html" },
+    { "route": "/prospects",               "rewrite": "/prospects/index.html" },
+    { "route": "/respond",                 "rewrite": "/respond/index.html" }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
@@ -25,4 +25,3 @@
   },
   "platform": { "apiRuntime": "node:22" }
 }
- 
