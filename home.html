@@ -113,28 +113,19 @@ const ALL_MODULES = [
   {
     id: 'enrollment',
     icon: '📋', iconClass: 'icon-enroll',
-    title: 'Enrollment & E-Sign',
-    desc: 'Send advertising agreements. Track client signing status in real time.',
+    title: 'Enrollment',
+    desc: 'Send advertising agreements and track client e-sign status.',
     href: '/enrollment/dashboard',
-    footer: 'Pending signatures',
+    footer: 'View enrollment dashboard',
     roles: ['admin', 'rep']
   },
   {
     id: 'approvals',
-    icon: '✉️', iconClass: 'icon-approval',
+    icon: '📊', iconClass: 'icon-approval',
     title: 'Ad Approvals',
-    desc: 'Send monthly ad proof emails. Track who approved or needs changes.',
-    href: '/approvals',
-    footer: 'Send proofs',
-    roles: ['admin']
-  },
-  {
-    id: 'approval-dashboard',
-    icon: '📊', iconClass: 'icon-dashboard',
-    title: 'Approval Dashboard',
-    desc: 'See approval status for all clients. Resend proofs and track responses.',
+    desc: 'Send proofs, track approvals, upload files and manage all client ad statuses.',
     href: '/approvals/dashboard',
-    footer: 'All client statuses',
+    footer: 'View approval dashboard',
     roles: ['admin']
   },
   {
@@ -144,15 +135,6 @@ const ALL_MODULES = [
     desc: 'Browse, preview, and download ad proof PDFs by mailing month.',
     href: '/files',
     footer: 'Browse files',
-    roles: ['admin', 'designer']
-  },
-  {
-    id: 'upload',
-    icon: '⬆️', iconClass: 'icon-upload',
-    title: 'Upload Proofs',
-    desc: 'Upload completed ad proof PDFs. Bulk upload or name individually.',
-    href: '/upload',
-    footer: 'Add new files',
     roles: ['admin', 'designer']
   },
   {
@@ -168,10 +150,19 @@ const ALL_MODULES = [
     id: 'prospects',
     icon: '🎯', iconClass: 'icon-prospects',
     title: 'Prospects',
-    desc: 'Track potential advertisers. Send enrollment forms to prospects.',
+    desc: 'Track potential advertisers, log contacts and set follow-up reminders.',
     href: '/prospects',
     footer: 'View prospects',
     roles: ['admin', 'rep']
+  },
+  {
+    id: 'upload',
+    icon: '⬆️', iconClass: 'icon-upload',
+    title: 'Upload Proofs',
+    desc: 'Upload completed ad proof PDFs. Bulk upload or name individually.',
+    href: '/upload',
+    footer: 'Add new files',
+    roles: ['designer']
   }
 ];
 
