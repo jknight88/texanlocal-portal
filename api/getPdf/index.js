@@ -1,8 +1,10 @@
 // GET /api/getPdf?id=SESSION_ID&key=DASHBOARD_KEY  or  ?id=SESSION_ID&pdfToken=TOKEN
 const { BlobServiceClient } = require("@azure/storage-blob");
+const jwt           = require("jsonwebtoken");
 const STORAGE_CONN  = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const CONTAINER     = "enrollments";
 const DASHBOARD_KEY = process.env.DASHBOARD_KEY || "changeme";
+const JWT_SECRET    = process.env.JWT_SECRET || "e42f24e9f5cfe3558144a25a0b30c6458fc4bd5ab6a6271404a1e7b509404c72";
 
 function maskPayment(payMethod, payDetail) {
   if (!payDetail) return { method: payMethod||'', rows: '' };
@@ -35,6 +37,14 @@ module.exports = async function(context, req) {
   const authKey     = req.query.key;
   const pdfTokenReq = req.query.pdfToken;
   let authorized    = (authKey === DASHBOARD_KEY);
+  // Also accept portal JWT token
+  if (!authorized) {
+    const tokenParam = req.query.token || authKey || '';
+    try {
+      const decoded = jwt.verify(tokenParam, JWT_SECRET);
+      if (decoded.role === 'admin') authorized = true;
+    } catch(e) {}
+  }
 
   const id = req.query.id;
   if (!id) { context.res={status:400,body:"Missing id"}; return; }
