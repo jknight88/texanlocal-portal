@@ -41,6 +41,19 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .import-zone p{font-size:13px;color:var(--md);margin-bottom:6px}
 .import-zone small{font-size:11px;color:#aaa}
 .import-options{display:flex;gap:10px;justify-content:center;margin-top:10px}
+
+.group-tab{flex:1;padding:.65rem 1rem;font-size:12px;font-weight:700;color:var(--md);border:none;background:transparent;cursor:pointer;font-family:inherit;border-right:1px solid var(--br);transition:all .15s}
+.group-tab:last-child{border-right:none}
+.group-tab:hover{background:#f5f8ff;color:var(--bl)}
+.group-tab.active{background:var(--bl);color:#fff}
+.tab-cnt{display:inline-block;background:rgba(0,0,0,.15);border-radius:8px;padding:1px 6px;font-size:10px;margin-left:4px}
+.group-tab.active .tab-cnt{background:rgba(255,255,255,.2)}
+.badge-active{background:#e8f5e9;color:#1a5c1a;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-past{background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-prospect{background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.btn-move{background:#f0f2f5;color:var(--md);border:1px solid var(--br);padding:3px 8px;border-radius:3px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-move:hover{background:#e8eaf0}
+
 .btn-sm{padding:5px 12px;border-radius:4px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-merge{background:#e8f5e9;color:var(--green);border:1px solid #a5d6a7}
 .btn-replace{background:#ffebee;color:var(--rd);border:1px solid #ffcdd2}
@@ -92,7 +105,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 <header class="hdr">
   <div class="hdr-l">
     <img src="/assets/logo.png" alt="" style="height:44px" onerror="this.style.display='none'">
-    <h1>Client List</h1>
+    <h1>Clients</h1>
   </div>
   <div class="hdr-r">
     <a href="/home" class="btn-hdr">← Portal Home</a>
@@ -110,6 +123,14 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
     <span class="client-count" id="clientCount"></span>
     <button class="btn btn-import" onclick="toggleImport()">📥 Import CSV</button>
     <button class="btn btn-primary" onclick="openModal()">+ Add Client</button>
+  </div>
+
+  <!-- Group tabs -->
+  <div style="display:flex;gap:0;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:1rem">
+    <button class="group-tab active" id="tab-active"   onclick="setGroup('active')">✓ Active Clients <span class="tab-cnt" id="cnt-active"></span></button>
+    <button class="group-tab"        id="tab-past"     onclick="setGroup('past')">Past Clients <span class="tab-cnt" id="cnt-past"></span></button>
+    <button class="group-tab"        id="tab-prospect" onclick="setGroup('prospect')">Prospects <span class="tab-cnt" id="cnt-prospect"></span></button>
+    <button class="group-tab"        id="tab-all"      onclick="setGroup('all')">All <span class="tab-cnt" id="cnt-all"></span></button>
   </div>
 
   <!-- Import zone -->
@@ -175,6 +196,7 @@ let editingId    = null;
 let importBuffer = null;
 let sortCol = 'business';
 let sortDir = 1;
+let currentGroup = 'active';
 
 async function init() {
   const token = sessionStorage.getItem('txl_token');
@@ -196,21 +218,80 @@ async function loadClients() {
   }
 }
 
+
+async function moveClient(id, newGroup, selectEl) {
+  if (!newGroup) return;
+  selectEl.value = '';
+  const client = allClients.find(c => c.id === id);
+  if (!client) return;
+  const oldGroup = client.group || 'active';
+  if (!confirm('Move ' + client.business + ' from ' + oldGroup + ' to ' + newGroup + '?')) return;
+
+  try {
+    // Update client group
+    const updated = Object.assign({}, client, { group: newGroup });
+    const res = await fetch(API + '/saveClient', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ client: updated })
+    });
+    if (!res.ok) throw new Error('Save failed');
+
+    // If moving to prospect, also add to prospects list
+    if (newGroup === 'prospect') {
+      await fetch(API + '/saveProspect', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({
+          business: client.business, contact: client.contact, lastName: client.lastName,
+          phone: client.phone, email: client.email, address: client.address,
+          city: client.city, state: client.state, notes: client.notes,
+          status: 'interested', owner: ''
+        })
+      });
+    }
+
+    showToast(client.business + ' moved to ' + newGroup);
+    await loadClients();
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+}
+
 function setSort(col) {
   if (sortCol === col) sortDir = -sortDir;
   else { sortCol = col; sortDir = 1; }
   renderTable();
 }
 
+function setGroup(group) {
+  currentGroup = group;
+  document.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + group).classList.add('active');
+  renderTable();
+}
+
+function updateTabCounts() {
+  const groups = ['active','past','prospect'];
+  groups.forEach(g => {
+    const cnt = allClients.filter(c => (c.group || 'active') === g).length;
+    const el  = document.getElementById('cnt-' + g);
+    if (el) el.textContent = cnt;
+  });
+  const allEl = document.getElementById('cnt-all');
+  if (allEl) allEl.textContent = allClients.length;
+}
+
 function renderTable() {
-  const q        = document.getElementById('searchInput').value.toLowerCase();
-  const filtered = q ? allClients.filter(c =>
+  const q     = document.getElementById('searchInput').value.toLowerCase();
+  const byGrp = currentGroup === 'all' ? allClients : allClients.filter(c => (c.group || 'active') === currentGroup);
+  const filtered = q ? byGrp.filter(c =>
     c.business.toLowerCase().includes(q) ||
     (c.contact || '').toLowerCase().includes(q) ||
     (c.email || '').toLowerCase().includes(q)
-  ) : allClients;
+  ) : byGrp;
 
-  document.getElementById('clientCount').textContent = filtered.length + ' of ' + allClients.length + ' clients';
+  updateTabCounts();
+  const groupLabel = currentGroup === 'all' ? 'clients' : currentGroup === 'active' ? 'active clients' : currentGroup === 'past' ? 'past clients' : 'prospects';
+  document.getElementById('clientCount').textContent = filtered.length + ' ' + groupLabel;
 
   if (!allClients.length) {
     document.getElementById('tableContainer').innerHTML = `
@@ -242,7 +323,7 @@ function renderTable() {
         <th onclick="setSort('business')" style="cursor:pointer">Business Name${sortIcon('business')}</th>
         <th onclick="setSort('contact')" style="cursor:pointer">Contact${sortIcon('contact')}</th>
         <th onclick="setSort('email')" style="cursor:pointer">Email${sortIcon('email')}</th>
-        <th>Phone</th><th>Notes</th><th style="text-align:right">Actions</th>
+        <th>Phone</th><th>Address</th><th>Status</th><th style="text-align:right">Actions</th>
       </tr></thead>
       <tbody>${filtered.map(c => `
         <tr>
@@ -251,7 +332,14 @@ function renderTable() {
           <td class="td-email">${esc(c.email || '—')}</td>
           <td style="font-size:12px;color:var(--md)">${esc(c.phone || '—')}</td>
           <td style="font-size:12px;color:var(--md)">${c.address ? esc(c.address) + (c.city ? ', '+esc(c.city) : '') : '—'}</td>
+          <td>${c.group && c.group !== 'active' ? `<span class="badge-${esc(c.group)}">${c.group === 'past' ? 'Past' : 'Prospect'}</span>` : ''}</td>
           <td class="td-actions">
+            <select class="btn-move" onchange="moveClient('${c.id}', this.value, this)" title="Move to...">
+              <option value="">Move to…</option>
+              ${(c.group||'active') !== 'active'   ? '<option value="active">→ Active Client</option>' : ''}
+              ${(c.group||'active') !== 'past'     ? '<option value="past">→ Past Client</option>' : ''}
+              ${(c.group||'active') !== 'prospect' ? '<option value="prospect">→ Prospect</option>' : ''}
+            </select>
             <button class="btn-sm btn-edit" onclick="openModal('${c.id}')">✏ Edit</button>
             <button class="btn-sm btn-del" onclick="deleteClient('${c.id}','${esc(c.business)}')">🗑</button>
           </td>
