@@ -4,10 +4,12 @@
 // POST /api/getDashboard?key=KEY&action=restore&id=ID → restore from trash
 // POST /api/getDashboard?key=KEY&action=purge&id=ID   → permanent delete from trash
 const { BlobServiceClient } = require("@azure/storage-blob");
+const jwt             = require("jsonwebtoken");
 const STORAGE_CONN    = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const CONTAINER       = "enrollments";
 const TRASH_CONTAINER = "enrollments-trash";
 const DASHBOARD_KEY   = process.env.DASHBOARD_KEY || "changeme";
+const JWT_SECRET      = process.env.JWT_SECRET || "e42f24e9f5cfe3558144a25a0b30c6458fc4bd5ab6a6271404a1e7b509404c72";
 const SIXTY_DAYS_MS   = 60 * 24 * 60 * 60 * 1000;
 
 module.exports = async function(context, req) {
@@ -23,7 +25,20 @@ module.exports = async function(context, req) {
   const action = req.query.action || body.action || "";
   const id     = req.query.id     || body.id     || "";
 
-  if (key !== DASHBOARD_KEY) {
+  // Accept either dashboard key OR portal JWT token (admin role)
+  let authorized = (key === DASHBOARD_KEY);
+  if (!authorized) {
+    // Check Authorization header for portal JWT
+    const authHeader = req.headers["authorization"] || "";
+    const bearerToken = req.query.token || authHeader.replace("Bearer ", "") || "";
+    if (bearerToken) {
+      try {
+        const decoded = jwt.verify(bearerToken, JWT_SECRET);
+        if (decoded.role === "admin") authorized = true;
+      } catch(e) {}
+    }
+  }
+  if (!authorized) {
     context.res = { status:401, headers:{"Content-Type":"application/json"}, body: JSON.stringify({error:"Unauthorized"}) };
     return;
   }
