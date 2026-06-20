@@ -2,12 +2,16 @@
   "name": "texanlocal-portal-api",
   "version": "1.0.0",
   "description": "Azure Functions API for Texan Local Portal",
+  "main": "index.js",
   "dependencies": {
     "@azure/storage-blob": "^12.17.0",
     "@azure/identity": "^4.0.0",
+    "@azure/keyvault-secrets": "^4.7.0",
     "uuid": "^9.0.0",
     "jsonwebtoken": "^9.0.2",
     "bcryptjs": "^2.4.3",
-    "pdf-to-img": "^4.2.0"
+    "sharp": "^0.33.2",
+    "pdf-to-img": "^4.2.0",
+    "archiver": "^7.0.1"
   }
 }
