@@ -189,8 +189,9 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
     <button class="btn-load" onclick="loadLayout()">Load</button>
     <div class="zoom-bar">
       <label>Zoom</label>
-      <input type="range" id="zoomRange" min="40" max="200" value="100" oninput="applyZoom(this.value)">
-      <span id="zoomLabel">100%</span>
+      <button onclick="stepZoom(-1)" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1;font-family:inherit">−</button>
+      <span id="zoomLabel" style="min-width:32px;text-align:center;font-size:11px;color:#fff">100%</span>
+      <button onclick="stepZoom(1)"  style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1;font-family:inherit">+</button>
     </div>
   </div>
   <div style="display:flex;gap:6px;align-items:center">
@@ -660,6 +661,14 @@ async function genAllThumbs() {
 }
 
 // ── Zoom ──────────────────────────────────────────────────────────────────────
+const ZOOM_STEPS = [40, 60, 100, 150, 200];
+let zoomStepIdx = 2; // default 100%
+
+function stepZoom(dir) {
+  zoomStepIdx = Math.max(0, Math.min(ZOOM_STEPS.length - 1, zoomStepIdx + dir));
+  applyZoom(ZOOM_STEPS[zoomStepIdx]);
+}
+
 function applyZoom(val) {
   zoomScale = val / 100;
   document.getElementById('zoomLabel').textContent = val + '%';
