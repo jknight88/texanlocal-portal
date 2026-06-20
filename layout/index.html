@@ -420,8 +420,11 @@ function renderArtPanel() {
       : '<div class="thumb-na"><div class="na-label">N/A</div><div class="na-sub">No preview</div></div>' +
         '<button class="btn-gen-thumb" onclick="event.stopPropagation();genThumb(\''+esc(a.id)+'\',\''+esc(a.path)+'\',this)">Generate</button>';
 
-    return '<div class="art-card '+cc+'" draggable="true" id="artcard-'+esc(a.id)+'" '+
-      'ondragstart="onArtDrag(event,\''+esc(a.id)+'\')" ondragend="onArtDragEnd(event)">'+
+    return '<div class="art-card '+cc+(SEL&&SEL.art&&SEL.art.id===a.id?' selected':'')+'" draggable="true" id="artcard-'+esc(a.id)+'" '+
+      'ondragstart="artDragStart(event,\''+esc(a.id)+'\')" '+
+      'ondragend="artDragEnd(event)" '+
+      'onclick="selectArt(\''+esc(a.id)+'\')" '+
+      'style="cursor:grab">'+
       '<div class="thumb-wrap">'+thumbHtml+'</div>'+
       '<div class="card-info">'+
         '<div class="card-biz">'+esc(a.business)+'</div>'+
@@ -887,9 +890,7 @@ function clearSELSource() {
 
 function bumpBack(art) { /* art returns to panel automatically via getPlacedIds */ }
 
-// Legacy no-ops for any remaining references
-function onArtDrag(){}
-function onArtDragEnd(){}
+// Legacy no-ops
 function placedDragStartEl(){}
 function placedDragStart(){}
 function getDragArt(){ return SEL ? SEL.art : null; }
