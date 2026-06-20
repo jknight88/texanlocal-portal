@@ -657,14 +657,20 @@ function render2PSpread(sp, si) {
 }
 
 // ── Drag & Drop ───────────────────────────────────────────────────────────────
+// Use sessionStorage-like object to persist drag state across re-renders
+var DRAG = { active: false, artwork: null, fromZone: null, fromSpread: null, fromSide: null, fromHalf: null, isPlaced: false };
+
 function onArtDrag(e, artId) {
-  isDragging = true;
-  dragItem = { type:'artwork', artwork: allArtwork.find(function(a){return a.id===artId;}) };
+  const art = allArtwork.find(function(a){return a.id===artId;});
+  if (!art) return;
+  DRAG.active=true; DRAG.artwork=art; DRAG.isPlaced=false;
+  DRAG.fromZone=null; DRAG.fromSpread=null; DRAG.fromSide=null; DRAG.fromHalf=null;
+  dragItem = { type:'artwork', artwork: art };
   e.dataTransfer.effectAllowed = 'copy';
+  try { e.dataTransfer.setData('text/plain', JSON.stringify({ artId: art.id||art.path, isPlaced: false })); } catch(ex){}
 }
 function onArtDragEnd(e) {
-  isDragging = false;
-  dragItem = null;
+  DRAG.active = false;
 }
 
 function placedDragStartEl(e, el) {
@@ -699,11 +705,50 @@ function placedDragStart(e, zId, si, side, half) {
   e.dataTransfer.effectAllowed = 'move';
 }
 
+function getDragArt(e) {
+  // Try DRAG object first (persists across re-renders), then dragItem, then dataTransfer
+  if (DRAG.active && DRAG.artwork) return DRAG.artwork;
+  if (dragItem && dragItem.artwork) return dragItem.artwork;
+  try {
+    const stored = JSON.parse(e.dataTransfer.getData('text/plain'));
+    if (stored && stored.artId) {
+      const art = allArtwork.find(function(a){ return a.id===stored.artId||a.path===stored.artId; });
+      if (art) {
+        DRAG.active=true; DRAG.artwork=art; DRAG.isPlaced=stored.isPlaced||false;
+        DRAG.fromZone=stored.fromZone; DRAG.fromSpread=stored.fromSpread;
+        DRAG.fromSide=stored.fromSide; DRAG.fromHalf=stored.fromHalf;
+        dragItem = { type: DRAG.isPlaced?'placed':'artwork', artwork:art,
+          fromZone:DRAG.fromZone, fromSpread:DRAG.fromSpread, fromSide:DRAG.fromSide, fromHalf:DRAG.fromHalf };
+      }
+      return art;
+    }
+  } catch(ex){}
+  return null;
+}
+
+function clearDragSource2() {
+  // Clear source slot using DRAG state
+  if (!DRAG.isPlaced || !DRAG.fromZone) return;
+  const layout = layouts[DRAG.fromZone];
+  if (!layout) return;
+  const sp = layout.spreads[DRAG.fromSpread];
+  if (!sp) return;
+  if (DRAG.fromHalf) {
+    if (sp[DRAG.fromSide] && sp[DRAG.fromSide].type==='hp-pair') {
+      sp[DRAG.fromSide][DRAG.fromHalf] = null;
+      if (!sp[DRAG.fromSide].left && !sp[DRAG.fromSide].right) sp[DRAG.fromSide] = null;
+    }
+  } else {
+    sp[DRAG.fromSide] = null;
+  }
+}
+
 function slotDragOver(e, pageType) {
-  if (!dragItem || !dragItem.artwork) return;
-  const sz = dragItem.artwork.size;
+  const art = DRAG.active ? DRAG.artwork : null;
+  if (!art) return;
+  const sz = art.size;
   // 2P is handled by the spread container - don't block it here, just don't claim it
-  if (sz==='2P') { return; } // let it bubble to spread
+  if (sz==='2P') { return; }
   e.preventDefault();
   e.stopPropagation();
   if (pageType==='FC' && sz!=='FC') { e.dataTransfer.dropEffect='none'; return; }
@@ -714,20 +759,9 @@ function slotDragOver(e, pageType) {
 
 function slotDrop(e, zId, si, side, pageType) {
   e.preventDefault(); e.stopPropagation();
-
-  // Restore dragItem from dataTransfer if it was lost (can happen with re-renders)
-  if (!dragItem || !dragItem.artwork) {
-    try {
-      const stored = JSON.parse(e.dataTransfer.getData('text/plain'));
-      if (stored && stored.artId) {
-        const art = allArtwork.find(function(a){ return a.id===stored.artId || a.path===stored.artId; });
-        if (art) dragItem = { type:'placed', artwork:art, fromZone:stored.fromZone, fromSpread:stored.fromSpread, fromSide:stored.fromSide, fromHalf:stored.fromHalf };
-      }
-    } catch(ex) {}
-  }
-  if (!dragItem || !dragItem.artwork) return;
-
-  const art = dragItem.artwork;
+  const art = getDragArt(e);
+  if (!art) return;
+  si = parseInt(si);
   pageType = pageType || 'any';
 
   if (art.size==='2P') {
@@ -741,38 +775,33 @@ function slotDrop(e, zId, si, side, pageType) {
   // Interior pages: no FC or BP ads
   if (pageType==='any' && (art.size==='FC'||art.size==='BP')) { showToast(art.size+' ads only go on the front/back cover',true); return; }
 
-  const layout = layouts[zId];
-  const sp     = layout.spreads[parseInt(si)];
-  const artRef = art; // save ref before any clearing
+  const existing = layouts[zId].spreads[si][side];
 
   if (art.size==='FP' || art.size==='FC' || art.size==='BP') {
-    // What's currently in target slot
-    const existing = sp[side];
-    // Clear source first
-    clearDragSource();
-    // Bump whatever was in target (unless it was the source itself)
-    if (existing && existing !== artRef) {
+    clearDragSource2();
+    // Bump whatever was in target
+    if (existing && existing !== art) {
       if (existing.type==='hp-pair') { bumpBack(existing.left); bumpBack(existing.right); }
       else bumpBack(existing);
     }
-    sp[side] = artRef;
+    layouts[zId].spreads[si][side] = art;
 
   } else if (art.size==='HP') {
-    // For HP we need to know if dropping on a page that has an hp-pair slot
-    const existing = sp[side];
-    clearDragSource();
-    // Re-read after clear (in case we cleared this same slot)
-    const currentSlot = layouts[zId].spreads[parseInt(si)][side];
-    if (!currentSlot || currentSlot.type!=='hp-pair') {
-      if (currentSlot && currentSlot.id) bumpBack(currentSlot);
-      layouts[zId].spreads[parseInt(si)][side] = { type:'hp-pair', left:artRef, right:null };
+    // Dropping HP on a whole page-side: create pair, put in left slot
+    clearDragSource2();
+    const cur = layouts[zId].spreads[si][side];
+    if (!cur || cur.type!=='hp-pair') {
+      if (cur && cur.id) bumpBack(cur);
+      layouts[zId].spreads[si][side] = { type:'hp-pair', left:art, right:null };
     } else {
-      if (!currentSlot.left)       currentSlot.left  = artRef;
-      else if (!currentSlot.right) currentSlot.right = artRef;
-      else { bumpBack(currentSlot.left); currentSlot.left = artRef; }
+      // Page already has an hp-pair - fill whichever half is empty
+      if (!cur.left)       cur.left  = art;
+      else if (!cur.right) cur.right = art;
+      else { bumpBack(cur.left); cur.left = art; }
     }
   }
 
+  DRAG.active = false;
   dragItem = null;
   refreshLayout();
 }
@@ -807,7 +836,7 @@ function hpDrop(e, zId, si, pageSide, half) {
     sp[pageSide] = { type:'hp-pair', left:null, right:null };
   }
   if (sp[pageSide][half]) bumpBack(sp[pageSide][half]);
-  clearDragSource();
+  clearDragSource2();
   sp[pageSide][half] = art;
   refreshLayout();
 }
@@ -821,8 +850,8 @@ function dragOver2P(e) {
 }
 
 function spreadDragOver(e, el) {
-  if (!dragItem || !dragItem.artwork) return;
-  if (dragItem.artwork.size === '2P') {
+  if (!DRAG.active || !DRAG.artwork) return;
+  if (DRAG.artwork.size === '2P') {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
@@ -842,7 +871,8 @@ function spreadDrop(e, el) {
       }
     } catch(ex) {}
   }
-  if (!dragItem || !dragItem.artwork || dragItem.artwork.size !== '2P') return;
+  const sd_art = getDragArt(e);
+  if (!sd_art || sd_art.size !== '2P') return;
   e.preventDefault();
   e.stopPropagation();
   const zId = el.getAttribute('data-zone');
@@ -852,7 +882,8 @@ function spreadDrop(e, el) {
 
 function drop2P(e, zId, si) {
   e.preventDefault(); e.stopPropagation();
-  if (!dragItem || !dragItem.artwork || dragItem.artwork.size!=='2P') return;
+  const art2pCheck = getDragArt(e);
+  if (!art2pCheck || art2pCheck.size!=='2P') return;
   const totalSpreads = layouts[zId].spreads.length;
   if (si === 0 || si === totalSpreads-1) {
     showToast('2P spread cannot go on FC or BP pages', true); return;
@@ -860,10 +891,10 @@ function drop2P(e, zId, si) {
   const sp = layouts[zId].spreads[si];
   if (sp.left)  { if (sp.left.type==='hp-pair')  { bumpBack(sp.left.left);  bumpBack(sp.left.right);  } else bumpBack(sp.left);  }
   if (sp.right) { if (sp.right.type==='hp-pair') { bumpBack(sp.right.left); bumpBack(sp.right.right); } else bumpBack(sp.right); }
-  const art2p = dragItem.artwork;
-  const fromInfo = dragItem.type === 'placed' ? { zone: dragItem.fromZone, spread: dragItem.fromSpread, side: dragItem.fromSide } : null;
-  clearDragSource();
+  const art2p = getDragArt(e);
+  clearDragSource2();
   layouts[zId].spreads[parseInt(si)] = { left: art2p, right: null };
+  DRAG.active = false;
   dragItem = null;
   refreshLayout();
 }
@@ -873,22 +904,8 @@ function bumpBack(art) {
   // Art is automatically shown again in panel since placed status is computed
 }
 
-function clearDragSource() {
-  if (!dragItem || dragItem.type !== 'placed') return;
-  const layout = layouts[dragItem.fromZone];
-  if (!layout) return;
-  const sp = layout.spreads[dragItem.fromSpread];
-  if (!sp) return;
-  if (dragItem.fromHalf) {
-    if (sp[dragItem.fromSide] && sp[dragItem.fromSide].type==='hp-pair') {
-      sp[dragItem.fromSide][dragItem.fromHalf] = null;
-      if (!sp[dragItem.fromSide].left && !sp[dragItem.fromSide].right) sp[dragItem.fromSide] = null;
-    }
-  } else {
-    sp[dragItem.fromSide] = null;
-  }
-  // Note: do NOT null dragItem here - caller does that after using artwork
-}
+// clearDragSource removed - use clearDragSource2 with DRAG object instead
+
 
 function removeSlot(zId, si, side) {
   layouts[zId].spreads[si][side] = null;
@@ -905,6 +922,7 @@ function removeHp(zId, si, pageSide, half) {
 }
 
 function refreshLayout() {
+  // Don't clear DRAG here - it needs to persist
   isDragging = false;
   dragItem   = null;
   renderSpreads();
