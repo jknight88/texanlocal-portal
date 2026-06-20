@@ -272,6 +272,65 @@ async function init() {
 
   buildZoneTabs();
   populateZoneFilter();
+  initDragDrop();
+}
+
+function initDragDrop() {
+  // Document-level drag delegation - works across scroll containers
+  document.addEventListener('dragover', function(e) {
+    if (!BANK_DRAG) return;
+    const t = e.target.closest('[data-dropzone]') || e.target.closest('.spread[data-zone]');
+    if (t) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  });
+
+  document.addEventListener('drop', function(e) {
+    if (!BANK_DRAG) return;
+    e.preventDefault();
+    console.log('[DROP] doc drop fired on:', e.target.tagName, e.target.className);
+
+    // HP half first (most specific)
+    const hpHalf = e.target.closest('[data-dhalf]');
+    if (hpHalf) {
+      console.log('[DROP] HP half:', hpHalf.getAttribute('data-dhalf'));
+      slotDrop(e,
+        hpHalf.getAttribute('data-dz'),
+        parseInt(hpHalf.getAttribute('data-dsi')),
+        hpHalf.getAttribute('data-dside'),
+        'any',
+        hpHalf.getAttribute('data-dhalf')
+      ); return;
+    }
+
+    // Page slot
+    const slot = e.target.closest('[data-dropzone]');
+    if (slot) {
+      console.log('[DROP] slot:', slot.getAttribute('data-dside'), slot.getAttribute('data-dtype'));
+      slotDrop(e,
+        slot.getAttribute('data-dz'),
+        parseInt(slot.getAttribute('data-dsi')),
+        slot.getAttribute('data-dside'),
+        slot.getAttribute('data-dtype'),
+        null
+      ); return;
+    }
+
+    // Spread for 2P
+    const spread = e.target.closest('.spread[data-zone]');
+    if (spread) {
+      console.log('[DROP] spread 2P');
+      spreadDrop(e, spread.getAttribute('data-zone'), parseInt(spread.getAttribute('data-si'))); return;
+    }
+
+    console.log('[DROP] no target found - missed');
+    BANK_DRAG = null;
+  });
+
+  document.addEventListener('dragend', function() {
+    BANK_DRAG = null;
+  });
 }
 
 function buildZoneTabs() {
@@ -558,44 +617,6 @@ function renderSpreads() {
   // Reapply zoom
   const grid = document.getElementById('spreadsGrid');
   if (grid) grid.style.zoom = zoomScale;
-
-  // Event delegation - runs fresh each render to pick up new slots
-  const sa = document.getElementById('spreadArea');
-  if (sa) {
-    // Remove old listener by cloning
-    const newSa = sa.cloneNode(true);
-    sa.parentNode.replaceChild(newSa, newSa); // no-op clone trick doesn't work, use flag
-    if (!sa._dropInited) {
-      sa._dropInited = true;
-      sa.addEventListener('dragover', function(e) {
-        if (!BANK_DRAG) return;
-        const t = e.target.closest('[data-dropzone]') || e.target.closest('.spread[data-zone]');
-        if (t) { e.preventDefault(); e.dataTransfer.dropEffect='copy'; }
-      });
-      sa.addEventListener('drop', function(e) {
-        if (!BANK_DRAG) return;
-        e.preventDefault(); e.stopPropagation();
-        console.log('[DROP] delegation fired, target:', e.target.className, e.target.tagName);
-        // HP half slot
-        const hpHalf = e.target.closest('[data-dhalf]');
-        if (hpHalf) {
-          slotDrop(e, hpHalf.getAttribute('data-dz'), parseInt(hpHalf.getAttribute('data-dsi')),
-            hpHalf.getAttribute('data-dside'), 'any', hpHalf.getAttribute('data-dhalf')); return;
-        }
-        // Page slot
-        const slot = e.target.closest('[data-dropzone]');
-        if (slot) {
-          slotDrop(e, slot.getAttribute('data-dz'), parseInt(slot.getAttribute('data-dsi')),
-            slot.getAttribute('data-dside'), slot.getAttribute('data-dtype'), null); return;
-        }
-        // Spread (2P)
-        const spread = e.target.closest('.spread[data-zone]');
-        if (spread) {
-          spreadDrop(e, spread.getAttribute('data-zone'), parseInt(spread.getAttribute('data-si'))); return;
-        }
-      });
-    }
-  }
 }
 
 function renderPageSide(slot, si, side, pageType) {
