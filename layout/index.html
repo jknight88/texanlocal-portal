@@ -559,40 +559,57 @@ function renderSpreads() {
   const grid = document.getElementById('spreadsGrid');
   if (grid) grid.style.zoom = zoomScale;
 
-  // Clear drag state on dragend for any placed element
-  document.querySelectorAll('[draggable="true"]').forEach(function(el) {
-    el.addEventListener('dragend', function() {
-      isDragging = false;
-      dragItem   = null;
-    });
-  });
-
-  // Init drag events on all page sides using event delegation on spread area
+  // Event delegation - runs fresh each render to pick up new slots
   const sa = document.getElementById('spreadArea');
-  if (sa && !sa._dragInited) {
-    sa._dragInited = true;
-    sa.addEventListener('dragover', function(e){
-      if (e.target.closest('.page-side') || e.target.closest('.slot-hp') || e.target.closest('.spread')) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    });
+  if (sa) {
+    // Remove old listener by cloning
+    const newSa = sa.cloneNode(true);
+    sa.parentNode.replaceChild(newSa, newSa); // no-op clone trick doesn't work, use flag
+    if (!sa._dropInited) {
+      sa._dropInited = true;
+      sa.addEventListener('dragover', function(e) {
+        if (!BANK_DRAG) return;
+        const t = e.target.closest('[data-dropzone]') || e.target.closest('.spread[data-zone]');
+        if (t) { e.preventDefault(); e.dataTransfer.dropEffect='copy'; }
+      });
+      sa.addEventListener('drop', function(e) {
+        if (!BANK_DRAG) return;
+        e.preventDefault(); e.stopPropagation();
+        console.log('[DROP] delegation fired, target:', e.target.className, e.target.tagName);
+        // HP half slot
+        const hpHalf = e.target.closest('[data-dhalf]');
+        if (hpHalf) {
+          slotDrop(e, hpHalf.getAttribute('data-dz'), parseInt(hpHalf.getAttribute('data-dsi')),
+            hpHalf.getAttribute('data-dside'), 'any', hpHalf.getAttribute('data-dhalf')); return;
+        }
+        // Page slot
+        const slot = e.target.closest('[data-dropzone]');
+        if (slot) {
+          slotDrop(e, slot.getAttribute('data-dz'), parseInt(slot.getAttribute('data-dsi')),
+            slot.getAttribute('data-dside'), slot.getAttribute('data-dtype'), null); return;
+        }
+        // Spread (2P)
+        const spread = e.target.closest('.spread[data-zone]');
+        if (spread) {
+          spreadDrop(e, spread.getAttribute('data-zone'), parseInt(spread.getAttribute('data-si'))); return;
+        }
+      });
+    }
   }
 }
 
 function renderPageSide(slot, si, side, pageType) {
   pageType = pageType || 'any';
-  const da = 'ondragover="slotDragOver(event,\\'+pageType+'\')" ondrop="slotDrop(event,\\'+activeZone+'\','+si+',\\'+side+'\',\\'+pageType+'\')"';
-  const hintText  = pageType==='FC' ? '🏠 Front Cover (FC/FP)' : pageType==='BP' ? '⬅ Back Page (BP/FP)' : 'Drop FP, HP, or 2P';
+  const hintText  = pageType==='FC' ? '🏠 Front Cover (FC only)' : pageType==='BP' ? '⬅ Back Page (BP only)' : 'Drop FP, HP, or 2P here';
   const hintColor = pageType==='FC'||pageType==='BP' ? '#BF0D3E' : '#aaa';
-
-  const isSingle = pageType === 'FC' || pageType === 'BP';
+  const isSingle  = pageType === 'FC' || pageType === 'BP';
   const singleStyle = isSingle ? ' style="flex:0 0 calc(50% - 2px)"' : '';
+  const dropAttrs = 'data-dropzone="1" data-dz="'+esc(activeZone)+'" data-dsi="'+si+'" data-dside="'+side+'" data-dtype="'+pageType+'"';
 
   if (!slot) {
-    return '<div class="page-side"'+singleStyle+' '+
+    return '<div class="page-side drop-target"'+singleStyle+' '+dropAttrs+' '+
       'onclick="placeSelected(\''+activeZone+'\','+si+',\''+side+'\',\''+pageType+'\',null)">'+
-      '<div class="page-empty">'+
+      '<div class="page-empty" style="pointer-events:none">'+
         '<div style="font-size:20px">'+(pageType==='FC'?'🏠':pageType==='BP'?'⬅':'📄')+'</div>'+
         '<div class="drop-hint" style="color:'+hintColor+'">'+hintText+'</div>'+
       '</div>'+
@@ -600,7 +617,7 @@ function renderPageSide(slot, si, side, pageType) {
   }
 
   if (slot.type==='hp-pair') {
-    return '<div class="page-side"'+singleStyle+' '+da+'>'+
+    return '<div class="page-side"'+singleStyle+' '+dropAttrs+'>'+
       '<div class="hp-pair">'+
         renderHpSlot(slot.left,  si, side, 'left')  +
         renderHpSlot(slot.right, si, side, 'right') +
@@ -610,38 +627,38 @@ function renderPageSide(slot, si, side, pageType) {
 
   // FP/FC/BP
   const thumb = slot.thumbUrl
-    ? '<img src="'+slot.thumbUrl+'" alt="'+esc(slot.business)+'" loading="lazy">'
-    : '<div class="no-thumb"><span style="font-size:22px">📄</span><span>N/A</span></div>';
+    ? '<img src="'+slot.thumbUrl+'" alt="'+esc(slot.business)+'" loading="lazy" style="pointer-events:none">'
+    : '<div class="no-thumb" style="pointer-events:none"><span style="font-size:22px">📄</span><span>N/A</span></div>';
 
-  return '<div class="page-side"'+singleStyle+' '+da+'>'+
-    '<div class="slot-fp" '+
-      'data-zone="'+esc(activeZone)+'" data-si="'+si+'" data-side="'+side+'" '+
-      'onclick="event.stopPropagation();selectPlaced(\''+esc(activeZone)+'\','+si+',\''+side+'\',null)">'+
+  return '<div class="page-side"'+singleStyle+' '+dropAttrs+' '+
+    'onclick="event.stopPropagation();selectPlaced(\''+esc(activeZone)+'\','+si+',\''+side+'\',null)">'+
+    '<div class="slot-fp" style="pointer-events:none">'+
       thumb+
-      '<div class="ad-label">'+esc(slot.business)+'</div>'+
-      '<span class="size-pip">'+(slot.size||'FP')+'</span>'+
-      '<button class="btn-rm" onclick="event.stopPropagation();removeSlot(\\'+activeZone+'\','+si+',\\'+side+'\')">✕</button>'+
+      '<div class="ad-label" style="pointer-events:none">'+esc(slot.business)+'</div>'+
+      '<span class="size-pip" style="pointer-events:none">'+(slot.size||'FP')+'</span>'+
     '</div>'+
+    '<button class="btn-rm" style="pointer-events:auto" onclick="event.stopPropagation();removeSlot(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>'+
   '</div>';
 }
 
 function renderHpSlot(art, si, pageSide, half) {
-  const da = 'ondragover="hpDragOver(event)" ondrop="hpDrop(event,\\'+activeZone+'\','+si+',\\'+pageSide+'\',\\'+half+'\')"';
+  const dropAttrs = 'data-dropzone="1" data-dz="'+esc(activeZone)+'" data-dsi="'+si+'" data-dside="'+pageSide+'" data-dhalf="'+half+'" data-dtype="any"';
   if (!art) {
-    return '<div class="slot-hp empty" '+
+    return '<div class="slot-hp empty" '+dropAttrs+' '+
       'onclick="event.stopPropagation();placeSelected(\''+activeZone+'\','+si+',\''+pageSide+'\',\'any\',\''+half+'\')">'+
-      '<span style="font-size:12px;color:#aaa">📄</span>'+
-      '<span style="font-size:8px;color:#aaa">HP</span>'+
+      '<span style="font-size:12px;color:#aaa;pointer-events:none">📄</span>'+
+      '<span style="font-size:8px;color:#aaa;pointer-events:none">HP</span>'+
     '</div>';
   }
   const thumb = art.thumbUrl
-    ? '<img src="'+art.thumbUrl+'" alt="'+esc(art.business)+'" loading="lazy">'
-    : '<div class="no-thumb"><span style="font-size:14px">📄</span></div>';
-  return '<div class="slot-hp has-ad" '+da+' draggable="true" ondragstart="placedDragStart(event,\\'+activeZone+'\','+si+',\\'+pageSide+'\',\\'+half+'\')">'+
+    ? '<img src="'+art.thumbUrl+'" alt="'+esc(art.business)+'" loading="lazy" style="pointer-events:none">'
+    : '<div class="no-thumb" style="pointer-events:none"><span style="font-size:14px">📄</span></div>';
+  return '<div class="slot-hp has-ad" '+dropAttrs+' '+
+    'onclick="event.stopPropagation();selectPlaced(\''+esc(activeZone)+'\','+si+',\''+pageSide+'\',\''+half+'\')">'+
     thumb+
-    '<div class="ad-label">'+esc(art.business)+'</div>'+
-    '<span class="size-pip">HP</span>'+
-    '<button class="btn-rm" onclick="removeHp(\\'+activeZone+'\','+si+',\\'+pageSide+'\',\\'+half+'\')">✕</button>'+
+    '<div class="ad-label" style="pointer-events:none">'+esc(art.business)+'</div>'+
+    '<span class="size-pip" style="pointer-events:none">HP</span>'+
+    '<button class="btn-rm" style="pointer-events:auto" onclick="event.stopPropagation();removeHp(\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">✕</button>'+
   '</div>';
 }
 
