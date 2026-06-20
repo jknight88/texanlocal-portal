@@ -249,6 +249,8 @@ async function init() {
   const token = sessionStorage.getItem('txl_token');
   const res   = await fetch(API+'/authVerify'+(token?'?token='+token:''),{credentials:'include'});
   if (!res.ok) { window.location.href='/'; return; }
+  const user  = await res.json();
+  if (!user.role) { window.location.href='/'; return; }
 
   // Store role for UI decisions
   window._portalRole = user.role;
@@ -285,6 +287,9 @@ async function init() {
   initDragDrop();
   fixPanelTop();
   window.addEventListener('resize', fixPanelTop);
+
+  // Designer: auto-load so they see the saved layout immediately
+  if (window._readOnly) loadLayout();
 }
 
 function updateRoleUI() {
