@@ -38,10 +38,10 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .zone-tab.active .z-cnt{background:var(--rd)}
 
 /* Workspace */
-.workspace{display:flex;flex:1;min-height:0;height:calc(100vh - 110px);overflow:hidden}
+.workspace{display:flex;flex:1;min-height:0;height:calc(100vh - 110px);overflow:hidden;position:relative}
 
 /* Spread area */
-.spread-area{flex:1;overflow-y:scroll;overflow-x:hidden;padding:1rem;background:#1a1a2e;display:flex;flex-direction:column;gap:.5rem;height:100%;min-height:0}
+.spread-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:1rem;background:#1a1a2e;flex-direction:column;gap:.5rem;min-height:0;height:100%;display:block}
 .zone-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.5rem .8rem;background:#111827;border-radius:6px;margin-bottom:.5rem;flex-shrink:0}
 .zone-toolbar h2{font-size:12px;font-weight:700;color:#fff}
 .zone-toolbar .pg-info{font-size:11px;color:rgba(255,255,255,.5)}
@@ -113,13 +113,13 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .spread-2p-gutter{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#1a1a2e;transform:translateX(-50%);z-index:4}
 
 /* Artwork panel */
-.art-panel{width:260px;background:#111827;border-left:1px solid #2a3550;display:flex;flex-direction:column;flex-shrink:0;height:100%;min-height:0;overflow:hidden}
+.art-panel{width:260px;background:#111827;border-left:1px solid #2a3550;display:flex;flex-direction:column;flex-shrink:0;height:100%;min-height:0;overflow:hidden;position:relative}
 .art-panel-hdr{background:#0a0f1e;padding:.6rem .8rem;flex-shrink:0}
 .art-panel-hdr h3{color:#fff;font-size:11px;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
 .art-panel-filters{display:flex;flex-direction:column;gap:5px}
 .art-panel-filters select,.art-panel-filters input{width:100%;padding:4px 7px;border:1px solid #2a3550;border-radius:3px;font-size:11px;font-family:inherit;background:#1a2540;color:#fff;outline:none}
 .art-panel-filters select option{background:#1a2540}
-.art-list{flex:1;overflow-y:scroll;padding:.5rem;min-height:0}
+.art-list{flex:1;overflow-y:auto;padding:.5rem;min-height:0;height:0}
 
 /* Art card */
 .art-card{background:#1e2a42;border:1px solid #2a3550;border-radius:4px;margin-bottom:5px;cursor:grab;transition:all .15s;overflow:hidden}
@@ -506,7 +506,7 @@ function renderSpreads() {
       // Page 1: Front Cover - standalone, centered, half width
       html += '<div class="spread-wrap" style="grid-column:1/-1">'+
         '<div class="spread-label">Page 1 — Front Cover</div>'+
-        '<div class="spread" id="sp-'+activeZone+'-'+si+'" style="max-width:calc(50% - 4px);margin:0 auto">'+
+        '<div class="spread" id="sp-'+activeZone+'-'+si+'" style="width:calc(50% - 3px);margin:0 auto">'+
           renderPageSide(sp.left, si, 'left', 'FC')+
         '</div></div>';
       return;
@@ -517,7 +517,7 @@ function renderSpreads() {
       const lastPageNum = (totalSpreads - 1) * 2;
       html += '<div class="spread-wrap" style="grid-column:1/-1">'+
         '<div class="spread-label">Page '+lastPageNum+' — Back Page</div>'+
-        '<div class="spread" id="sp-'+activeZone+'-'+si+'" style="max-width:calc(50% - 4px);margin:0 0 0 auto">'+
+        '<div class="spread" id="sp-'+activeZone+'-'+si+'" style="width:calc(50% - 3px);margin:0 0 0 auto">'+
           renderPageSide(sp.right, si, 'right', 'BP')+
         '</div></div>';
       return;
@@ -646,6 +646,14 @@ function onArtDrag(e, artId) {
 }
 function onArtDragEnd(e) {}
 
+function placedDragStartEl(e, el) {
+  const zId = el.getAttribute('data-zone');
+  const si   = parseInt(el.getAttribute('data-si'));
+  const side = el.getAttribute('data-side');
+  const half = el.getAttribute('data-half') || null;
+  placedDragStart(e, zId, si, side, half);
+}
+
 function placedDragStart(e, zId, si, side, half) {
   e.stopPropagation();
   const layout = layouts[zId];
@@ -673,9 +681,10 @@ function slotDragOver(e, pageType) {
   e.stopPropagation();
   if (!dragItem || !dragItem.artwork) return;
   const sz = dragItem.artwork.size;
-  if (pageType==='FC' && sz!=='FC' && sz!=='FP') { e.dataTransfer.dropEffect='none'; return; }
-  if (pageType==='BP' && sz!=='BP' && sz!=='FP') { e.dataTransfer.dropEffect='none'; return; }
-  if (sz==='2P') { e.dataTransfer.dropEffect='none'; return; } // 2P handled by spread
+  if (sz==='2P') { e.dataTransfer.dropEffect='none'; return; }
+  if (pageType==='FC' && sz!=='FC') { e.dataTransfer.dropEffect='none'; return; }
+  if (pageType==='BP' && sz!=='BP') { e.dataTransfer.dropEffect='none'; return; }
+  if (pageType==='any' && (sz==='FC'||sz==='BP')) { e.dataTransfer.dropEffect='none'; return; }
   e.dataTransfer.dropEffect = 'copy';
 }
 
@@ -689,8 +698,12 @@ function slotDrop(e, zId, si, side, pageType) {
     if (pageType==='FC'||pageType==='BP') { showToast('2P spread cannot go on FC or BP pages',true); return; }
     drop2P(e,zId,si); return;
   }
-  if (pageType==='FC' && art.size!=='FC' && art.size!=='FP') { showToast('Front Cover: FC or FP only',true); return; }
-  if (pageType==='BP' && art.size!=='BP' && art.size!=='FP') { showToast('Back Page: BP or FP only',true); return; }
+  // FC page: only FC ads
+  if (pageType==='FC' && art.size!=='FC') { showToast('Front Cover page: only FC ads allowed here',true); return; }
+  // BP page: only BP ads
+  if (pageType==='BP' && art.size!=='BP') { showToast('Back Page: only BP ads allowed here',true); return; }
+  // Interior pages: no FC or BP ads
+  if (pageType==='any' && (art.size==='FC'||art.size==='BP')) { showToast(art.size+' ads only go on the front/back cover',true); return; }
 
   const layout = layouts[zId];
   const sp     = layout.spreads[si];
@@ -747,6 +760,26 @@ function dragOver2P(e) {
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
   }
+}
+
+function spreadDragOver(e, el) {
+  if (!dragItem || !dragItem.artwork) return;
+  if (dragItem.artwork.size==='2P') {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+    el.style.outline = '2px solid #BF0D3E';
+  }
+}
+
+function spreadDrop(e, el) {
+  el.style.outline = '';
+  if (!dragItem || !dragItem.artwork || dragItem.artwork.size!=='2P') return;
+  e.preventDefault();
+  e.stopPropagation();
+  const zId = el.getAttribute('data-zone');
+  const si  = parseInt(el.getAttribute('data-si'));
+  drop2P(e, zId, si);
 }
 
 function drop2P(e, zId, si) {
