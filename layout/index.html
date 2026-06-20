@@ -189,7 +189,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
     <button class="btn-load" onclick="loadLayout()">Load</button>
     <div class="zoom-bar">
       <label>Zoom</label>
-      <input type="range" id="zoomRange" min="40" max="150" value="100" oninput="applyZoom(this.value)">
+      <input type="range" id="zoomRange" min="40" max="200" value="100" oninput="applyZoom(this.value)">
       <span id="zoomLabel">100%</span>
     </div>
   </div>
@@ -661,10 +661,25 @@ async function genAllThumbs() {
 
 // ── Zoom ──────────────────────────────────────────────────────────────────────
 function applyZoom(val) {
-  zoomScale = val/100;
-  document.getElementById('zoomLabel').textContent = val+'%';
+  zoomScale = val / 100;
+  document.getElementById('zoomLabel').textContent = val + '%';
   const grid = document.getElementById('spreadsGrid');
-  if (grid) grid.style.zoom = zoomScale;
+  if (!grid) return;
+
+  // Reflow grid columns based on zoom level
+  // Pages keep aspect-ratio so they naturally resize with the grid cells
+  if (zoomScale >= 1.5) {
+    grid.style.gridTemplateColumns = '1fr';          // 1 spread per row, very large
+  } else if (zoomScale >= 1.0) {
+    grid.style.gridTemplateColumns = '1fr 1fr';      // 2 per row (default 100%)
+  } else if (zoomScale >= 0.6) {
+    grid.style.gridTemplateColumns = '1fr 1fr 1fr';  // 3 per row, smaller
+  } else {
+    grid.style.gridTemplateColumns = '1fr 1fr 1fr 1fr'; // 4 per row, overview
+  }
+
+  // Scale font sizes proportionally
+  grid.style.fontSize = (zoomScale * 100) + '%';
 }
 
 // ── Render Spreads ────────────────────────────────────────────────────────────
@@ -741,9 +756,9 @@ function renderSpreads() {
 
   document.getElementById('spreadArea').innerHTML = html;
 
-  // Reapply zoom
-  const grid = document.getElementById('spreadsGrid');
-  if (grid) grid.style.zoom = zoomScale;
+  // Reapply zoom after render
+  applyZoom(Math.round(zoomScale * 100));
+  fixPanelTop();
 }
 
 function renderPageSide(slot, si, side, pageType) {
