@@ -284,6 +284,11 @@ function initDragDrop() {
   var ghost = document.getElementById('drag-ghost');
   var dragging = false;
   var lastHighlight = null;
+  lastPointerX = null;
+
+  // Track pointer X globally for HP half detection
+  document.addEventListener('pointermove', function(e) { lastPointerX = e.clientX; });
+  document.addEventListener('pointerup',   function(e) { lastPointerX = e.clientX; });
 
   function showGhost(e, label) {
     ghost.textContent = label;
@@ -797,18 +802,20 @@ function render2PSpread(sp, si) {
     ? '<img src="'+art.thumbUrl+'" alt="'+esc(art.business)+'" loading="lazy">'
     : '<div style="position:absolute;inset:0;background:#1a2540;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px"><span style="font-size:28px">📄</span><span style="color:#3a4a70;font-size:11px">N/A</span></div>';
   return '<div class="spread-2p-wrap" '+
+    'data-zone="'+esc(activeZone)+'" data-si="'+si+'" '+
     'onclick="event.stopPropagation();selectPlaced(\''+esc(activeZone)+'\','+si+',\'left\',null)">'+
     thumb+
     '<div class="spread-2p-gutter"></div>'+
     '<div class="ad-label">'+esc(art.business)+'</div>'+
     '<span class="size-pip">2P</span>'+
-    '<button class="btn-rm-2p" onclick="event.stopPropagation();removeSlot(\\'+activeZone+'\','+si+',\'left\')">✕</button>'+
+    '<button class="btn-rm-2p" onclick="event.stopPropagation();removeSlot(\''+esc(activeZone)+'\','+si+',\'left\')">✕</button>'+
   '</div>';
 }
 
 // ── Selection & Drag from Bank ───────────────────────────────────────────────
 var SEL = null; // selected item for click-to-place
 var BANK_DRAG = null; // art being dragged from bank
+var lastPointerX = null; // for HP half detection
 
 function artDragStart(e, artId) {
   const art = allArtwork.find(function(a){ return a.id===artId; });
@@ -853,19 +860,28 @@ function slotDrop(e, zId, si, side, pageType, half) {
 
   if (art.size==='HP') {
     if (half) {
+      // Explicit half specified (dropped on an HP slot directly)
       if (!sp[side] || sp[side].type!=='hp-pair') sp[side]={ type:'hp-pair', left:null, right:null };
       if (sp[side][half] && sp[side][half]!==art) bumpBack(sp[side][half]);
       sp[side][half] = art;
     } else {
+      // Dropped on whole page-side - detect which half based on pointer X position
+      var detectedHalf = 'left';
+      if (lastPointerX !== null) {
+        // Find the page-side element to get its bounds
+        var slotEl = document.querySelector('[data-dz="'+zId+'"][data-dsi="'+si+'"][data-dside="'+side+'"]');
+        if (slotEl) {
+          var rect = slotEl.getBoundingClientRect();
+          detectedHalf = (lastPointerX > rect.left + rect.width / 2) ? 'right' : 'left';
+        }
+      }
       const cur = sp[side];
       if (!cur || cur.type!=='hp-pair') {
         if (cur && cur.id) bumpBack(cur);
-        sp[side] = { type:'hp-pair', left:art, right:null };
-      } else {
-        if (!cur.left)       cur.left  = art;
-        else if (!cur.right) cur.right = art;
-        else { bumpBack(cur.left); cur.left = art; }
+        sp[side] = { type:'hp-pair', left:null, right:null };
       }
+      if (sp[side][detectedHalf] && sp[side][detectedHalf]!==art) bumpBack(sp[side][detectedHalf]);
+      sp[side][detectedHalf] = art;
     }
   } else {
     // FP/FC/BP
