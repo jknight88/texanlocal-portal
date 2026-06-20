@@ -63,11 +63,27 @@ module.exports = async function(context, req) {
 
       // If changes requested — email designer AND notify rep
       if (action === 'changes') {
-        const biz      = record.business || record.clientName || 'A client';
-        const month    = record.month    || '';
-        const filename = record.filename || record.proofFile || '';
+        const biz      = record.business || 'A client';
+        const month    = record.mailingMonthLabel || (record.mailingMonth ? record.mailingMonth+'/'+record.mailingYear : '');
+        const filename = record.filesUsed && record.filesUsed.length ? record.filesUsed.join(', ') : '';
         const dashUrl  = BASE_URL + '/approvals/dashboard';
         const fileUrl  = BASE_URL + '/files';
+
+        // Load designer/rep info from company settings
+        let designerEmail = DESIGNER_EMAIL;
+        let designerName  = 'Sherry';
+        let repEmail      = NOTIFY_EMAIL;
+        let repName       = 'Josh';
+        try {
+          const blobSvc2  = BlobServiceClient.fromConnectionString(STORAGE_CONN);
+          const settingsC = blobSvc2.getContainerClient('portal-data');
+          const settingsBuf = await settingsC.getBlockBlobClient('company-settings.json').downloadToBuffer();
+          const settings  = JSON.parse(settingsBuf.toString());
+          if (settings.designerEmail) designerEmail = settings.designerEmail;
+          if (settings.designerName)  designerName  = settings.designerName.split(' ')[0];
+          if (settings.pubEmail)      repEmail      = settings.pubEmail;
+          if (settings.pubPublisher)  repName       = settings.pubPublisher.split(' ')[0];
+        } catch(e) { context.log.warn('Could not load company settings:', e.message); }
 
         // Email to designer (Sherry)
         const designerHtml = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
@@ -127,10 +143,10 @@ module.exports = async function(context, req) {
           </div>
         </body></html>`;
 
-        try { await sendEmail(DESIGNER_EMAIL, 'Sherry Justice', 'Ad Changes Needed — '+biz+' ('+month+')', designerHtml); }
+        try { await sendEmail(designerEmail, designerName, 'Ad Changes Needed — '+biz+' ('+month+')', designerHtml, {address:repEmail, name:repName}); }
         catch(e) { context.log.warn('Designer email failed:', e.message); }
 
-        try { await sendEmail(NOTIFY_EMAIL, 'Josh Knight', 'Changes Requested — '+biz+' ('+month+')', repHtml); }
+        try { await sendEmail(repEmail, repName, 'Changes Requested — '+biz+' ('+month+')', repHtml); }
         catch(e) { context.log.warn('Rep notification email failed:', e.message); }
       }
 
