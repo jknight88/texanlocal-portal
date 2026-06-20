@@ -161,6 +161,10 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .toast.show{opacity:1}
 .toast.err{background:var(--rd);border-color:var(--rd)}
 .toast.ok{background:var(--green);border-color:var(--green)}
+
+/* Drag ghost */
+#drag-ghost{position:fixed;pointer-events:none;z-index:9999;background:#1e2a42;border:2px solid #BF0D3E;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.4);display:none;transform:translate(-50%,-50%)}
+.drop-target-active{outline:3px solid #BF0D3E!important;outline-offset:-3px;background:rgba(191,13,62,.08)!important}
 </style>
 </head>
 <body>
@@ -224,6 +228,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
   </div>
 </div>
 
+<div id="drag-ghost"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -276,60 +281,106 @@ async function init() {
 }
 
 function initDragDrop() {
-  // Document-level drag delegation - works across scroll containers
-  document.addEventListener('dragover', function(e) {
-    if (!BANK_DRAG) return;
-    // Always allow drop when dragging from bank - we'll validate on drop
+  var ghost = document.getElementById('drag-ghost');
+  var dragging = false;
+  var lastHighlight = null;
+
+  function showGhost(e, label) {
+    ghost.textContent = label;
+    ghost.style.display = 'block';
+    moveGhost(e);
+  }
+  function moveGhost(e) {
+    ghost.style.left = e.clientX + 'px';
+    ghost.style.top  = (e.clientY - 30) + 'px';
+  }
+  function hideGhost() {
+    ghost.style.display = 'none';
+  }
+  function highlightTarget(el) {
+    if (lastHighlight && lastHighlight !== el) lastHighlight.classList.remove('drop-target-active');
+    if (el) el.classList.add('drop-target-active');
+    lastHighlight = el;
+  }
+  function clearHighlight() {
+    if (lastHighlight) lastHighlight.classList.remove('drop-target-active');
+    lastHighlight = null;
+  }
+
+  // Pointer drag from art panel
+  document.getElementById('artList').addEventListener('pointerdown', function(e) {
+    var card = e.target.closest('.art-card');
+    if (!card) return;
+    var artId = card.id.replace('artcard-','');
+    // Decode the id (it was encoded with esc())
+    artId = card.getAttribute('data-artid') || artId;
+    var art = allArtwork.find(function(a){ return a.id===artId || card.id==='artcard-'+a.id.replace(/[^a-zA-Z0-9]/g,''); });
+    if (!art) {
+      // Try by business name match
+      var biz = card.querySelector('.card-biz');
+      if (biz) art = allArtwork.find(function(a){ return a.business===biz.textContent; });
+    }
+    if (!art) return;
+
+    BANK_DRAG = art;
+    dragging = true;
+    card.style.opacity = '0.5';
+    showGhost(e, art.business + ' [' + art.size + ']');
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  });
 
-  document.addEventListener('drop', function(e) {
-    if (!BANK_DRAG) return;
-    e.preventDefault();
-    console.log('[DROP] doc drop fired on:', e.target.tagName, e.target.className);
-
-    // HP half first (most specific)
-    const hpHalf = e.target.closest('[data-dhalf]');
-    if (hpHalf) {
-      console.log('[DROP] HP half:', hpHalf.getAttribute('data-dhalf'));
-      slotDrop(e,
-        hpHalf.getAttribute('data-dz'),
-        parseInt(hpHalf.getAttribute('data-dsi')),
-        hpHalf.getAttribute('data-dside'),
-        'any',
-        hpHalf.getAttribute('data-dhalf')
-      ); return;
+    function onMove(ev) {
+      if (!dragging) return;
+      moveGhost(ev);
+      var el = document.elementFromPoint(ev.clientX, ev.clientY);
+      var slot = el && (el.closest('[data-dropzone]') || el.closest('.spread[data-zone]') || el.closest('[data-dhalf]'));
+      highlightTarget(slot);
     }
 
-    // Page slot
-    const slot = e.target.closest('[data-dropzone]');
-    if (slot) {
-      console.log('[DROP] slot:', slot.getAttribute('data-dside'), slot.getAttribute('data-dtype'));
-      slotDrop(e,
-        slot.getAttribute('data-dz'),
-        parseInt(slot.getAttribute('data-dsi')),
-        slot.getAttribute('data-dside'),
-        slot.getAttribute('data-dtype'),
-        null
-      ); return;
+    function onUp(ev) {
+      if (!dragging) return;
+      dragging = false;
+      card.style.opacity = '';
+      hideGhost();
+      clearHighlight();
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+
+      if (!BANK_DRAG) return;
+      var el = document.elementFromPoint(ev.clientX, ev.clientY);
+      console.log('[DROP] pointer drop on:', el ? el.tagName+'.'+el.className : 'null');
+
+      // HP half
+      var hpHalf = el && el.closest('[data-dhalf]');
+      if (hpHalf) {
+        slotDrop(null, hpHalf.getAttribute('data-dz'), parseInt(hpHalf.getAttribute('data-dsi')),
+          hpHalf.getAttribute('data-dside'), 'any', hpHalf.getAttribute('data-dhalf'));
+        BANK_DRAG = null; return;
+      }
+      // Page slot
+      var slot = el && el.closest('[data-dropzone]');
+      if (slot) {
+        slotDrop(null, slot.getAttribute('data-dz'), parseInt(slot.getAttribute('data-dsi')),
+          slot.getAttribute('data-dside'), slot.getAttribute('data-dtype'), null);
+        BANK_DRAG = null; return;
+      }
+      // 2P spread
+      var spread = el && el.closest('.spread[data-zone]');
+      if (spread) {
+        spreadDrop(null, spread.getAttribute('data-zone'), parseInt(spread.getAttribute('data-si')));
+        BANK_DRAG = null; return;
+      }
+
+      console.log('[DROP] missed - no valid target');
+      BANK_DRAG = null;
     }
 
-    // Spread for 2P
-    const spread = e.target.closest('.spread[data-zone]');
-    if (spread) {
-      console.log('[DROP] spread 2P');
-      spreadDrop(e, spread.getAttribute('data-zone'), parseInt(spread.getAttribute('data-si'))); return;
-    }
-
-    console.log('[DROP] no target found - missed');
-    BANK_DRAG = null;
-  });
-
-  document.addEventListener('dragend', function() {
-    BANK_DRAG = null;
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   });
 }
+
+// slotDrop now accepts null event (pointer-based)
+
 
 function buildZoneTabs() {
   document.getElementById('zoneTabs').innerHTML = zones.map(function(z){
@@ -477,11 +528,11 @@ function renderArtPanel() {
       : '<div class="thumb-na"><div class="na-label">N/A</div><div class="na-sub">No preview</div></div>' +
         '<button class="btn-gen-thumb" onclick="event.stopPropagation();genThumb(\''+esc(a.id)+'\',\''+esc(a.path)+'\',this)">Generate</button>';
 
-    return '<div class="art-card '+cc+(SEL&&SEL.art&&SEL.art.id===a.id?' selected':'')+'" draggable="true" id="artcard-'+esc(a.id)+'" '+
-      'ondragstart="artDragStart(event,\''+esc(a.id)+'\')" '+
-      'ondragend="artDragEnd(event)" '+
+    return '<div class="art-card '+cc+(SEL&&SEL.art&&SEL.art.id===a.id?' selected':'')+'" '+
+      'id="artcard-'+esc(a.id)+'" '+
+      'data-artid="'+esc(a.id)+'" '+
       'onclick="selectArt(\''+esc(a.id)+'\')" '+
-      'style="cursor:grab">'+
+      'style="cursor:grab;user-select:none">'+
       '<div class="thumb-wrap">'+thumbHtml+'</div>'+
       '<div class="card-info">'+
         '<div class="card-biz">'+esc(a.business)+'</div>'+
