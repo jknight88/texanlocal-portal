@@ -503,26 +503,24 @@ function renderSpreads() {
     const is2P = !isFC && !isBP && sp.left && sp.left.size === '2P';
 
     if (isFC) {
-      // Page 1: FC - fills left half of first spread slot, right half blank
       html += '<div class="spread-wrap">'+
         '<div class="spread-label">Page 1 — Front Cover</div>'+
         '<div class="spread" id="sp-'+activeZone+'-'+si+'"'+
           ' data-zone="'+activeZone+'" data-si="'+si+'">'+
+          '<div class="page-side" style="background:#111827;border:none;flex:1"></div>'+
           renderPageSide(sp.left, si, 'left', 'FC')+
-          '<div class="page-side" style="background:#111;border:none;flex:1"></div>'+
         '</div></div>';
       return;
     }
 
     if (isBP) {
-      // Last page: BP - fills right half, left half blank
       const lastPageNum = (totalSpreads - 1) * 2;
       html += '<div class="spread-wrap">'+
         '<div class="spread-label">Page '+lastPageNum+' — Back Page</div>'+
         '<div class="spread" id="sp-'+activeZone+'-'+si+'"'+
           ' data-zone="'+activeZone+'" data-si="'+si+'">'+
-          '<div class="page-side" style="background:#111;border:none;flex:1"></div>'+
           renderPageSide(sp.right, si, 'right', 'BP')+
+          '<div class="page-side" style="background:#111827;border:none;flex:1"></div>'+
         '</div></div>';
       return;
     }
