@@ -55,12 +55,9 @@ if (action === 'approved') {
   document.getElementById('card').classList.add('changes');
   document.getElementById('icon').textContent  = '✏️';
   document.getElementById('title').textContent = 'Changes Requested';
-  document.getElementById('message').innerHTML = 'Your request has been noted. Please send us an email describing the specific changes needed and we\'ll get them taken care of right away.';
-  const subject = encodeURIComponent('Ad Changes Requested' + (id ? ' — Ref: ' + id.slice(0,8) : ''));
-  const body    = encodeURIComponent('Hi Josh,\n\nI have reviewed my ad proof and would like to request the following changes:\n\n[Please describe your requested changes here]\n\nThank you!');
+  document.getElementById('message').innerHTML = 'Your request has been noted and our design team has been automatically notified. We\'ll get your revisions taken care of and send you an updated proof shortly.';
   document.getElementById('actionArea').innerHTML =
-    `<a class="mailto-btn" href="mailto:josh@thetexanlocal.com?subject=${subject}&body=${body}">📧 Send Change Request Email</a>
-     <p style="margin-top:12px;font-size:12px;color:#aaa">This will open your email with a pre-filled message.</p>`;
+    '<p style="font-size:13px;color:#aaa;margin-top:12px">✓ Our team has been notified automatically. No further action needed.</p>';
 
 } else {
   document.getElementById('icon').textContent    = '❓';
