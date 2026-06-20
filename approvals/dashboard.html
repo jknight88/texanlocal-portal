@@ -117,7 +117,7 @@ select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:1
   <div class="controls">
     <div class="ctrl-group">
       <label>Month</label>
-      <select id="selMonth">
+      <select id="selMonth"><option value="">All Months</option>
         <option value="01">January</option><option value="02">February</option>
         <option value="03">March</option><option value="04">April</option>
         <option value="05">May</option><option value="06">June</option>
@@ -208,10 +208,6 @@ async function init() {
   }
 
   const now = new Date();
-  const nextMonth = now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2;
-  document.getElementById('selMonth').value = String(nextMonth).padStart(2,'0');
-  document.getElementById('selYear').value  = now.getFullYear();
-
   // Load master client list
   try {
     const cr = await fetch(API + '/getClients', { credentials: 'include' });
@@ -219,7 +215,40 @@ async function init() {
     allClients = (cd.clients || []).filter(c => !c.group || c.group === 'active');
   } catch(e) {}
 
+  // Auto-detect most recent month with approvals sent
+  await autoDetectMonth();
   loadDashboard();
+}
+
+async function autoDetectMonth() {
+  try {
+    // Load all records without month filter to find most recent
+    const res  = await fetch(API + '/getApprovalsDashboard', { credentials: 'include' });
+    const data = await res.json();
+    const records = data.records || [];
+
+    if (!records.length) {
+      // No records - default to current month
+      const now = new Date();
+      document.getElementById('selMonth').value = String(now.getMonth()+1).padStart(2,'0');
+      document.getElementById('selYear').value  = now.getFullYear();
+      return;
+    }
+
+    // Find most recent sentAt
+    records.sort(function(a,b){ return new Date(b.sentAt) - new Date(a.sentAt); });
+    const latest = records[0];
+    const month  = latest.mailingMonth || String(new Date(latest.sentAt).getMonth()+1).padStart(2,'0');
+    const year   = latest.mailingYear  || String(new Date(latest.sentAt).getFullYear());
+
+    document.getElementById('selMonth').value = month;
+    document.getElementById('selYear').value  = year;
+  } catch(e) {
+    // Fallback to current month
+    const now = new Date();
+    document.getElementById('selMonth').value = String(now.getMonth()+1).padStart(2,'0');
+    document.getElementById('selYear').value  = now.getFullYear();
+  }
 }
 
 async function loadDashboard() {
