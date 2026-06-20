@@ -3,66 +3,146 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>The Texan Local — Ad Proof Response</title>
+<title>The Texan Local — Ad Response</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bl:#00205B;--rd:#BF0D3E;--green:#1a5c1a}
-body{font-family:'Source Sans 3',sans-serif;background:#f5f7fa;min-height:100vh;display:flex;flex-direction:column}
-.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:1rem 2rem}
-.hdr h1{font-family:'Playfair Display',serif;font-size:18px;color:#fff}
-.page{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem}
-.card{background:#fff;border-radius:12px;box-shadow:0 6px 32px rgba(0,0,0,.12);max-width:480px;width:100%;overflow:hidden;text-align:center}
-.card-top{padding:2.5rem 2rem 1.5rem}
-.icon{font-size:64px;margin-bottom:16px}
-.card-top h2{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:10px}
-.card-top p{font-size:14px;color:#555;line-height:1.7}
-.card-bottom{background:#f9fafc;border-top:1px solid #eee;padding:1.2rem 2rem;font-size:12px;color:#999}
-.approved .card-top{border-top:6px solid var(--green)}
-.changes .card-top{border-top:6px solid var(--rd)}
-.mailto-btn{display:inline-block;background:var(--rd);color:#fff;padding:13px 28px;border-radius:5px;text-decoration:none;font-size:14px;font-weight:700;margin-top:20px}
-.mailto-btn:hover{background:#9e0a31}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.card{background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.1);max-width:520px;width:100%;overflow:hidden}
+.card-top{border-top:6px solid #00205B}
+.card-top.approved{border-top-color:#43a047}
+.card-top.changes{border-top-color:#BF0D3E}
+.card-body{padding:2rem}
+.logo{text-align:center;margin-bottom:1.5rem}
+.logo-text{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#00205B}
+.logo-sub{font-size:12px;color:#888;margin-top:2px}
+.icon{font-size:42px;text-align:center;margin-bottom:1rem}
+h1{font-size:20px;font-weight:700;color:#1a1a2e;text-align:center;margin-bottom:.75rem}
+.message{font-size:14px;color:#444;text-align:center;line-height:1.7;margin-bottom:1.5rem}
+
+/* Changes form */
+.changes-form{display:none;margin-top:1rem}
+.form-field{margin-bottom:1rem}
+.form-field label{display:block;font-size:12px;font-weight:700;color:#4a4f5e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.form-field input,.form-field textarea{width:100%;border:1px solid #c8cdd8;border-radius:5px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;resize:vertical}
+.form-field input:focus,.form-field textarea:focus{border-color:#00205B}
+.form-field textarea{min-height:120px}
+.submit-btn{width:100%;background:#BF0D3E;color:#fff;border:none;padding:13px;border-radius:5px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:.5rem;transition:background .15s}
+.submit-btn:hover{background:#a00a34}
+.submit-btn:disabled{background:#ccc;cursor:not-allowed}
+
+/* Status messages */
+.status-msg{display:none;padding:12px 16px;border-radius:5px;font-size:13px;font-weight:600;text-align:center;margin-top:1rem}
+.status-msg.success{background:#e8f5e9;color:#1a5c1a;border:1px solid #a5d6a7;display:block}
+.status-msg.error{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;display:block}
+
+.footer{text-align:center;padding:1rem 2rem;border-top:1px solid #f0f2f5;font-size:11px;color:#aaa}
 </style>
 </head>
 <body>
-<header class="hdr"><h1>The Texan Local — Ad Proof</h1></header>
-<div class="page">
-  <div class="card" id="card">
-    <div class="card-top">
-      <div class="icon" id="icon">⏳</div>
-      <h2 id="title">Processing…</h2>
-      <p id="message">Please wait.</p>
-      <div id="actionArea"></div>
+<div class="card" id="card">
+  <div class="card-top" id="cardTop"></div>
+  <div class="card-body">
+    <div class="logo">
+      <div class="logo-text">The Texan Local</div>
+      <div class="logo-sub">Where Local Residents Find Local Businesses</div>
     </div>
-    <div class="card-bottom">
-      Questions? Contact us at <strong>josh@thetexanlocal.com</strong> or call <strong>830-214-3487</strong>
+    <div class="icon" id="icon"></div>
+    <h1 id="title"></h1>
+    <p class="message" id="message"></p>
+
+    <!-- Changes form (shown only for changes action) -->
+    <div class="changes-form" id="changesForm">
+      <div class="form-field">
+        <label>Your Name *</label>
+        <input type="text" id="clientName" placeholder="Enter your name" required>
+      </div>
+      <div class="form-field">
+        <label>Changes Needed *</label>
+        <textarea id="changesText" placeholder="Please describe the changes you need on your ad..." required></textarea>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="submitChanges()">Submit Change Request</button>
+      <div class="status-msg" id="statusMsg"></div>
     </div>
+
   </div>
+  <div class="footer">The Texan Local &nbsp;·&nbsp; Internal Use Only</div>
 </div>
+
 <script>
-const params = new URLSearchParams(window.location.search);
-const action = params.get('action');
-const id     = params.get('id');
+const params   = new URLSearchParams(window.location.search);
+const id       = params.get('id')     || '';
+const action   = params.get('action') || '';
+const business = params.get('biz')    || '';
 
 if (action === 'approved') {
-  document.getElementById('card').classList.add('approved');
+  document.getElementById('cardTop').classList.add('approved');
   document.getElementById('icon').textContent    = '✅';
   document.getElementById('title').textContent   = 'Ad Approved!';
-  document.getElementById('message').textContent = 'Thank you! Your approval has been received. Your ad will run as shown in the upcoming mailing of The Texan Local.';
-  document.getElementById('actionArea').innerHTML = '<p style="margin-top:16px;font-size:12px;color:#aaa">You can close this page.</p>';
+  document.getElementById('message').textContent = 'Thank you for approving your ad. Your ad will run as shown in the upcoming mailing. We appreciate your business!';
 
 } else if (action === 'changes') {
-  document.getElementById('card').classList.add('changes');
+  document.getElementById('cardTop').classList.add('changes');
   document.getElementById('icon').textContent  = '✏️';
-  document.getElementById('title').textContent = 'Changes Requested';
-  document.getElementById('message').innerHTML = 'Your request has been noted and our design team has been automatically notified. We\'ll get your revisions taken care of and send you an updated proof shortly.';
-  document.getElementById('actionArea').innerHTML =
-    '<p style="font-size:13px;color:#aaa;margin-top:12px">✓ Our team has been notified automatically. No further action needed.</p>';
+  document.getElementById('title').textContent = 'Request Changes';
+  document.getElementById('message').textContent = 'Please describe the changes you need and we\'ll get them taken care of right away.';
+  document.getElementById('changesForm').style.display = 'block';
 
 } else {
   document.getElementById('icon').textContent    = '❓';
   document.getElementById('title').textContent   = 'Invalid Link';
   document.getElementById('message').textContent = 'This link appears to be invalid. Please contact us directly.';
+}
+
+async function submitChanges() {
+  const name    = document.getElementById('clientName').value.trim();
+  const changes = document.getElementById('changesText').value.trim();
+  const btn     = document.getElementById('submitBtn');
+  const msg     = document.getElementById('statusMsg');
+
+  if (!name)    { showError('Please enter your name.'); return; }
+  if (!changes) { showError('Please describe the changes needed.'); return; }
+
+  btn.disabled    = true;
+  btn.textContent = 'Sending…';
+  msg.className   = 'status-msg';
+  msg.style.display = 'none';
+
+  try {
+    const res  = await fetch('/api/submitChanges', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: id, clientName: name, changes: changes, business: business })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.ok) {
+      btn.style.display = 'none';
+      document.getElementById('clientName').disabled  = true;
+      document.getElementById('changesText').disabled = true;
+      document.getElementById('icon').textContent     = '✅';
+      document.getElementById('title').textContent    = 'Changes Submitted!';
+      document.getElementById('message').textContent  = 'Your change request has been sent to our team. We\'ll get back to you with a revised proof shortly.';
+      showSuccess('✓ Your change request was sent successfully!');
+    } else {
+      throw new Error(data.error || 'Send failed');
+    }
+  } catch(e) {
+    btn.disabled    = false;
+    btn.textContent = 'Submit Change Request';
+    showError('Could not send your request. Please email your changes directly to <a href="mailto:josh@thetexanlocal.com">josh@thetexanlocal.com</a> to make sure we receive them.');
+  }
+}
+
+function showSuccess(msg) {
+  const el = document.getElementById('statusMsg');
+  el.innerHTML = msg;
+  el.className = 'status-msg success';
+}
+
+function showError(msg) {
+  const el = document.getElementById('statusMsg');
+  el.innerHTML = msg;
+  el.className = 'status-msg error';
 }
 </script>
 </body>
