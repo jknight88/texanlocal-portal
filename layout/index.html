@@ -55,7 +55,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 /* Each spread */
 .spread-wrap{display:flex;flex-direction:column;gap:3px}
 .spread-label{font-size:9px;color:rgba(255,255,255,.4);text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.spread{display:flex;gap:3px;background:#0a0f1e;border-radius:3px;padding:2px;cursor:default}
+.spread{display:flex;gap:3px;background:transparent;border-radius:3px;padding:2px;cursor:default}
 
 /* Page - 11" x 6.5" ratio = 11/6.5 = 1.692 width per height */
 /* We want each page in the grid to be correct ratio */
@@ -506,8 +506,7 @@ function renderSpreads() {
       html += '<div class="spread-wrap">'+
         '<div class="spread-label">Page 1 — Front Cover</div>'+
         '<div class="spread" id="sp-'+activeZone+'-'+si+'"'+
-          ' data-zone="'+activeZone+'" data-si="'+si+'">'+
-          '<div class="page-side" style="background:#111827;border:none;flex:1"></div>'+
+          ' data-zone="'+activeZone+'" data-si="'+si+'" style="justify-content:flex-end">'+
           renderPageSide(sp.left, si, 'left', 'FC')+
         '</div></div>';
       return;
@@ -518,9 +517,8 @@ function renderSpreads() {
       html += '<div class="spread-wrap">'+
         '<div class="spread-label">Page '+lastPageNum+' — Back Page</div>'+
         '<div class="spread" id="sp-'+activeZone+'-'+si+'"'+
-          ' data-zone="'+activeZone+'" data-si="'+si+'">'+
+          ' data-zone="'+activeZone+'" data-si="'+si+'" style="justify-content:flex-start">'+
           renderPageSide(sp.right, si, 'right', 'BP')+
-          '<div class="page-side" style="background:#111827;border:none;flex:1"></div>'+
         '</div></div>';
       return;
     }
@@ -572,8 +570,11 @@ function renderPageSide(slot, si, side, pageType) {
   const hintText  = pageType==='FC' ? '🏠 Front Cover (FC/FP)' : pageType==='BP' ? '⬅ Back Page (BP/FP)' : 'Drop FP, HP, or 2P';
   const hintColor = pageType==='FC'||pageType==='BP' ? '#BF0D3E' : '#aaa';
 
+  const isSingle = pageType === 'FC' || pageType === 'BP';
+  const singleStyle = isSingle ? ' style="flex:0 0 calc(50% - 2px)"' : '';
+
   if (!slot) {
-    return '<div class="page-side" '+da+'>'+
+    return '<div class="page-side"'+singleStyle+' '+da+'>'+
       '<div class="page-empty" '+da+'>'+
         '<div style="font-size:20px">'+(pageType==='FC'?'🏠':pageType==='BP'?'⬅':'📄')+'</div>'+
         '<div class="drop-hint" style="color:'+hintColor+'">'+hintText+'</div>'+
@@ -582,7 +583,7 @@ function renderPageSide(slot, si, side, pageType) {
   }
 
   if (slot.type==='hp-pair') {
-    return '<div class="page-side" '+da+'>'+
+    return '<div class="page-side"'+singleStyle+' '+da+'>'+
       '<div class="hp-pair">'+
         renderHpSlot(slot.left,  si, side, 'left')  +
         renderHpSlot(slot.right, si, side, 'right') +
@@ -590,17 +591,19 @@ function renderPageSide(slot, si, side, pageType) {
     '</div>';
   }
 
-  // FP
+  // FP/FC/BP
   const thumb = slot.thumbUrl
     ? '<img src="'+slot.thumbUrl+'" alt="'+esc(slot.business)+'" loading="lazy">'
     : '<div class="no-thumb"><span style="font-size:22px">📄</span><span>N/A</span></div>';
 
-  return '<div class="page-side" '+da+'>'+
-    '<div class="slot-fp" draggable="true" ondragstart="placedDragStart(event,\''+activeZone+'\','+si+',\''+side+'\')">'+
+  return '<div class="page-side"'+singleStyle+' '+da+'>'+
+    '<div class="slot-fp" draggable="true" '+
+      'data-zone="'+activeZone+'" data-si="'+si+'" data-side="'+side+'" '+
+      'ondragstart="placedDragStartEl(event,this)">'+
       thumb+
       '<div class="ad-label">'+esc(slot.business)+'</div>'+
       '<span class="size-pip">'+(slot.size||'FP')+'</span>'+
-      '<button class="btn-rm" onclick="removeSlot(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>'+
+      '<button class="btn-rm" onclick="event.stopPropagation();removeSlot(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>'+
     '</div>'+
   '</div>';
 }
