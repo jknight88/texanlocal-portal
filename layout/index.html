@@ -725,7 +725,8 @@ function renderSpreads() {
   const editControls = window._readOnly ? '' :
     '<button class="btn-pg" onclick="removePgs()">− 4 Pages</button>'+
     '<button class="btn-pg" onclick="addPgs()">+ 4 Pages</button>'+
-    '<button class="btn-email-designer" onclick="emailDesigner()" id="btnEmailDesigner">✉ Email to Designer</button>';
+    '<button class="btn-email-designer" onclick="emailDesigner()" id="btnEmailDesigner">✉ Email to Designer</button>'+
+    '<button class="btn-email-designer" onclick="exportZip()" style="background:#1a5c1a;border-color:#1a5c1a" id="btnExport">⬇ Export for Print</button>';
 
   let html = '<div class="zone-toolbar">'+
     '<div>'+
@@ -1202,6 +1203,54 @@ async function saveLayout() {
 }
 
 // ── Email Designer ────────────────────────────────────────────────────────────
+async function exportZip() {
+  if (!activeZone || !curMonth || !curYear) { showToast('Load a layout first', true); return; }
+  const layout = layouts[activeZone];
+  if (!layout) return;
+
+  const btn = document.getElementById('btnExport');
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ Building ZIP…'; btn.disabled = true; }
+  showToast('Building ZIP — fetching PDFs…');
+
+  try {
+    const res = await fetch(API + '/exportLayoutZip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        month:  curMonth,
+        year:   curYear,
+        zoneId: activeZone,
+        layout: layout
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Export failed');
+    }
+
+    // Download the ZIP
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const zone = zones.find(function(z){ return z.id === activeZone; });
+    const abbr = activeZone.split('-').slice(1).join('').toLowerCase();
+    a.href     = url;
+    a.download = abbr + '-layout-' + curMonth + curYear + '.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('ZIP downloaded! ✓', false);
+  } catch(e) {
+    showToast('Export error: ' + e.message, true);
+  } finally {
+    if (btn) { btn.textContent = orig; btn.disabled = false; }
+  }
+}
+
 async function emailDesigner() {
   if (!activeZone) return;
   const l    = layouts[activeZone];
