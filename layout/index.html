@@ -855,6 +855,11 @@ function selectArt(artId) {
 
 function selectPlaced(zId, si, side, half) {
   si = parseInt(si);
+  // If something is already selected, place it here instead
+  if (SEL) {
+    placeSelected(zId, si, side, 'any', half);
+    return;
+  }
   const sp = layouts[zId] && layouts[zId].spreads[si];
   if (!sp) return;
   let art = null;
@@ -865,7 +870,7 @@ function selectPlaced(zId, si, side, half) {
   }
   if (!art) return;
 
-  if (SEL && SEL.art === art) { SEL = null; renderSpreads(); renderArtPanel(); return; } // deselect
+  if (SEL && SEL.art === art) { SEL = null; renderSpreads(); renderArtPanel(); return; }
 
   SEL = { art:art, isPlaced:true, fromZone:zId, fromSpread:si, fromSide:side, fromHalf:half||null };
   showToast('Selected: '+art.business+' ['+art.size+'] — click target slot to move', false);
@@ -975,7 +980,11 @@ function clearSELSource() {
   }
 }
 
-function bumpBack(art) { /* art returns to panel automatically via getPlacedIds */ }
+function bumpBack(art) {
+  // Art returns to panel automatically via getPlacedIds recompute
+  // Just a hook for future use (e.g. toast notification)
+  if (art && art.business) console.log('[BUMP] returned to bank:', art.business);
+}
 
 // Legacy no-ops
 function placedDragStartEl(){}
