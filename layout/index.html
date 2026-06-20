@@ -657,10 +657,97 @@ function render2PSpread(sp, si) {
   '</div>';
 }
 
-// ── Click-to-Select, Click-to-Place ─────────────────────────────────────────
-// SEL = currently selected item to place
-var SEL = null;
-// { art, isPlaced, fromZone, fromSpread, fromSide, fromHalf }
+// ── Selection & Drag from Bank ───────────────────────────────────────────────
+var SEL = null; // selected item for click-to-place
+var BANK_DRAG = null; // art being dragged from bank
+
+function artDragStart(e, artId) {
+  const art = allArtwork.find(function(a){ return a.id===artId; });
+  if (!art) return;
+  BANK_DRAG = art;
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', artId);
+}
+
+function artDragEnd(e) {
+  BANK_DRAG = null;
+}
+
+function slotDragOver(e, pageType) {
+  if (!BANK_DRAG) return;
+  const sz = BANK_DRAG.size;
+  if (sz==='2P') return; // handled by spread
+  if (pageType==='FC' && sz!=='FC') { e.dataTransfer.dropEffect='none'; return; }
+  if (pageType==='BP' && sz!=='BP') { e.dataTransfer.dropEffect='none'; return; }
+  if (pageType==='any' && (sz==='FC'||sz==='BP')) { e.dataTransfer.dropEffect='none'; return; }
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+}
+
+function slotDrop(e, zId, si, side, pageType, half) {
+  e.preventDefault(); e.stopPropagation();
+  const art = BANK_DRAG;
+  if (!art) return;
+  si = parseInt(si);
+  pageType = pageType || 'any';
+
+  if (art.size==='2P') { spreadDrop(e, zId, si); return; }
+  if (pageType==='FC' && art.size!=='FC') { showToast('Front Cover: FC ads only',true); return; }
+  if (pageType==='BP' && art.size!=='BP') { showToast('Back Page: BP ads only',true); return; }
+  if (pageType==='any' && (art.size==='FC'||art.size==='BP')) { showToast(art.size+' only goes on cover pages',true); return; }
+
+  const sp = layouts[zId].spreads[si];
+
+  if (art.size==='HP') {
+    if (half) {
+      if (!sp[side] || sp[side].type!=='hp-pair') sp[side]={ type:'hp-pair', left:null, right:null };
+      if (sp[side][half] && sp[side][half]!==art) bumpBack(sp[side][half]);
+      sp[side][half] = art;
+    } else {
+      const cur = sp[side];
+      if (!cur || cur.type!=='hp-pair') {
+        if (cur && cur.id) bumpBack(cur);
+        sp[side] = { type:'hp-pair', left:art, right:null };
+      } else {
+        if (!cur.left)       cur.left  = art;
+        else if (!cur.right) cur.right = art;
+        else { bumpBack(cur.left); cur.left = art; }
+      }
+    }
+  } else {
+    // FP/FC/BP
+    const existing = sp[side];
+    if (existing && existing!==art) {
+      if (existing.type==='hp-pair') { bumpBack(existing.left); bumpBack(existing.right); }
+      else bumpBack(existing);
+    }
+    sp[side] = art;
+  }
+
+  BANK_DRAG = null;
+  refreshLayout();
+}
+
+function spreadDragOver(e) {
+  if (!BANK_DRAG || BANK_DRAG.size!=='2P') return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+}
+
+function spreadDrop(e, zId, si) {
+  e.preventDefault(); e.stopPropagation();
+  const art = BANK_DRAG;
+  if (!art || art.size!=='2P') return;
+  si = parseInt(si);
+  const totalSpreads = layouts[zId].spreads.length;
+  if (si===0 || si===totalSpreads-1) { showToast('2P cannot go on FC or BP pages',true); return; }
+  const sp = layouts[zId].spreads[si];
+  if (sp.left)  { if (sp.left.type==='hp-pair')  { bumpBack(sp.left.left);  bumpBack(sp.left.right);  } else bumpBack(sp.left);  }
+  if (sp.right) { if (sp.right.type==='hp-pair') { bumpBack(sp.right.left); bumpBack(sp.right.right); } else bumpBack(sp.right); }
+  layouts[zId].spreads[si] = { left:art, right:null };
+  BANK_DRAG = null;
+  refreshLayout();
+}
 
 function selectArt(artId) {
   const art = allArtwork.find(function(a){ return a.id===artId; });
