@@ -592,10 +592,9 @@ function renderArtPanel() {
       : '<div class="thumb-na"><div class="na-label">N/A</div><div class="na-sub">No preview</div></div>' +
         '<button class="btn-gen-thumb" onclick="event.stopPropagation();genThumb(\''+esc(a.id)+'\',\''+esc(a.path)+'\',this)">Generate</button>';
 
-    return '<div class="art-card '+cc+(SEL&&SEL.art&&SEL.art.id===a.id?' selected':'')+'" '+
+    return '<div class="art-card '+cc+'" '+
       'id="artcard-'+esc(a.id)+'" '+
       'data-artid="'+esc(a.id)+'" '+
-      'onclick="selectArt(\''+esc(a.id)+'\')" '+
       'style="cursor:grab;user-select:none">'+
       '<div class="thumb-wrap">'+thumbHtml+'</div>'+
       '<div class="card-info">'+
