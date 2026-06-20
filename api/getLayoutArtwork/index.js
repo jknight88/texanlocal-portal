@@ -37,7 +37,7 @@ function parseFilename(fname) {
   if (parts.length < 2) return null;
   let size='', zoneStr='';
   for (let i=0;i<parts.length;i++) {
-    if (/^(FP|HP|2P)$/i.test(parts[i])) size = parts[i].toUpperCase();
+    if (/^(FP|HP|2P|FC|BP)$/i.test(parts[i])) size = parts[i].toUpperCase();
     if (/^Z\d/i.test(parts[i]))          zoneStr = parts[i];
   }
   if (!size) return null;
