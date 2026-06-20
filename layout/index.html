@@ -236,7 +236,6 @@ let curMonth    = null;
 let curYear     = null;
 let settings    = {};
 let dragItem    = null;
-let isDragging  = false;
 let zoomScale   = 1.0;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -580,7 +579,7 @@ function renderSpreads() {
 
 function renderPageSide(slot, si, side, pageType) {
   pageType = pageType || 'any';
-  const da = 'ondragover="slotDragOver(event,\''+pageType+'\')" ondrop="slotDrop(event,\''+activeZone+'\','+si+',\''+side+'\',\''+pageType+'\')"';
+  const da = 'ondragover="slotDragOver(event,\\'+pageType+'\')" ondrop="slotDrop(event,\\'+activeZone+'\','+si+',\\'+side+'\',\\'+pageType+'\')"';
   const hintText  = pageType==='FC' ? '🏠 Front Cover (FC/FP)' : pageType==='BP' ? '⬅ Back Page (BP/FP)' : 'Drop FP, HP, or 2P';
   const hintColor = pageType==='FC'||pageType==='BP' ? '#BF0D3E' : '#aaa';
 
@@ -589,7 +588,7 @@ function renderPageSide(slot, si, side, pageType) {
 
   if (!slot) {
     return '<div class="page-side"'+singleStyle+' '+
-      'onclick="placeSelected(''+activeZone+'','+si+',''+side+'',''+pageType+'',null)">'+
+      'onclick="placeSelected(\''+activeZone+'\','+si+',\''+side+'\',\''+pageType+'\',null)">'+
       '<div class="page-empty">'+
         '<div style="font-size:20px">'+(pageType==='FC'?'🏠':pageType==='BP'?'⬅':'📄')+'</div>'+
         '<div class="drop-hint" style="color:'+hintColor+'">'+hintText+'</div>'+
@@ -614,20 +613,20 @@ function renderPageSide(slot, si, side, pageType) {
   return '<div class="page-side"'+singleStyle+' '+da+'>'+
     '<div class="slot-fp" '+
       'data-zone="'+esc(activeZone)+'" data-si="'+si+'" data-side="'+side+'" '+
-      'onclick="event.stopPropagation();selectPlaced(''+esc(activeZone)+'','+si+',''+side+'',null)">'+
+      'onclick="event.stopPropagation();selectPlaced(\''+esc(activeZone)+'\','+si+',\''+side+'\',null)">'+
       thumb+
       '<div class="ad-label">'+esc(slot.business)+'</div>'+
       '<span class="size-pip">'+(slot.size||'FP')+'</span>'+
-      '<button class="btn-rm" onclick="event.stopPropagation();removeSlot(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>'+
+      '<button class="btn-rm" onclick="event.stopPropagation();removeSlot(\\'+activeZone+'\','+si+',\\'+side+'\')">✕</button>'+
     '</div>'+
   '</div>';
 }
 
 function renderHpSlot(art, si, pageSide, half) {
-  const da = 'ondragover="hpDragOver(event)" ondrop="hpDrop(event,\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')"';
+  const da = 'ondragover="hpDragOver(event)" ondrop="hpDrop(event,\\'+activeZone+'\','+si+',\\'+pageSide+'\',\\'+half+'\')"';
   if (!art) {
     return '<div class="slot-hp empty" '+
-      'onclick="event.stopPropagation();placeSelected(''+activeZone+'','+si+',''+pageSide+'','any',''+half+'')">'+
+      'onclick="event.stopPropagation();placeSelected(\''+activeZone+'\','+si+',\''+pageSide+'\',\'any\',\''+half+'\')">'+
       '<span style="font-size:12px;color:#aaa">📄</span>'+
       '<span style="font-size:8px;color:#aaa">HP</span>'+
     '</div>';
@@ -635,11 +634,11 @@ function renderHpSlot(art, si, pageSide, half) {
   const thumb = art.thumbUrl
     ? '<img src="'+art.thumbUrl+'" alt="'+esc(art.business)+'" loading="lazy">'
     : '<div class="no-thumb"><span style="font-size:14px">📄</span></div>';
-  return '<div class="slot-hp has-ad" '+da+' draggable="true" ondragstart="placedDragStart(event,\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">'+
+  return '<div class="slot-hp has-ad" '+da+' draggable="true" ondragstart="placedDragStart(event,\\'+activeZone+'\','+si+',\\'+pageSide+'\',\\'+half+'\')">'+
     thumb+
     '<div class="ad-label">'+esc(art.business)+'</div>'+
     '<span class="size-pip">HP</span>'+
-    '<button class="btn-rm" onclick="removeHp(\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">✕</button>'+
+    '<button class="btn-rm" onclick="removeHp(\\'+activeZone+'\','+si+',\\'+pageSide+'\',\\'+half+'\')">✕</button>'+
   '</div>';
 }
 
@@ -649,12 +648,12 @@ function render2PSpread(sp, si) {
     ? '<img src="'+art.thumbUrl+'" alt="'+esc(art.business)+'" loading="lazy">'
     : '<div style="position:absolute;inset:0;background:#1a2540;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px"><span style="font-size:28px">📄</span><span style="color:#3a4a70;font-size:11px">N/A</span></div>';
   return '<div class="spread-2p-wrap" '+
-    'onclick="event.stopPropagation();selectPlaced(''+esc(activeZone)+'','+si+','left',null)">'+
+    'onclick="event.stopPropagation();selectPlaced(\''+esc(activeZone)+'\','+si+',\'left\',null)">'+
     thumb+
     '<div class="spread-2p-gutter"></div>'+
     '<div class="ad-label">'+esc(art.business)+'</div>'+
     '<span class="size-pip">2P</span>'+
-    '<button class="btn-rm-2p" onclick="event.stopPropagation();removeSlot(\''+activeZone+'\','+si+',\'left\')">✕</button>'+
+    '<button class="btn-rm-2p" onclick="event.stopPropagation();removeSlot(\\'+activeZone+'\','+si+',\'left\')">✕</button>'+
   '</div>';
 }
 
@@ -803,11 +802,9 @@ function onArtDragEnd(){}
 function placedDragStartEl(){}
 function placedDragStart(){}
 function getDragArt(){ return SEL ? SEL.art : null; }
-var DRAG = { active:false, artwork:null };
-var isDragging = false;
-var dragItem = null;
+// DRAG, isDragging, dragItem declared above
 
-function function removeSlot(zId, si, side) {
+function removeSlot(zId, si, side) {
   layouts[zId].spreads[si][side] = null;
   refreshLayout();
 }
