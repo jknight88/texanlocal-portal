@@ -1,6 +1,14 @@
 {
   "routes": [
     {
+      "route": "/layout",
+      "rewrite": "/layout/index.html"
+    },
+    {
+      "route": "/setup",
+      "rewrite": "/setup/index.html"
+    },
+    {
       "route": "/",
       "rewrite": "/index.html"
     },

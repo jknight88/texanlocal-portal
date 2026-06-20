@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Company Setup</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.hdr-r{display:flex;gap:10px}
+.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.btn-hdr:hover{background:rgba(255,255,255,.2)}
+.main{max-width:900px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;margin-bottom:1.2rem}
+.card-hdr{background:var(--bl);padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between}
+.card-hdr h2{color:#fff;font-size:13px;font-weight:700;letter-spacing:.4px}
+.card-body{padding:1.2rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;border:none;border-bottom:2px solid var(--br);background:transparent;font-size:14px;font-family:inherit;padding:6px 2px;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus{border-bottom-color:var(--rd)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* Zone list */
+.zone-list{display:flex;flex-direction:column;gap:8px}
+.zone-row{display:grid;grid-template-columns:80px 1fr 100px 80px 32px;gap:8px;align-items:center;background:#f9fafc;border:1px solid var(--br);border-radius:5px;padding:8px 10px}
+.zone-row input{border:none;border-bottom:1px solid var(--br);background:transparent;font-size:13px;font-family:inherit;padding:3px 2px;outline:none;width:100%}
+.zone-row input:focus{border-bottom-color:var(--rd)}
+.zone-label{font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.btn-del-zone{background:#ffebee;color:var(--rd);border:1px solid #ffcdd2;border-radius:3px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.btn-add-zone{background:var(--bl);color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px}
+.btn-save{background:var(--green);color:#fff;border:none;padding:10px 28px;border-radius:5px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-save:hover{background:#144d14}
+.zone-hdr{display:grid;grid-template-columns:80px 1fr 100px 80px 32px;gap:8px;padding:0 10px;margin-bottom:4px}
+.zone-hdr span{font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.err{background:var(--rd)}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-l">
+    <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
+    <h1>Company Setup</h1>
+  </div>
+  <div class="hdr-r">
+    <a href="/home" class="btn-hdr">← Portal Home</a>
+    <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Publication Info -->
+  <div class="card">
+    <div class="card-hdr"><h2>Publication Info</h2></div>
+    <div class="card-body">
+      <div class="field-row">
+        <div class="field"><label>Publication Name</label><input type="text" id="pubName" value="The Texan Local"></div>
+        <div class="field"><label>Publisher Name</label><input type="text" id="pubPublisher" value="Josh Knight"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Publisher Email</label><input type="email" id="pubEmail" value="josh@thetexanlocal.com"></div>
+        <div class="field"><label>Publisher Phone</label><input type="text" id="pubPhone" value="830-214-3487"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Designer Name</label><input type="text" id="designerName" value="Sherry Justice"></div>
+        <div class="field"><label>Designer Email</label><input type="email" id="designerEmail" value="sherry.workofheart@gmail.com"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zones -->
+  <div class="card">
+    <div class="card-hdr">
+      <h2>Zones</h2>
+      <span style="color:rgba(255,255,255,.6);font-size:11px">Each zone gets its own magazine layout</span>
+    </div>
+    <div class="card-body">
+      <div class="zone-hdr">
+        <span>Zone ID</span>
+        <span>Zone Name</span>
+        <span>Default Pages</span>
+        <span>Active</span>
+        <span></span>
+      </div>
+      <div class="zone-list" id="zoneList"></div>
+      <button class="btn-add-zone" onclick="addZone()">+ Add Zone</button>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end">
+    <button class="btn-save" onclick="saveSettings()">💾 Save Settings</button>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let settings = null;
+
+const DEFAULT_ZONES = [
+  { id:'01-NBE', name:'New Braunfels East',    pages:16, active:true  },
+  { id:'02-NBW', name:'New Braunfels West',    pages:16, active:true  },
+  { id:'03-BSB', name:'Bulverde/Spring Branch', pages:16, active:true  },
+  { id:'04-SMW', name:'Schertz/Marion/Welder', pages:16, active:true  },
+  { id:'05-SCG', name:'Seguin',                pages:16, active:true  },
+  { id:'06-TPC', name:'The Park/Converse',     pages:16, active:true  },
+  { id:'07-STP', name:'Stone Oak/TPC',         pages:16, active:true  },
+  { id:'08-DSB', name:'Dripping Springs/Buda', pages:16, active:false }
+];
+
+async function init() {
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials:'include' });
+  if (!res.ok) { window.location.href = '/'; return; }
+  const user = await res.json();
+  if (user.role !== 'admin') { window.location.href = '/home'; return; }
+  await loadSettings();
+}
+
+async function loadSettings() {
+  try {
+    const res  = await fetch(API + '/getCompanySettings', { credentials:'include' });
+    const data = await res.json();
+    settings   = data.settings || {};
+  } catch(e) { settings = {}; }
+
+  // Populate publication fields
+  document.getElementById('pubName').value      = settings.pubName      || 'The Texan Local';
+  document.getElementById('pubPublisher').value = settings.pubPublisher || 'Josh Knight';
+  document.getElementById('pubEmail').value     = settings.pubEmail     || 'josh@thetexanlocal.com';
+  document.getElementById('pubPhone').value     = settings.pubPhone     || '830-214-3487';
+  document.getElementById('designerName').value = settings.designerName || 'Sherry Justice';
+  document.getElementById('designerEmail').value= settings.designerEmail|| 'sherry.workofheart@gmail.com';
+
+  // Populate zones
+  const zones = settings.zones || DEFAULT_ZONES;
+  document.getElementById('zoneList').innerHTML = '';
+  zones.forEach(function(z) { addZoneRow(z); });
+}
+
+function addZone() {
+  addZoneRow({ id:'', name:'', pages:16, active:true });
+}
+
+function addZoneRow(z) {
+  const div = document.createElement('div');
+  div.className = 'zone-row';
+  div.innerHTML =
+    '<div><div class="zone-label">ID</div><input type="text" class="z-id" value="' + (z.id||'') + '" placeholder="01-NBE"></div>' +
+    '<div><div class="zone-label">Name</div><input type="text" class="z-name" value="' + (z.name||'') + '" placeholder="Zone Name"></div>' +
+    '<div><div class="zone-label">Default Pages</div><input type="number" class="z-pages" value="' + (z.pages||16) + '" min="8" step="4" style="text-align:center"></div>' +
+    '<div style="display:flex;align-items:center;gap:6px;padding-top:16px"><input type="checkbox" class="z-active"' + (z.active?' checked':'') + '><span style="font-size:12px">Active</span></div>' +
+    '<button class="btn-del-zone" onclick="this.closest(\'.zone-row\').remove()" title="Delete zone">✕</button>';
+  document.getElementById('zoneList').appendChild(div);
+}
+
+async function saveSettings() {
+  const zones = Array.from(document.querySelectorAll('.zone-row')).map(function(row) {
+    return {
+      id:     row.querySelector('.z-id').value.trim(),
+      name:   row.querySelector('.z-name').value.trim(),
+      pages:  parseInt(row.querySelector('.z-pages').value) || 16,
+      active: row.querySelector('.z-active').checked
+    };
+  }).filter(function(z) { return z.id; });
+
+  const data = {
+    pubName:       document.getElementById('pubName').value.trim(),
+    pubPublisher:  document.getElementById('pubPublisher').value.trim(),
+    pubEmail:      document.getElementById('pubEmail').value.trim(),
+    pubPhone:      document.getElementById('pubPhone').value.trim(),
+    designerName:  document.getElementById('designerName').value.trim(),
+    designerEmail: document.getElementById('designerEmail').value.trim(),
+    zones
+  };
+
+  try {
+    const res = await fetch(API + '/saveCompanySettings', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Save failed');
+    showToast('Settings saved!');
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+}
+
+async function logout() {
+  await fetch(API + '/authLogout', { method:'POST', credentials:'include' });
+  sessionStorage.clear(); window.location.href = '/';
+}
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (isErr?' err':'');
+  setTimeout(function() { t.className = 'toast'; }, 3000);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Magazine Layout</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* Header */
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px;flex-wrap:wrap}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.hdr-logo{height:38px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:15px;color:#fff;white-space:nowrap}
+.hdr-controls{display:flex;align-items:center;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
+.hdr-controls label{font-size:11px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px}
+.hdr-controls select{padding:5px 10px;border:1px solid rgba(255,255,255,.3);border-radius:4px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.1);color:#fff;outline:none;cursor:pointer}
+.hdr-controls select option{background:#00205B;color:#fff}
+.hdr-r{display:flex;gap:8px;align-items:center}
+.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block;white-space:nowrap}
+.btn-hdr:hover{background:rgba(255,255,255,.2)}
+
+/* Zone tabs */
+.zone-tabs{background:var(--bl);border-bottom:2px solid rgba(255,255,255,.1);display:flex;overflow-x:auto;flex-shrink:0}
+.zone-tab{padding:.5rem 1.1rem;font-size:12px;font-weight:700;color:rgba(255,255,255,.55);cursor:pointer;border:none;background:transparent;font-family:inherit;white-space:nowrap;border-bottom:3px solid transparent;transition:all .15s}
+.zone-tab:hover{color:#fff;background:rgba(255,255,255,.05)}
+.zone-tab.active{color:#fff;border-bottom-color:var(--rd);background:rgba(255,255,255,.08)}
+
+/* Main layout */
+.workspace{display:flex;flex:1;overflow:hidden;height:calc(100vh - 110px)}
+
+/* Left: spread viewer */
+.spread-area{flex:1;overflow-y:auto;padding:1rem;background:var(--bg)}
+.zone-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;background:#fff;border-radius:6px;padding:.6rem 1rem;box-shadow:0 2px 6px rgba(0,0,0,.07)}
+.zone-header h2{font-size:13px;font-weight:700;color:var(--bl)}
+.page-controls{display:flex;align-items:center;gap:8px}
+.page-controls span{font-size:12px;color:var(--md)}
+.btn-pages{background:#f0f2f5;border:1px solid var(--br);color:var(--md);padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-pages:hover{background:#e0e3ea}
+.btn-email{background:var(--rd);color:#fff;border:none;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-email:hover{background:#a00a34}
+
+/* Spread */
+.spread{display:flex;gap:4px;margin-bottom:8px;background:#888;border-radius:4px;padding:4px;position:relative}
+.spread-num{position:absolute;top:-18px;left:0;font-size:10px;color:var(--md);font-weight:700}
+.page-side{flex:1;min-height:180px;background:#fff;border-radius:2px;position:relative;display:flex;flex-direction:column;overflow:hidden;transition:outline .15s}
+.page-side.drag-over{outline:3px solid var(--rd);background:#fff8f8}
+.page-side.two-page-left{border-radius:2px 0 0 2px}
+.page-side.two-page-right{border-radius:0 2px 2px 0}
+
+/* Slot */
+.slot{flex:1;border:2px dashed #ddd;border-radius:3px;margin:4px;display:flex;align-items:center;justify-content:center;min-height:80px;position:relative;transition:all .15s;cursor:pointer}
+.slot.has-ad{border:none;margin:0;border-radius:0}
+.slot.drag-over{border-color:var(--rd);background:#fff0f0}
+.slot.empty-slot{flex-direction:column;gap:4px;color:#bbb;font-size:11px}
+.slot.empty-slot .slot-hint{font-size:18px}
+
+/* Ad card in slot */
+.ad-in-slot{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;cursor:grab;padding:6px;text-align:center}
+.ad-in-slot:active{cursor:grabbing}
+.ad-in-slot .ad-thumb{width:100%;flex:1;object-fit:cover;border-radius:2px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;overflow:hidden}
+.ad-in-slot .ad-thumb img{width:100%;height:100%;object-fit:cover}
+.ad-in-slot .ad-name{font-size:9px;font-weight:700;color:var(--bl);margin-top:3px;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ad-in-slot .ad-size-badge{position:absolute;top:3px;right:3px;background:var(--bl);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px}
+.ad-in-slot .btn-remove{position:absolute;top:2px;left:2px;background:var(--rd);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.ad-in-slot:hover .btn-remove{opacity:1}
+
+/* HP slots side by side */
+.hp-container{display:flex;flex:1;gap:2px;padding:4px}
+.hp-slot{flex:1;border:2px dashed #ddd;border-radius:3px;display:flex;align-items:center;justify-content:center;min-height:80px;cursor:pointer;transition:all .15s;position:relative}
+.hp-slot.has-ad{border:none;padding:0}
+.hp-slot.drag-over{border-color:var(--rd);background:#fff0f0}
+.hp-slot.empty-slot{flex-direction:column;gap:4px;color:#bbb;font-size:10px}
+
+/* 2P spread indicator */
+.two-page-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,32,91,.85);color:#fff;padding:4px 10px;border-radius:10px;font-size:10px;font-weight:700;pointer-events:none;white-space:nowrap;z-index:2}
+
+/* Right: artwork panel */
+.artwork-panel{width:280px;background:#fff;border-left:2px solid var(--br);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.panel-hdr{background:var(--bl);padding:.7rem 1rem;flex-shrink:0}
+.panel-hdr h3{color:#fff;font-size:12px;font-weight:700;margin-bottom:6px}
+.panel-filters{display:flex;flex-direction:column;gap:6px}
+.panel-filters select,.panel-filters input{width:100%;padding:5px 8px;border:1px solid rgba(255,255,255,.3);border-radius:4px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.1);color:#fff;outline:none}
+.panel-filters select option{background:#00205B}
+.artwork-list{flex:1;overflow-y:auto;padding:.6rem}
+.art-card{background:#f9fafc;border:1px solid var(--br);border-radius:5px;padding:8px;margin-bottom:6px;cursor:grab;transition:all .15s;display:flex;gap:8px;align-items:center}
+.art-card:active{cursor:grabbing;opacity:.7}
+.art-card:hover{background:#eef2ff;border-color:var(--bl)}
+.art-card.placed{opacity:.4;border-style:dashed}
+.art-card.dragging{opacity:.5;transform:scale(.95)}
+.art-thumb{width:48px;height:36px;background:#e8edf8;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--md);flex-shrink:0;overflow:hidden}
+.art-thumb img{width:100%;height:100%;object-fit:cover}
+.art-info{flex:1;min-width:0}
+.art-biz{font-size:11px;font-weight:700;color:var(--bl);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.art-meta{font-size:10px;color:var(--md);margin-top:2px}
+.art-zones{font-size:9px;color:var(--green);font-weight:700;margin-top:2px}
+.size-tag{display:inline-block;background:var(--bl);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px;margin-right:3px}
+.size-tag.fp{background:var(--rd)}
+.size-tag.hp{background:var(--amber)}
+.size-tag.two-p{background:var(--green)}
+
+.panel-empty{padding:1.5rem;text-align:center;color:var(--md);font-size:12px}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a2e;color:#fff;padding:10px 16px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.err{background:var(--rd)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
+    <h1>Magazine Layout</h1>
+  </div>
+  <div class="hdr-controls">
+    <label>Mailing Month</label>
+    <select id="selMonth">
+      <option value="01">January</option><option value="02">February</option>
+      <option value="03">March</option><option value="04">April</option>
+      <option value="05">May</option><option value="06">June</option>
+      <option value="07">July</option><option value="08">August</option>
+      <option value="09">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+    <select id="selYear"></select>
+    <button class="btn-hdr" onclick="loadLayout()" style="background:var(--rd);border-color:var(--rd)">Load</button>
+  </div>
+  <div class="hdr-r">
+    <a href="/home" class="btn-hdr">← Home</a>
+    <button class="btn-hdr" onclick="saveLayout()">💾 Save</button>
+    <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<!-- Zone tabs -->
+<div class="zone-tabs" id="zoneTabs"></div>
+
+<!-- Main workspace -->
+<div class="workspace">
+
+  <!-- Left: Spread viewer -->
+  <div class="spread-area" id="spreadArea">
+    <div style="padding:2rem;text-align:center;color:var(--md)">Select a month and click Load to begin</div>
+  </div>
+
+  <!-- Right: Artwork panel -->
+  <div class="artwork-panel">
+    <div class="panel-hdr">
+      <h3>Available Artwork</h3>
+      <div class="panel-filters">
+        <select id="zoneFilter" onchange="filterArtwork()">
+          <option value="">All Zones</option>
+        </select>
+        <input type="text" id="artSearch" placeholder="Search…" oninput="filterArtwork()">
+      </div>
+    </div>
+    <div class="artwork-list" id="artworkList">
+      <div class="panel-empty">Load a month to see artwork</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let zones        = [];
+let allArtwork   = [];
+let layouts      = {}; // { zoneId: { pages: N, spreads: [[left,right],...] } }
+let activeZone   = null;
+let currentMonth = null;
+let currentYear  = null;
+let settings     = {};
+let dragItem     = null; // { type:'artwork'|'placed', artwork, fromZone, fromSpread, fromSide, fromHalf }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials:'include' });
+  if (!res.ok) { window.location.href = '/'; return; }
+
+  // Year selector
+  const now = new Date();
+  const sel = document.getElementById('selYear');
+  for (let y = now.getFullYear(); y <= now.getFullYear()+1; y++) {
+    const o = document.createElement('option'); o.value = y; o.textContent = y; sel.appendChild(o);
+  }
+  // Default to next month
+  const next = new Date(now.getFullYear(), now.getMonth()+1, 1);
+  document.getElementById('selMonth').value = String(next.getMonth()+1).padStart(2,'0');
+  sel.value = next.getFullYear();
+
+  // Load settings
+  try {
+    const sr   = await fetch(API + '/getCompanySettings', { credentials:'include' });
+    const sd   = await sr.json();
+    settings   = sd.settings || {};
+    zones      = (settings.zones || []).filter(function(z){ return z.active; });
+  } catch(e) {}
+
+  if (!zones.length) {
+    zones = [
+      {id:'01-NBE',name:'New Braunfels East',pages:16,active:true},
+      {id:'02-NBW',name:'New Braunfels West',pages:16,active:true},
+      {id:'03-BSB',name:'Bulverde/Spring Branch',pages:16,active:true},
+      {id:'04-SMW',name:'Schertz/Marion/Welder',pages:16,active:true},
+      {id:'05-SCG',name:'Seguin',pages:16,active:true},
+      {id:'06-TPC',name:'The Park/Converse',pages:16,active:true},
+      {id:'07-STP',name:'Stone Oak/TPC',pages:16,active:true},
+      {id:'08-DSB',name:'Dripping Springs/Buda',pages:16,active:false}
+    ].filter(function(z){ return z.active; });
+  }
+
+  renderZoneTabs();
+  populateZoneFilter();
+}
+
+// ── Zone Tabs ─────────────────────────────────────────────────────────────────
+function renderZoneTabs() {
+  document.getElementById('zoneTabs').innerHTML = zones.map(function(z) {
+    return '<button class="zone-tab" id="ztab-'+z.id+'" onclick="selectZone(\''+z.id+'\')">' +
+      z.id + ' — ' + z.name + '</button>';
+  }).join('');
+}
+
+function selectZone(zoneId) {
+  activeZone = zoneId;
+  document.querySelectorAll('.zone-tab').forEach(function(t){ t.classList.remove('active'); });
+  const tab = document.getElementById('ztab-'+zoneId);
+  if (tab) tab.classList.add('active');
+  renderSpreadArea();
+  filterArtwork();
+  document.getElementById('zoneFilter').value = zoneId;
+}
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+async function loadLayout() {
+  currentMonth = document.getElementById('selMonth').value;
+  currentYear  = document.getElementById('selYear').value;
+
+  showToast('Loading files…');
+
+  try {
+    // Load artwork files from blob storage
+    const res  = await fetch(API + '/filesListFiles?year='+currentYear+'&month='+currentMonth, { credentials:'include' });
+    const data = await res.json();
+    allArtwork = (data.files || []).map(function(f){ return parseFilename(f.name, f); });
+    allArtwork = allArtwork.filter(function(a){ return a; });
+
+    // Try to load saved layout
+    try {
+      const lr   = await fetch(API + '/getLayoutData?month='+currentMonth+'&year='+currentYear, { credentials:'include' });
+      const ld   = await lr.json();
+      layouts    = ld.layout || {};
+    } catch(e) { layouts = {}; }
+
+    // Init layouts for zones that don't have one
+    zones.forEach(function(z) {
+      if (!layouts[z.id]) {
+        const pages = z.pages || 16;
+        const numSpreads = pages / 2;
+        layouts[z.id] = { pages: pages, spreads: [] };
+        for (let i = 0; i < numSpreads; i++) {
+          layouts[z.id].spreads.push({ left: null, right: null });
+        }
+      }
+    });
+
+    renderArtworkPanel();
+    if (activeZone) { renderSpreadArea(); }
+    else if (zones.length) { selectZone(zones[0].id); }
+
+    showToast('Loaded ' + allArtwork.length + ' files for ' + currentMonth + '/' + currentYear);
+  } catch(e) {
+    showToast('Error loading files: ' + e.message, true);
+  }
+}
+
+// ── Parse filename ────────────────────────────────────────────────────────────
+function parseFilename(fullPath, fileObj) {
+  const fname = fullPath.split('/').pop();
+  const noExt = fname.replace(/\.pdf$/i,'');
+  const parts = noExt.split('_');
+  if (parts.length < 3) return null;
+
+  const biz     = parts[0];
+  const dateStr = parts[1]; // MMYY
+  let   size    = '';
+  let   zoneStr = '';
+
+  // Find size (FP, HP, 2P)
+  for (let i = 2; i < parts.length; i++) {
+    if (/^(FP|HP|2P)$/i.test(parts[i])) { size = parts[i].toUpperCase(); }
+    if (/^Z/i.test(parts[i]))            { zoneStr = parts[i]; }
+  }
+  if (!size) return null;
+
+  const zones = parseZones(zoneStr);
+
+  return {
+    filename: fname,
+    path:     fullPath,
+    business: biz,
+    size,
+    zoneStr,
+    zones,
+    placed:   false,
+    id:       fullPath
+  };
+}
+
+// Parse zone string: Z1 → [1], Z1-3 → [1,2,3], Z1,4,5 → [1,4,5]
+function parseZones(zstr) {
+  if (!zstr) return [];
+  const s = zstr.replace(/^Z/i,'');
+  const result = [];
+  s.split(',').forEach(function(part) {
+    if (part.includes('-')) {
+      const bounds = part.split('-');
+      const start  = parseInt(bounds[0]);
+      const end    = parseInt(bounds[1]);
+      for (let n = start; n <= end; n++) result.push(n);
+    } else {
+      const n = parseInt(part);
+      if (!isNaN(n)) result.push(n);
+    }
+  });
+  return result;
+}
+
+function zoneNum(zoneId) {
+  return parseInt(zoneId.split('-')[0]);
+}
+
+function artworkForZone(zoneId) {
+  const num = zoneNum(zoneId);
+  return allArtwork.filter(function(a) {
+    if (!a.zones.length) return true; // no zone = show in all
+    return a.zones.indexOf(num) !== -1;
+  });
+}
+
+// ── Artwork Panel ─────────────────────────────────────────────────────────────
+function populateZoneFilter() {
+  const sel = document.getElementById('zoneFilter');
+  sel.innerHTML = '<option value="">All Zones</option>';
+  zones.forEach(function(z) {
+    const o = document.createElement('option'); o.value = z.id;
+    o.textContent = z.id + ' — ' + z.name; sel.appendChild(o);
+  });
+}
+
+function filterArtwork() {
+  renderArtworkPanel();
+}
+
+function renderArtworkPanel() {
+  const zf  = document.getElementById('zoneFilter').value;
+  const q   = (document.getElementById('artSearch').value||'').toLowerCase();
+  const list= document.getElementById('artworkList');
+
+  let filtered = allArtwork;
+  if (zf) filtered = artworkForZone(zf);
+  if (q)  filtered = filtered.filter(function(a){ return a.business.toLowerCase().includes(q); });
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="panel-empty">' + (allArtwork.length ? 'No artwork matches filter' : 'Load a month to see artwork') + '</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(function(a) {
+    const sizeClass = a.size === 'FP' ? 'fp' : a.size === 'HP' ? 'hp' : 'two-p';
+    const sizeLabel = a.size === '2P' ? '2P Spread' : a.size;
+    return '<div class="art-card' + (a.placed?' placed':'') + '" draggable="true" ' +
+      'id="art-' + esc(a.id) + '" ' +
+      'ondragstart="onArtDragStart(event,\'' + esc(a.id) + '\')" ' +
+      'ondragend="onArtDragEnd(event)">' +
+      '<div class="art-thumb"><span style="font-size:16px">📄</span></div>' +
+      '<div class="art-info">' +
+        '<div class="art-biz">' + esc(a.business) + '</div>' +
+        '<div class="art-meta"><span class="size-tag '+sizeClass+'">'+sizeLabel+'</span></div>' +
+        '<div class="art-zones">' + (a.zoneStr || 'All zones') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── Spread Area ───────────────────────────────────────────────────────────────
+function renderSpreadArea() {
+  if (!activeZone) return;
+  const zone   = zones.find(function(z){ return z.id === activeZone; });
+  const layout = layouts[activeZone];
+  if (!layout) return;
+
+  const zName  = zone ? zone.name : activeZone;
+  const nPages = layout.pages;
+
+  let html = '<div class="zone-header">' +
+    '<div>' +
+      '<h2>' + esc(activeZone) + ' — ' + esc(zName) + '</h2>' +
+      '<div style="font-size:11px;color:var(--md);margin-top:2px">' + nPages + ' pages · ' + layout.spreads.length + ' spreads</div>' +
+    '</div>' +
+    '<div class="page-controls">' +
+      '<button class="btn-pages" onclick="removePages()">− 4 Pages</button>' +
+      '<span>' + nPages + ' pages</span>' +
+      '<button class="btn-pages" onclick="addPages()">+ 4 Pages</button>' +
+      '<button class="btn-email" onclick="emailToDesigner()">✉ Email to Designer</button>' +
+    '</div>' +
+  '</div>';
+
+  layout.spreads.forEach(function(spread, si) {
+    const isTwoPage = spread.left && spread.left.size === '2P';
+    const pageNums  = 'Pages ' + ((si*2)+1) + '–' + ((si*2)+2);
+
+    if (isTwoPage) {
+      html += renderTwoPageSpread(spread, si, pageNums);
+    } else {
+      html += '<div class="spread" id="spread-'+activeZone+'-'+si+'">' +
+        '<div class="spread-num">' + pageNums + '</div>' +
+        renderPageSide(spread.left, si, 'left', spread) +
+        renderPageSide(spread.right, si, 'right', spread) +
+      '</div>';
+    }
+  });
+
+  document.getElementById('spreadArea').innerHTML = html;
+  initDropZones();
+}
+
+function renderTwoPageSpread(spread, si, pageNums) {
+  const a = spread.left;
+  return '<div class="spread" id="spread-'+activeZone+'-'+si+'" ' +
+    'ondragover="event.preventDefault()" ' +
+    'ondrop="onDropSpread(event,\''+activeZone+'\','+si+')">' +
+    '<div class="spread-num">' + pageNums + '</div>' +
+    '<div class="page-side two-page-left" style="flex:2;position:relative;cursor:grab;min-height:180px;background:#e8edf8;display:flex;align-items:center;justify-content:center" ' +
+    'draggable="true" ondragstart="onPlacedDragStart(event,\''+activeZone+'\','+si+',\'left\')">' +
+    '<div class="two-page-banner">2P SPREAD</div>' +
+    '<div style="text-align:center;z-index:1">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--bl)">' + esc(a.business) + '</div>' +
+      '<div style="font-size:11px;color:var(--md)">' + a.filename + '</div>' +
+    '</div>' +
+    '<button class="btn-remove" style="position:absolute;top:6px;left:6px;background:var(--rd);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer" onclick="removeAd(\''+activeZone+'\','+si+',\'left\')">✕</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderPageSide(slot, si, side, spread) {
+  const dropAttrs = 'ondragover="onDragOverSlot(event)" ondrop="onDropSlot(event,\''+activeZone+'\','+si+',\''+side+'\')"';
+
+  if (!slot) {
+    return '<div class="page-side" '+dropAttrs+'>' +
+      '<div class="slot empty-slot" '+dropAttrs+'>' +
+        '<span class="slot-hint">📄</span>' +
+        '<span>Drop FP or HP ads here</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  if (slot.type === 'hp-pair') {
+    return '<div class="page-side" '+dropAttrs+'>' +
+      '<div class="hp-container">' +
+        renderHpSlot(slot.left, si, side, 'left') +
+        renderHpSlot(slot.right, si, side, 'right') +
+      '</div>' +
+    '</div>';
+  }
+
+  // FP
+  const a = slot;
+  return '<div class="page-side" '+dropAttrs+'>' +
+    '<div class="ad-in-slot" draggable="true" ' +
+    'ondragstart="onPlacedDragStart(event,\''+activeZone+'\','+si+',\''+side+'\')">' +
+      '<div class="ad-thumb"><span style="font-size:20px">📄</span></div>' +
+      '<div class="ad-name">' + esc(a.business) + '</div>' +
+      '<div style="font-size:9px;color:var(--md)">' + esc(a.filename) + '</div>' +
+      '<span class="ad-size-badge">FP</span>' +
+      '<button class="btn-remove" onclick="removeAd(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderHpSlot(art, si, pageSide, half) {
+  const dropAttrs = 'ondragover="onDragOverSlot(event)" ondrop="onDropHp(event,\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')"';
+  if (!art) {
+    return '<div class="hp-slot empty-slot" '+dropAttrs+'>' +
+      '<span style="font-size:14px">📄</span><span style="font-size:9px">HP</span>' +
+    '</div>';
+  }
+  return '<div class="hp-slot has-ad" '+dropAttrs+'>' +
+    '<div class="ad-in-slot" draggable="true" ' +
+    'ondragstart="onPlacedDragStart(event,\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">' +
+      '<div class="ad-thumb"><span style="font-size:16px">📄</span></div>' +
+      '<div class="ad-name">' + esc(art.business) + '</div>' +
+      '<span class="ad-size-badge" style="background:var(--amber)">HP</span>' +
+      '<button class="btn-remove" onclick="removeHpAd(\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">✕</button>' +
+    '</div>' +
+  '</div>';
+}
+
+// ── Drag & Drop ───────────────────────────────────────────────────────────────
+function onArtDragStart(e, artId) {
+  dragItem = { type:'artwork', artwork: allArtwork.find(function(a){ return a.id === artId; }) };
+  e.dataTransfer.effectAllowed = 'copy';
+}
+
+function onArtDragEnd(e) {
+  // Keep dragItem until drop completes
+}
+
+function onPlacedDragStart(e, zoneId, si, side, half) {
+  e.stopPropagation();
+  const layout = layouts[zoneId];
+  const spread = layout.spreads[si];
+  let art = null;
+  if (half) {
+    art = spread[side] && spread[side].type === 'hp-pair' ? spread[side][half] : null;
+  } else {
+    art = spread[side];
+  }
+  dragItem = { type:'placed', artwork: art, fromZone: zoneId, fromSpread: si, fromSide: side, fromHalf: half||null };
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOverSlot(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = dragItem && dragItem.type === 'placed' ? 'move' : 'copy';
+}
+
+function onDropSlot(e, zoneId, si, side) {
+  e.preventDefault(); e.stopPropagation();
+  if (!dragItem) return;
+  const art = dragItem.artwork;
+  if (!art) return;
+
+  if (art.size === '2P') {
+    onDropSpread(e, zoneId, si);
+    return;
+  }
+
+  const layout = layouts[zoneId];
+  const spread = layout.spreads[si];
+
+  if (art.size === 'FP') {
+    // Clear source if moving
+    clearDragSource();
+    spread[side] = art;
+  } else if (art.size === 'HP') {
+    clearDragSource();
+    if (!spread[side] || spread[side].type !== 'hp-pair') {
+      spread[side] = { type:'hp-pair', left: art, right: null };
+    } else {
+      if (!spread[side].left)       spread[side].left  = art;
+      else if (!spread[side].right) spread[side].right = art;
+      else spread[side].left = art; // replace left
+    }
+  }
+
+  updatePlacedStatus();
+  renderSpreadArea();
+  renderArtworkPanel();
+  dragItem = null;
+}
+
+function onDropHp(e, zoneId, si, pageSide, half) {
+  e.preventDefault(); e.stopPropagation();
+  if (!dragItem || !dragItem.artwork) return;
+  const art = dragItem.artwork;
+  if (art.size !== 'HP') { showToast('Only HP ads fit here', true); return; }
+
+  const layout = layouts[zoneId];
+  const spread = layout.spreads[si];
+  clearDragSource();
+
+  if (!spread[pageSide] || spread[pageSide].type !== 'hp-pair') {
+    spread[pageSide] = { type:'hp-pair', left: null, right: null };
+  }
+  spread[pageSide][half] = art;
+
+  updatePlacedStatus();
+  renderSpreadArea();
+  renderArtworkPanel();
+  dragItem = null;
+}
+
+function onDropSpread(e, zoneId, si) {
+  e.preventDefault();
+  if (!dragItem || !dragItem.artwork || dragItem.artwork.size !== '2P') return;
+  const layout = layouts[zoneId];
+  clearDragSource();
+  layout.spreads[si] = { left: dragItem.artwork, right: null, isTwoPage: true };
+  updatePlacedStatus();
+  renderSpreadArea();
+  renderArtworkPanel();
+  dragItem = null;
+}
+
+function clearDragSource() {
+  if (!dragItem || dragItem.type !== 'placed') return;
+  const layout = layouts[dragItem.fromZone];
+  if (!layout) return;
+  const spread = layout.spreads[dragItem.fromSpread];
+  if (dragItem.fromHalf) {
+    if (spread[dragItem.fromSide] && spread[dragItem.fromSide].type === 'hp-pair') {
+      spread[dragItem.fromSide][dragItem.fromHalf] = null;
+      if (!spread[dragItem.fromSide].left && !spread[dragItem.fromSide].right) {
+        spread[dragItem.fromSide] = null;
+      }
+    }
+  } else {
+    spread[dragItem.fromSide] = null;
+  }
+}
+
+function initDropZones() {
+  // Allow dropping 2P on entire spread
+  document.querySelectorAll('.spread').forEach(function(el) {
+    el.addEventListener('dragover', function(e){ e.preventDefault(); });
+    el.addEventListener('drop', function(e){
+      if (dragItem && dragItem.artwork && dragItem.artwork.size === '2P') {
+        const parts = el.id.split('-');
+        const si    = parseInt(parts[parts.length-1]);
+        onDropSpread(e, activeZone, si);
+      }
+    });
+  });
+}
+
+// ── Remove ads ────────────────────────────────────────────────────────────────
+function removeAd(zoneId, si, side) {
+  layouts[zoneId].spreads[si][side] = null;
+  updatePlacedStatus(); renderSpreadArea(); renderArtworkPanel();
+}
+
+function removeHpAd(zoneId, si, pageSide, half) {
+  const pair = layouts[zoneId].spreads[si][pageSide];
+  if (pair && pair.type === 'hp-pair') {
+    pair[half] = null;
+    if (!pair.left && !pair.right) layouts[zoneId].spreads[si][pageSide] = null;
+  }
+  updatePlacedStatus(); renderSpreadArea(); renderArtworkPanel();
+}
+
+function updatePlacedStatus() {
+  const placed = {};
+  Object.keys(layouts).forEach(function(zid) {
+    layouts[zid].spreads.forEach(function(sp) {
+      ['left','right'].forEach(function(side) {
+        const s = sp[side];
+        if (!s) return;
+        if (s.type === 'hp-pair') {
+          if (s.left)  placed[s.left.id]  = true;
+          if (s.right) placed[s.right.id] = true;
+        } else if (s.id) {
+          placed[s.id] = true;
+        }
+      });
+    });
+  });
+  allArtwork.forEach(function(a){ a.placed = !!placed[a.id]; });
+}
+
+// ── Add/Remove pages ──────────────────────────────────────────────────────────
+function addPages() {
+  const layout = layouts[activeZone];
+  layout.pages += 4;
+  layout.spreads.push({ left:null, right:null });
+  layout.spreads.push({ left:null, right:null });
+  renderSpreadArea();
+}
+
+function removePages() {
+  const layout = layouts[activeZone];
+  if (layout.pages <= 8) { showToast('Minimum 8 pages', true); return; }
+  // Check if last 2 spreads are empty
+  const last2 = layout.spreads.slice(-2);
+  const hasAds = last2.some(function(sp){
+    return sp.left || sp.right;
+  });
+  if (hasAds && !confirm('Last 4 pages have ads. Remove anyway?')) return;
+  layout.spreads.splice(-2, 2);
+  layout.pages -= 4;
+  renderSpreadArea();
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+async function saveLayout() {
+  if (!currentMonth) { showToast('Load a month first', true); return; }
+  try {
+    const res = await fetch(API + '/saveLayoutData', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ month: currentMonth, year: currentYear, layout: layouts })
+    });
+    if (!res.ok) throw new Error('Save failed');
+    showToast('Layout saved!');
+  } catch(e) { showToast('Error: '+e.message, true); }
+}
+
+// ── Email to Designer ─────────────────────────────────────────────────────────
+async function emailToDesigner() {
+  if (!activeZone) return;
+  const layout  = layouts[activeZone];
+  const zone    = zones.find(function(z){ return z.id === activeZone; });
+  const months  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const mLabel  = months[parseInt(currentMonth)-1] + ' ' + currentYear;
+  const designer= settings.designerEmail || 'sherry.workofheart@gmail.com';
+  const dName   = settings.designerName  || 'Sherry';
+
+  // Build page list
+  let pageList = '';
+  layout.spreads.forEach(function(sp, si) {
+    const p1 = (si*2)+1, p2 = (si*2)+2;
+    const leftInfo  = slotSummary(sp.left);
+    const rightInfo = slotSummary(sp.right);
+    if (sp.left && sp.left.size === '2P') {
+      pageList += 'Pages ' + p1 + '-' + p2 + ': [2P SPREAD] ' + sp.left.business + ' (' + sp.left.filename + ')\n';
+    } else {
+      pageList += 'Page ' + p1 + ' (Left):  ' + leftInfo  + '\n';
+      pageList += 'Page ' + p2 + ' (Right): ' + rightInfo + '\n';
+    }
+  });
+
+  try {
+    const res = await fetch(API + '/sendLayoutEmail', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({
+        to: designer,
+        toName: dName,
+        zone: activeZone,
+        zoneName: zone ? zone.name : activeZone,
+        month: mLabel,
+        pageList: pageList,
+        totalPages: layout.pages
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Send failed');
+    showToast('Layout emailed to ' + dName + '! ✉');
+  } catch(e) { showToast('Error: '+e.message, true); }
+}
+
+function slotSummary(slot) {
+  if (!slot) return '(empty)';
+  if (slot.type === 'hp-pair') {
+    const l = slot.left  ? slot.left.business  + ' [HP]' : '(empty HP)';
+    const r = slot.right ? slot.right.business + ' [HP]' : '(empty HP)';
+    return l + '  |  ' + r;
+  }
+  return slot.business + ' [' + slot.size + '] (' + slot.filename + ')';
+}
+
+async function logout() {
+  await fetch(API+'/authLogout',{method:'POST',credentials:'include'});
+  sessionStorage.clear(); window.location.href='/';
+}
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show'+(isErr?' err':'');
+  setTimeout(function(){ t.className='toast'; }, 3000);
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+init();
+</script>
+</body>
+</html>
