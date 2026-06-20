@@ -279,11 +279,9 @@ function initDragDrop() {
   // Document-level drag delegation - works across scroll containers
   document.addEventListener('dragover', function(e) {
     if (!BANK_DRAG) return;
-    const t = e.target.closest('[data-dropzone]') || e.target.closest('.spread[data-zone]');
-    if (t) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-    }
+    // Always allow drop when dragging from bank - we'll validate on drop
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
   });
 
   document.addEventListener('drop', function(e) {
