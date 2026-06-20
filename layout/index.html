@@ -235,6 +235,7 @@ let curMonth    = null;
 let curYear     = null;
 let settings    = {};
 let dragItem    = null;
+let isDragging  = false;
 let zoomScale   = 1.0;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -555,6 +556,14 @@ function renderSpreads() {
   const grid = document.getElementById('spreadsGrid');
   if (grid) grid.style.zoom = zoomScale;
 
+  // Clear drag state on dragend for any placed element
+  document.querySelectorAll('[draggable="true"]').forEach(function(el) {
+    el.addEventListener('dragend', function() {
+      isDragging = false;
+      dragItem   = null;
+    });
+  });
+
   // Init drag events on all page sides using event delegation on spread area
   const sa = document.getElementById('spreadArea');
   if (sa && !sa._dragInited) {
@@ -602,8 +611,8 @@ function renderPageSide(slot, si, side, pageType) {
 
   return '<div class="page-side"'+singleStyle+' '+da+'>'+
     '<div class="slot-fp" draggable="true" '+
-      'data-zone="'+activeZone+'" data-si="'+si+'" data-side="'+side+'" '+
-      'ondragstart="placedDragStartEl(event,this)">'+
+      'data-zone="'+esc(activeZone)+'" data-si="'+si+'" data-side="'+side+'" '+
+      'ondragstart="placedDragStartEl(event,this)" ondragend="isDragging=false;dragItem=null;">'+
       thumb+
       '<div class="ad-label">'+esc(slot.business)+'</div>'+
       '<span class="size-pip">'+(slot.size||'FP')+'</span>'+
@@ -637,8 +646,8 @@ function render2PSpread(sp, si) {
     ? '<img src="'+art.thumbUrl+'" alt="'+esc(art.business)+'" loading="lazy">'
     : '<div style="position:absolute;inset:0;background:#1a2540;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px"><span style="font-size:28px">📄</span><span style="color:#3a4a70;font-size:11px">N/A</span></div>';
   return '<div class="spread-2p-wrap" draggable="true" '+
-    'data-zone="'+activeZone+'" data-si="'+si+'" data-side="left" '+
-    'ondragstart="placedDragStartEl(event,this)">'+
+    'data-zone="'+esc(activeZone)+'" data-si="'+si+'" data-side="left" '+
+    'ondragstart="placedDragStartEl(event,this)" ondragend="isDragging=false;dragItem=null;">'+
     thumb+
     '<div class="spread-2p-gutter"></div>'+
     '<div class="ad-label">'+esc(art.business)+'</div>'+
@@ -649,10 +658,14 @@ function render2PSpread(sp, si) {
 
 // ── Drag & Drop ───────────────────────────────────────────────────────────────
 function onArtDrag(e, artId) {
+  isDragging = true;
   dragItem = { type:'artwork', artwork: allArtwork.find(function(a){return a.id===artId;}) };
   e.dataTransfer.effectAllowed = 'copy';
 }
-function onArtDragEnd(e) {}
+function onArtDragEnd(e) {
+  isDragging = false;
+  dragItem = null;
+}
 
 function placedDragStartEl(e, el) {
   const zId = el.getAttribute('data-zone');
@@ -682,6 +695,7 @@ function placedDragStart(e, zId, si, side, half) {
       fromZone:zId, fromSpread:parseInt(si), fromSide:side, fromHalf:half||null, artId:art.id||art.path
     }));
   } catch(ex) {}
+  isDragging = true;
   e.dataTransfer.effectAllowed = 'move';
 }
 
@@ -728,29 +742,34 @@ function slotDrop(e, zId, si, side, pageType) {
   if (pageType==='any' && (art.size==='FC'||art.size==='BP')) { showToast(art.size+' ads only go on the front/back cover',true); return; }
 
   const layout = layouts[zId];
-  const sp     = layout.spreads[si];
+  const sp     = layout.spreads[parseInt(si)];
+  const artRef = art; // save ref before any clearing
 
-  // Handle FP
   if (art.size==='FP' || art.size==='FC' || art.size==='BP') {
-    // Bump what's already there
-    if (sp[side]) {
-      if (sp[side].type==='hp-pair') {
-        bumpBack(sp[side].left); bumpBack(sp[side].right);
-      } else if (sp[side].id !== art.id) {
-        bumpBack(sp[side]);
-      }
+    // What's currently in target slot
+    const existing = sp[side];
+    // Clear source first
+    clearDragSource();
+    // Bump whatever was in target (unless it was the source itself)
+    if (existing && existing !== artRef) {
+      if (existing.type==='hp-pair') { bumpBack(existing.left); bumpBack(existing.right); }
+      else bumpBack(existing);
     }
-    clearDragSource();
-    sp[side] = art;
+    sp[side] = artRef;
+
   } else if (art.size==='HP') {
+    // For HP we need to know if dropping on a page that has an hp-pair slot
+    const existing = sp[side];
     clearDragSource();
-    if (!sp[side] || sp[side].type!=='hp-pair') {
-      if (sp[side] && sp[side].id) bumpBack(sp[side]);
-      sp[side] = { type:'hp-pair', left:art, right:null };
+    // Re-read after clear (in case we cleared this same slot)
+    const currentSlot = layouts[zId].spreads[parseInt(si)][side];
+    if (!currentSlot || currentSlot.type!=='hp-pair') {
+      if (currentSlot && currentSlot.id) bumpBack(currentSlot);
+      layouts[zId].spreads[parseInt(si)][side] = { type:'hp-pair', left:artRef, right:null };
     } else {
-      if (!sp[side].left)       sp[side].left  = art;
-      else if (!sp[side].right) sp[side].right = art;
-      else { bumpBack(sp[side].left); sp[side].left = art; }
+      if (!currentSlot.left)       currentSlot.left  = artRef;
+      else if (!currentSlot.right) currentSlot.right = artRef;
+      else { bumpBack(currentSlot.left); currentSlot.left = artRef; }
     }
   }
 
@@ -759,6 +778,14 @@ function slotDrop(e, zId, si, side, pageType) {
 }
 
 function hpDragOver(e) { e.preventDefault(); e.stopPropagation(); }
+
+function hpDropEl(e, el) {
+  const zId     = el.getAttribute('data-tzone');
+  const si      = parseInt(el.getAttribute('data-tsi'));
+  const pageSide= el.getAttribute('data-tside');
+  const half    = el.getAttribute('data-thalf');
+  hpDrop(e, zId, si, pageSide, half);
+}
 
 function hpDrop(e, zId, si, pageSide, half) {
   e.preventDefault(); e.stopPropagation();
@@ -834,8 +861,9 @@ function drop2P(e, zId, si) {
   if (sp.left)  { if (sp.left.type==='hp-pair')  { bumpBack(sp.left.left);  bumpBack(sp.left.right);  } else bumpBack(sp.left);  }
   if (sp.right) { if (sp.right.type==='hp-pair') { bumpBack(sp.right.left); bumpBack(sp.right.right); } else bumpBack(sp.right); }
   const art2p = dragItem.artwork;
+  const fromInfo = dragItem.type === 'placed' ? { zone: dragItem.fromZone, spread: dragItem.fromSpread, side: dragItem.fromSide } : null;
   clearDragSource();
-  layouts[zId].spreads[si] = { left: art2p, right: null };
+  layouts[zId].spreads[parseInt(si)] = { left: art2p, right: null };
   dragItem = null;
   refreshLayout();
 }
@@ -877,6 +905,8 @@ function removeHp(zId, si, pageSide, half) {
 }
 
 function refreshLayout() {
+  isDragging = false;
+  dragItem   = null;
   renderSpreads();
   renderArtPanel();
 }
