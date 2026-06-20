@@ -89,8 +89,8 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .slot-fp .no-thumb{position:absolute;inset:0;background:#e8edf8;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px}
 .slot-fp .no-thumb span{font-size:10px;color:#888}
 .slot-fp .size-pip{position:absolute;top:3px;right:3px;background:var(--rd);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px;z-index:3}
-.btn-rm{position:absolute;top:2px;left:2px;background:rgba(191,13,62,.9);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:10;line-height:1}
-.slot-fp:hover .btn-rm{display:flex}
+.btn-rm{position:absolute;top:4px;left:4px;background:rgba(191,13,62,.9);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:20;line-height:1;pointer-events:auto}
+.page-side:hover .btn-rm,.slot-hp:not(.empty):hover .btn-rm{display:flex}
 
 /* HP slots - side by side */
 .hp-pair{display:flex;width:100%;height:100%;gap:1px}
@@ -102,8 +102,8 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .slot-hp .ad-label{position:relative;z-index:2;width:100%;background:rgba(0,0,0,.55);color:#fff;font-size:8px;font-weight:700;padding:2px 4px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .slot-hp .no-thumb{position:absolute;inset:0;background:#e8edf8;display:flex;align-items:center;justify-content:center;flex-direction:column}
 .slot-hp .size-pip{position:absolute;top:2px;right:2px;background:var(--amber);color:#fff;font-size:7px;font-weight:700;padding:1px 3px;border-radius:2px;z-index:3}
-.slot-hp .btn-rm{width:14px;height:14px;font-size:8px}
-.slot-hp:not(.empty):hover .btn-rm{display:flex}
+.slot-hp .btn-rm{width:16px;height:16px;font-size:9px}
+/* slot-hp hover handled above */
 
 /* 2P spread - double width page, same height */
 .spread-2p-wrap{flex:1;position:relative;overflow:hidden;aspect-ratio:22/6.5;background:#fff;border-radius:1px;cursor:pointer;display:flex;align-items:flex-end}
@@ -294,9 +294,7 @@ function initDragDrop() {
     ghost.style.left = e.clientX + 'px';
     ghost.style.top  = (e.clientY - 30) + 'px';
   }
-  function hideGhost() {
-    ghost.style.display = 'none';
-  }
+  function hideGhost() { ghost.style.display = 'none'; }
   function highlightTarget(el) {
     if (lastHighlight && lastHighlight !== el) lastHighlight.classList.remove('drop-target-active');
     if (el) el.classList.add('drop-target-active');
@@ -307,24 +305,11 @@ function initDragDrop() {
     lastHighlight = null;
   }
 
-  // Pointer drag from art panel
-  document.getElementById('artList').addEventListener('pointerdown', function(e) {
-    var card = e.target.closest('.art-card');
-    if (!card) return;
-    var artId = card.id.replace('artcard-','');
-    // Decode the id (it was encoded with esc())
-    artId = card.getAttribute('data-artid') || artId;
-    var art = allArtwork.find(function(a){ return a.id===artId || card.id==='artcard-'+a.id.replace(/[^a-zA-Z0-9]/g,''); });
-    if (!art) {
-      // Try by business name match
-      var biz = card.querySelector('.card-biz');
-      if (biz) art = allArtwork.find(function(a){ return a.business===biz.textContent; });
-    }
-    if (!art) return;
-
+  function startDrag(e, art, fromZone, fromSpread, fromSide, fromHalf) {
     BANK_DRAG = art;
+    // Store source info so we can clear it on drop
+    BANK_DRAG._from = { zone: fromZone, spread: fromSpread, side: fromSide, half: fromHalf };
     dragging = true;
-    card.style.opacity = '0.5';
     showGhost(e, art.business + ' [' + art.size + ']');
     e.preventDefault();
 
@@ -332,14 +317,13 @@ function initDragDrop() {
       if (!dragging) return;
       moveGhost(ev);
       var el = document.elementFromPoint(ev.clientX, ev.clientY);
-      var slot = el && (el.closest('[data-dropzone]') || el.closest('.spread[data-zone]') || el.closest('[data-dhalf]'));
-      highlightTarget(slot);
+      var target = el && (el.closest('[data-dhalf]') || el.closest('[data-dropzone]') || el.closest('.spread[data-zone]'));
+      highlightTarget(target);
     }
 
     function onUp(ev) {
       if (!dragging) return;
       dragging = false;
-      card.style.opacity = '';
       hideGhost();
       clearHighlight();
       document.removeEventListener('pointermove', onMove);
@@ -349,34 +333,109 @@ function initDragDrop() {
       var el = document.elementFromPoint(ev.clientX, ev.clientY);
       console.log('[DROP] pointer drop on:', el ? el.tagName+'.'+el.className : 'null');
 
-      // HP half
       var hpHalf = el && el.closest('[data-dhalf]');
       if (hpHalf) {
         slotDrop(null, hpHalf.getAttribute('data-dz'), parseInt(hpHalf.getAttribute('data-dsi')),
           hpHalf.getAttribute('data-dside'), 'any', hpHalf.getAttribute('data-dhalf'));
         BANK_DRAG = null; return;
       }
-      // Page slot
       var slot = el && el.closest('[data-dropzone]');
       if (slot) {
         slotDrop(null, slot.getAttribute('data-dz'), parseInt(slot.getAttribute('data-dsi')),
           slot.getAttribute('data-dside'), slot.getAttribute('data-dtype'), null);
         BANK_DRAG = null; return;
       }
-      // 2P spread
       var spread = el && el.closest('.spread[data-zone]');
       if (spread) {
         spreadDrop(null, spread.getAttribute('data-zone'), parseInt(spread.getAttribute('data-si')));
         BANK_DRAG = null; return;
       }
 
-      console.log('[DROP] missed - no valid target');
+      // Dropped on nothing - cancel, leave in place
+      console.log('[DROP] missed - cancelled');
       BANK_DRAG = null;
     }
 
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
+  }
+
+  // ── Drag from art bank ────────────────────────────────────────────────────
+  document.getElementById('artList').addEventListener('pointerdown', function(e) {
+    var card = e.target.closest('.art-card');
+    if (!card) return;
+    var artId = card.getAttribute('data-artid');
+    var art = allArtwork.find(function(a){ return a.id===artId; });
+    if (!art) {
+      var biz = card.querySelector('.card-biz');
+      if (biz) art = allArtwork.find(function(a){ return a.business===biz.textContent.trim(); });
+    }
+    if (!art) return;
+    card.style.opacity = '0.5';
+    var origOpacity = card.style.opacity;
+    var onDone = function() { card.style.opacity = ''; };
+    document.addEventListener('pointerup', onDone, { once: true });
+    startDrag(e, art, null, null, null, null);
   });
+
+  // ── Drag from placed slots ────────────────────────────────────────────────
+  document.getElementById('spreadArea').addEventListener('pointerdown', function(e) {
+    // Must be on a placed slot but NOT on the ✕ remove button
+    if (e.target.closest('.btn-rm') || e.target.closest('.btn-rm-2p')) return;
+
+    var pageSide = e.target.closest('.page-side[data-dz]');
+    var hpSlot   = e.target.closest('.slot-hp.has-ad');
+    var twoPWrap = e.target.closest('.spread-2p-wrap[data-zone]');
+
+    var art = null, fromZone, fromSpread, fromSide, fromHalf = null;
+
+    if (twoPWrap) {
+      fromZone   = twoPWrap.getAttribute('data-zone');
+      fromSpread = parseInt(twoPWrap.getAttribute('data-si'));
+      fromSide   = 'left';
+      var sp2p   = layouts[fromZone] && layouts[fromZone].spreads[fromSpread];
+      art        = sp2p && sp2p.left && sp2p.left.size==='2P' ? sp2p.left : null;
+    } else if (hpSlot) {
+      var dz  = hpSlot.getAttribute('data-dz');
+      var dsi = parseInt(hpSlot.getAttribute('data-dsi'));
+      var dside = hpSlot.getAttribute('data-dside');
+      var dhalf = hpSlot.getAttribute('data-dhalf');
+      var spHP  = layouts[dz] && layouts[dz].spreads[dsi];
+      art        = spHP && spHP[dside] && spHP[dside].type==='hp-pair' ? spHP[dside][dhalf] : null;
+      if (art) { fromZone=dz; fromSpread=dsi; fromSide=dside; fromHalf=dhalf; }
+    } else if (pageSide) {
+      fromZone   = pageSide.getAttribute('data-dz');
+      fromSpread = parseInt(pageSide.getAttribute('data-dsi'));
+      fromSide   = pageSide.getAttribute('data-dside');
+      var spFP   = layouts[fromZone] && layouts[fromZone].spreads[fromSpread];
+      var slot   = spFP && spFP[fromSide];
+      art        = slot && slot.type !== 'hp-pair' ? slot : null;
+    }
+
+    if (!art) return;
+
+    // Clear source slot immediately so it doesn't show as occupied during drag
+    clearPlacedSource(fromZone, fromSpread, fromSide, fromHalf);
+    refreshLayout();
+
+    startDrag(e, art, fromZone, fromSpread, fromSide, fromHalf);
+  });
+}
+
+function clearPlacedSource(zone, spread, side, half) {
+  if (!zone || spread === null) return;
+  var layout = layouts[zone];
+  if (!layout) return;
+  var sp = layout.spreads[spread];
+  if (!sp) return;
+  if (half) {
+    if (sp[side] && sp[side].type==='hp-pair') {
+      sp[side][half] = null;
+      if (!sp[side].left && !sp[side].right) sp[side] = null;
+    }
+  } else {
+    sp[side] = null;
+  }
 }
 
 // slotDrop now accepts null event (pointer-based)
@@ -702,12 +761,12 @@ function renderPageSide(slot, si, side, pageType) {
 
   return '<div class="page-side"'+singleStyle+' '+dropAttrs+' '+
     'onclick="event.stopPropagation();selectPlaced(\''+esc(activeZone)+'\','+si+',\''+side+'\',null)">'+
-    '<div class="slot-fp" style="pointer-events:none">'+
+    '<div class="slot-fp">'+
       thumb+
       '<div class="ad-label" style="pointer-events:none">'+esc(slot.business)+'</div>'+
       '<span class="size-pip" style="pointer-events:none">'+(slot.size||'FP')+'</span>'+
     '</div>'+
-    '<button class="btn-rm" style="pointer-events:auto" onclick="event.stopPropagation();removeSlot(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>'+
+    '<button class="btn-rm" onclick="event.stopPropagation();removeSlot(\''+esc(activeZone)+'\','+si+',\''+side+'\')">✕</button>'+
   '</div>';
 }
 
