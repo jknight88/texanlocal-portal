@@ -7,118 +7,168 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
-body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;overflow:hidden}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#c8cdd8;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 /* Header */
-.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px;flex-wrap:wrap}
-.hdr-l{display:flex;align-items:center;gap:12px}
-.hdr-logo{height:38px}
-.hdr-l h1{font-family:'Playfair Display',serif;font-size:15px;color:#fff;white-space:nowrap}
-.hdr-controls{display:flex;align-items:center;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
-.hdr-controls label{font-size:11px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px}
-.hdr-controls select{padding:5px 10px;border:1px solid rgba(255,255,255,.3);border-radius:4px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.1);color:#fff;outline:none;cursor:pointer}
-.hdr-controls select option{background:#00205B;color:#fff}
-.hdr-r{display:flex;gap:8px;align-items:center}
-.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block;white-space:nowrap}
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.6rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
+.hdr-l{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hdr-logo{height:36px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:14px;color:#fff;white-space:nowrap}
+.hdr-mid{display:flex;align-items:center;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
+.hdr-mid label{font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px}
+.hdr-mid select{padding:4px 8px;border:1px solid rgba(255,255,255,.25);border-radius:4px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.1);color:#fff;outline:none;cursor:pointer}
+.hdr-mid select option{background:#00205B;color:#fff}
+.btn-load{background:var(--rd);color:#fff;border:none;padding:5px 14px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-hdr{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block;white-space:nowrap}
 .btn-hdr:hover{background:rgba(255,255,255,.2)}
 
+/* Zoom controls */
+.zoom-bar{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border-radius:4px;padding:3px 8px}
+.zoom-bar label{font-size:10px;color:rgba(255,255,255,.6)}
+.zoom-bar input[type=range]{width:80px;accent-color:var(--rd)}
+.zoom-bar span{font-size:11px;color:#fff;min-width:32px;text-align:center}
+
 /* Zone tabs */
-.zone-tabs{background:var(--bl);border-bottom:2px solid rgba(255,255,255,.1);display:flex;overflow-x:auto;flex-shrink:0}
-.zone-tab{padding:.5rem 1.1rem;font-size:12px;font-weight:700;color:rgba(255,255,255,.55);cursor:pointer;border:none;background:transparent;font-family:inherit;white-space:nowrap;border-bottom:3px solid transparent;transition:all .15s}
-.zone-tab:hover{color:#fff;background:rgba(255,255,255,.05)}
-.zone-tab.active{color:#fff;border-bottom-color:var(--rd);background:rgba(255,255,255,.08)}
+.zone-bar{background:#111827;border-bottom:1px solid #2a3550;padding:0;display:flex;overflow-x:auto;flex-shrink:0}
+.zone-tab{padding:.45rem 1rem;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);cursor:pointer;border:none;background:transparent;font-family:inherit;white-space:nowrap;border-bottom:3px solid transparent;transition:all .15s;display:flex;align-items:center;gap:5px}
+.zone-tab:hover{color:rgba(255,255,255,.75)}
+.zone-tab.active{color:#fff;border-bottom-color:var(--rd);background:rgba(255,255,255,.05)}
+.zone-tab .z-cnt{font-size:9px;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 5px}
+.zone-tab.active .z-cnt{background:var(--rd)}
 
-/* Main layout */
-.workspace{display:flex;flex:1;overflow:hidden;height:calc(100vh - 110px)}
+/* Workspace */
+.workspace{display:flex;flex:1;overflow:hidden;min-height:0}
 
-/* Left: spread viewer */
-.spread-area{flex:1;overflow-y:auto;padding:1rem;background:var(--bg)}
-.zone-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;background:#fff;border-radius:6px;padding:.6rem 1rem;box-shadow:0 2px 6px rgba(0,0,0,.07)}
-.zone-header h2{font-size:13px;font-weight:700;color:var(--bl)}
-.page-controls{display:flex;align-items:center;gap:8px}
-.page-controls span{font-size:12px;color:var(--md)}
-.btn-pages{background:#f0f2f5;border:1px solid var(--br);color:var(--md);padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
-.btn-pages:hover{background:#e0e3ea}
-.btn-email{background:var(--rd);color:#fff;border:none;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
-.btn-email:hover{background:#a00a34}
+/* Spread area */
+.spread-area{flex:1;overflow-y:auto;overflow-x:auto;padding:1rem;background:#1a1a2e;display:flex;flex-direction:column;gap:.5rem}
+.zone-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.5rem .8rem;background:#111827;border-radius:6px;margin-bottom:.5rem;flex-shrink:0}
+.zone-toolbar h2{font-size:12px;font-weight:700;color:#fff}
+.zone-toolbar .pg-info{font-size:11px;color:rgba(255,255,255,.5)}
+.btn-pg{background:#2a3550;border:1px solid #3a4a70;color:#fff;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-pg:hover{background:#3a4a70}
+.btn-email-designer{background:var(--rd);color:#fff;border:none;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
 
-/* Spread */
-.spread{display:flex;gap:4px;margin-bottom:8px;background:#888;border-radius:4px;padding:4px;position:relative}
-.spread-num{position:absolute;top:-18px;left:0;font-size:10px;color:var(--md);font-weight:700}
-.page-side{flex:1;min-height:180px;background:#fff;border-radius:2px;position:relative;display:flex;flex-direction:column;overflow:hidden;transition:outline .15s}
-.page-side.drag-over{outline:3px solid var(--rd);background:#fff8f8}
-.page-side.two-page-left{border-radius:2px 0 0 2px}
-.page-side.two-page-right{border-radius:0 2px 2px 0}
+/* Spreads grid - 2 per row */
+.spreads-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
 
-/* Slot */
-.slot{flex:1;border:2px dashed #ddd;border-radius:3px;margin:4px;display:flex;align-items:center;justify-content:center;min-height:80px;position:relative;transition:all .15s;cursor:pointer}
-.slot.has-ad{border:none;margin:0;border-radius:0}
-.slot.drag-over{border-color:var(--rd);background:#fff0f0}
-.slot.empty-slot{flex-direction:column;gap:4px;color:#bbb;font-size:11px}
-.slot.empty-slot .slot-hint{font-size:18px}
+/* Each spread */
+.spread-wrap{display:flex;flex-direction:column;gap:3px}
+.spread-label{font-size:9px;color:rgba(255,255,255,.4);text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.spread{display:flex;gap:3px;background:#0a0f1e;border-radius:3px;padding:2px;cursor:default}
 
-/* Ad card in slot */
-.ad-in-slot{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;cursor:grab;padding:6px;text-align:center}
-.ad-in-slot:active{cursor:grabbing}
-.ad-in-slot .ad-thumb{width:100%;flex:1;object-fit:cover;border-radius:2px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;overflow:hidden}
-.ad-in-slot .ad-thumb img{width:100%;height:100%;object-fit:cover}
-.ad-in-slot .ad-name{font-size:9px;font-weight:700;color:var(--bl);margin-top:3px;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ad-in-slot .ad-size-badge{position:absolute;top:3px;right:3px;background:var(--bl);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px}
-.ad-in-slot .btn-remove{position:absolute;top:2px;left:2px;background:var(--rd);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
-.ad-in-slot:hover .btn-remove{opacity:1}
+/* Page - 11" x 6.5" ratio = 11/6.5 = 1.692 width per height */
+/* We want each page in the grid to be correct ratio */
+/* Each spread takes full column width. Page = half the spread width */
+/* Height = width * (6.5/11) */
+.page-side{
+  flex:1;
+  position:relative;
+  background:#fff;
+  border-radius:1px;
+  overflow:hidden;
+  /* Aspect ratio 11:6.5 = 1.692:1 */
+  aspect-ratio: 11 / 6.5;
+  display:flex;
+  flex-direction:column;
+  transition:outline .1s;
+  min-height:0;
+}
+.page-side.drag-over{outline:2px solid var(--rd);background:rgba(191,13,62,.05)}
+.page-side.two-page{flex:2}
 
-/* HP slots side by side */
-.hp-container{display:flex;flex:1;gap:2px;padding:4px}
-.hp-slot{flex:1;border:2px dashed #ddd;border-radius:3px;display:flex;align-items:center;justify-content:center;min-height:80px;cursor:pointer;transition:all .15s;position:relative}
-.hp-slot.has-ad{border:none;padding:0}
-.hp-slot.drag-over{border-color:var(--rd);background:#fff0f0}
-.hp-slot.empty-slot{flex-direction:column;gap:4px;color:#bbb;font-size:10px}
+/* Empty page */
+.page-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;color:#ccc;font-size:11px;border:2px dashed #ddd}
+.page-empty .drop-hint{font-size:9px;color:#aaa;text-align:center}
 
-/* 2P spread indicator */
-.two-page-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,32,91,.85);color:#fff;padding:4px 10px;border-radius:10px;font-size:10px;font-weight:700;pointer-events:none;white-space:nowrap;z-index:2}
+/* FP slot */
+.slot-fp{width:100%;height:100%;position:relative;cursor:grab;display:flex;align-items:flex-end}
+.slot-fp:active{cursor:grabbing}
+.slot-fp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.slot-fp .ad-label{position:relative;z-index:2;width:100%;background:rgba(0,0,0,.55);color:#fff;font-size:9px;font-weight:700;padding:3px 5px;text-align:center;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;backdrop-filter:blur(2px)}
+.slot-fp .no-thumb{position:absolute;inset:0;background:#e8edf8;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px}
+.slot-fp .no-thumb span{font-size:10px;color:#888}
+.slot-fp .size-pip{position:absolute;top:3px;right:3px;background:var(--rd);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px;z-index:3}
+.btn-rm{position:absolute;top:2px;left:2px;background:rgba(191,13,62,.9);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:10;line-height:1}
+.slot-fp:hover .btn-rm{display:flex}
 
-/* Right: artwork panel */
-.artwork-panel{width:280px;background:#fff;border-left:2px solid var(--br);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
-.panel-hdr{background:var(--bl);padding:.7rem 1rem;flex-shrink:0}
-.panel-hdr h3{color:#fff;font-size:12px;font-weight:700;margin-bottom:6px}
-.panel-filters{display:flex;flex-direction:column;gap:6px}
-.panel-filters select,.panel-filters input{width:100%;padding:5px 8px;border:1px solid rgba(255,255,255,.3);border-radius:4px;font-size:12px;font-family:inherit;background:rgba(255,255,255,.1);color:#fff;outline:none}
-.panel-filters select option{background:#00205B}
-.artwork-list{flex:1;overflow-y:auto;padding:.6rem}
-.art-card{background:#f9fafc;border:1px solid var(--br);border-radius:5px;padding:8px;margin-bottom:6px;cursor:grab;transition:all .15s;display:flex;gap:8px;align-items:center}
+/* HP slots - side by side */
+.hp-pair{display:flex;width:100%;height:100%;gap:1px}
+.slot-hp{flex:1;height:100%;position:relative;cursor:grab;display:flex;align-items:flex-end;overflow:hidden;border:2px dashed transparent}
+.slot-hp:active{cursor:grabbing}
+.slot-hp.empty{border-color:#ddd;align-items:center;justify-content:center;flex-direction:column;gap:2px;background:#fafafa}
+.slot-hp.drag-over{border-color:var(--rd);background:rgba(191,13,62,.05)}
+.slot-hp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.slot-hp .ad-label{position:relative;z-index:2;width:100%;background:rgba(0,0,0,.55);color:#fff;font-size:8px;font-weight:700;padding:2px 4px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot-hp .no-thumb{position:absolute;inset:0;background:#e8edf8;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.slot-hp .size-pip{position:absolute;top:2px;right:2px;background:var(--amber);color:#fff;font-size:7px;font-weight:700;padding:1px 3px;border-radius:2px;z-index:3}
+.slot-hp .btn-rm{width:14px;height:14px;font-size:8px}
+.slot-hp:not(.empty):hover .btn-rm{display:flex}
+
+/* 2P spread overlay */
+.spread-2p{position:absolute;inset:0;display:flex;align-items:flex-end;z-index:1}
+.spread-2p img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.spread-2p .ad-label{position:relative;z-index:2;width:100%;background:rgba(0,0,0,.55);color:#fff;font-size:9px;font-weight:700;padding:3px 5px;text-align:center}
+.spread-2p .size-pip{position:absolute;top:3px;right:3px;background:var(--green);color:#fff;font-size:8px;padding:1px 4px;border-radius:2px;z-index:3;font-weight:700}
+.spread-2p-gutter{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#1a1a2e;transform:translateX(-50%);z-index:4}
+
+/* Artwork panel */
+.art-panel{width:260px;background:#111827;border-left:1px solid #2a3550;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.art-panel-hdr{background:#0a0f1e;padding:.6rem .8rem;flex-shrink:0}
+.art-panel-hdr h3{color:#fff;font-size:11px;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.art-panel-filters{display:flex;flex-direction:column;gap:5px}
+.art-panel-filters select,.art-panel-filters input{width:100%;padding:4px 7px;border:1px solid #2a3550;border-radius:3px;font-size:11px;font-family:inherit;background:#1a2540;color:#fff;outline:none}
+.art-panel-filters select option{background:#1a2540}
+.art-list{flex:1;overflow-y:auto;padding:.5rem}
+
+/* Art card */
+.art-card{background:#1e2a42;border:1px solid #2a3550;border-radius:4px;margin-bottom:5px;cursor:grab;transition:all .15s;overflow:hidden}
 .art-card:active{cursor:grabbing;opacity:.7}
-.art-card:hover{background:#eef2ff;border-color:var(--bl)}
-.art-card.placed{opacity:.4;border-style:dashed}
-.art-card.dragging{opacity:.5;transform:scale(.95)}
-.art-thumb{width:48px;height:36px;background:#e8edf8;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--md);flex-shrink:0;overflow:hidden}
-.art-thumb img{width:100%;height:100%;object-fit:cover}
-.art-info{flex:1;min-width:0}
-.art-biz{font-size:11px;font-weight:700;color:var(--bl);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.art-meta{font-size:10px;color:var(--md);margin-top:2px}
-.art-zones{font-size:9px;color:var(--green);font-weight:700;margin-top:2px}
-.size-tag{display:inline-block;background:var(--bl);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px;margin-right:3px}
+.art-card:hover{border-color:#4a6090;background:#253354}
+.art-card.placed{opacity:.3;border-style:dashed}
+.art-card .thumb-wrap{position:relative;background:#0d1525;overflow:hidden}
+.art-card.fp-card .thumb-wrap{aspect-ratio:11/6.5}
+.art-card.hp-card .thumb-wrap{aspect-ratio:5.5/6.5}
+.art-card.two-p-card .thumb-wrap{aspect-ratio:22/6.5}
+.art-card .thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.art-card .thumb-na{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px}
+.art-card .thumb-na .na-label{font-size:16px;color:#3a4a70;font-weight:700}
+.art-card .thumb-na .na-sub{font-size:9px;color:#3a4a70}
+.art-card .thumb-loading{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#3a4a70;font-size:10px}
+.art-card .card-info{padding:4px 6px;display:flex;align-items:center;justify-content:space-between}
+.art-card .card-biz{font-size:10px;font-weight:700;color:#c8d8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.art-card .card-meta{display:flex;gap:3px;flex-shrink:0}
+.size-tag{font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px;color:#fff}
 .size-tag.fp{background:var(--rd)}
 .size-tag.hp{background:var(--amber)}
 .size-tag.two-p{background:var(--green)}
+.zones-tag{font-size:8px;color:#6a8ab8;margin-top:1px}
+.btn-gen-thumb{position:absolute;bottom:3px;right:3px;background:rgba(0,32,91,.85);color:#fff;border:none;border-radius:2px;font-size:8px;padding:2px 5px;cursor:pointer;font-family:inherit}
 
-.panel-empty{padding:1.5rem;text-align:center;color:var(--md);font-size:12px}
+.art-panel-empty{padding:1.5rem;text-align:center;color:#3a4a70;font-size:11px}
+
+/* Loading state */
+.loading-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:20;border-radius:4px}
+.loading-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* Toast */
-.toast{position:fixed;bottom:20px;right:20px;background:#1a1a2e;color:#fff;padding:10px 16px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast{position:fixed;bottom:16px;right:16px;background:#1a1a2e;color:#fff;padding:8px 16px;border-radius:5px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;border:1px solid #2a3550}
 .toast.show{opacity:1}
-.toast.err{background:var(--rd)}
+.toast.err{background:var(--rd);border-color:var(--rd)}
+.toast.ok{background:var(--green);border-color:var(--green)}
 </style>
 </head>
 <body>
 
+<!-- Header -->
 <header class="hdr">
   <div class="hdr-l">
-    <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
+    <img class="hdr-logo" src="/assets/logo.png" alt="TL" onerror="this.style.display='none'">
     <h1>Magazine Layout</h1>
   </div>
-  <div class="hdr-controls">
-    <label>Mailing Month</label>
+  <div class="hdr-mid">
+    <label>Month</label>
     <select id="selMonth">
       <option value="01">January</option><option value="02">February</option>
       <option value="03">March</option><option value="04">April</option>
@@ -128,631 +178,630 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
       <option value="11">November</option><option value="12">December</option>
     </select>
     <select id="selYear"></select>
-    <button class="btn-hdr" onclick="loadLayout()" style="background:var(--rd);border-color:var(--rd)">Load</button>
+    <button class="btn-load" onclick="loadLayout()">Load</button>
+    <div class="zoom-bar">
+      <label>Zoom</label>
+      <input type="range" id="zoomRange" min="40" max="150" value="100" oninput="applyZoom(this.value)">
+      <span id="zoomLabel">100%</span>
+    </div>
   </div>
-  <div class="hdr-r">
+  <div style="display:flex;gap:6px;align-items:center">
+    <button class="btn-hdr" onclick="saveLayout()" style="background:rgba(255,255,255,.15)">💾 Save</button>
     <a href="/home" class="btn-hdr">← Home</a>
-    <button class="btn-hdr" onclick="saveLayout()">💾 Save</button>
     <button class="btn-hdr" onclick="logout()">Sign Out</button>
   </div>
 </header>
 
 <!-- Zone tabs -->
-<div class="zone-tabs" id="zoneTabs"></div>
+<div class="zone-bar" id="zoneTabs"></div>
 
-<!-- Main workspace -->
+<!-- Workspace -->
 <div class="workspace">
-
-  <!-- Left: Spread viewer -->
   <div class="spread-area" id="spreadArea">
-    <div style="padding:2rem;text-align:center;color:var(--md)">Select a month and click Load to begin</div>
+    <div style="padding:3rem;text-align:center;color:#3a4a70;font-size:14px">
+      <div style="font-size:32px;margin-bottom:12px">📰</div>
+      Select a mailing month and click <strong style="color:#fff">Load</strong> to begin
+    </div>
   </div>
-
-  <!-- Right: Artwork panel -->
-  <div class="artwork-panel">
-    <div class="panel-hdr">
+  <div class="art-panel">
+    <div class="art-panel-hdr">
       <h3>Available Artwork</h3>
-      <div class="panel-filters">
+      <div class="art-panel-filters">
         <select id="zoneFilter" onchange="filterArtwork()">
           <option value="">All Zones</option>
         </select>
-        <input type="text" id="artSearch" placeholder="Search…" oninput="filterArtwork()">
+        <input type="text" id="artSearch" placeholder="Search business…" oninput="filterArtwork()">
       </div>
     </div>
-    <div class="artwork-list" id="artworkList">
-      <div class="panel-empty">Load a month to see artwork</div>
+    <div class="art-list" id="artList">
+      <div class="art-panel-empty">Load a month to see artwork</div>
     </div>
   </div>
-
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 const API = '/api';
-let zones        = [];
-let allArtwork   = [];
-let layouts      = {}; // { zoneId: { pages: N, spreads: [[left,right],...] } }
-let activeZone   = null;
-let currentMonth = null;
-let currentYear  = null;
-let settings     = {};
-let dragItem     = null; // { type:'artwork'|'placed', artwork, fromZone, fromSpread, fromSide, fromHalf }
+let zones       = [];
+let allArtwork  = [];   // all parsed artwork for the month
+let layouts     = {};   // { zoneId: { pages, spreads:[{left,right},...] } }
+let activeZone  = null;
+let curMonth    = null;
+let curYear     = null;
+let settings    = {};
+let dragItem    = null;
+let zoomScale   = 1.0;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
   const token = sessionStorage.getItem('txl_token');
-  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials:'include' });
-  if (!res.ok) { window.location.href = '/'; return; }
+  const res   = await fetch(API+'/authVerify'+(token?'?token='+token:''),{credentials:'include'});
+  if (!res.ok) { window.location.href='/'; return; }
 
-  // Year selector
-  const now = new Date();
-  const sel = document.getElementById('selYear');
-  for (let y = now.getFullYear(); y <= now.getFullYear()+1; y++) {
-    const o = document.createElement('option'); o.value = y; o.textContent = y; sel.appendChild(o);
+  const now  = new Date();
+  const ysel = document.getElementById('selYear');
+  for (let y=now.getFullYear();y<=now.getFullYear()+1;y++) {
+    const o=document.createElement('option');o.value=y;o.textContent=y;ysel.appendChild(o);
   }
-  // Default to next month
-  const next = new Date(now.getFullYear(), now.getMonth()+1, 1);
+  const next = new Date(now.getFullYear(),now.getMonth()+1,1);
   document.getElementById('selMonth').value = String(next.getMonth()+1).padStart(2,'0');
-  sel.value = next.getFullYear();
+  ysel.value = next.getFullYear();
 
-  // Load settings
   try {
-    const sr   = await fetch(API + '/getCompanySettings', { credentials:'include' });
-    const sd   = await sr.json();
-    settings   = sd.settings || {};
-    zones      = (settings.zones || []).filter(function(z){ return z.active; });
-  } catch(e) {}
+    const sr = await fetch(API+'/getCompanySettings',{credentials:'include'});
+    const sd = await sr.json();
+    settings = sd.settings || {};
+    zones    = (settings.zones||[]).filter(function(z){return z.active;});
+  } catch(e){}
 
-  if (!zones.length) {
-    zones = [
-      {id:'01-NBE',name:'New Braunfels East',pages:16,active:true},
-      {id:'02-NBW',name:'New Braunfels West',pages:16,active:true},
-      {id:'03-BSB',name:'Bulverde/Spring Branch',pages:16,active:true},
-      {id:'04-SMW',name:'Schertz/Marion/Welder',pages:16,active:true},
-      {id:'05-SCG',name:'Seguin',pages:16,active:true},
-      {id:'06-TPC',name:'The Park/Converse',pages:16,active:true},
-      {id:'07-STP',name:'Stone Oak/TPC',pages:16,active:true},
-      {id:'08-DSB',name:'Dripping Springs/Buda',pages:16,active:false}
-    ].filter(function(z){ return z.active; });
-  }
+  if (!zones.length) zones = [
+    {id:'01-NBE',name:'New Braunfels East',pages:16,active:true},
+    {id:'02-NBW',name:'New Braunfels West',pages:16,active:true},
+    {id:'03-BSB',name:'Bulverde/Spring Branch',pages:16,active:true},
+    {id:'04-SMW',name:'Schertz/Marion/Welder',pages:16,active:true},
+    {id:'05-SCG',name:'Seguin',pages:16,active:true},
+    {id:'06-TPC',name:'The Park/Converse',pages:16,active:true},
+    {id:'07-STP',name:'Stone Oak/TPC',pages:16,active:true}
+  ];
 
-  renderZoneTabs();
+  buildZoneTabs();
   populateZoneFilter();
 }
 
-// ── Zone Tabs ─────────────────────────────────────────────────────────────────
-function renderZoneTabs() {
-  document.getElementById('zoneTabs').innerHTML = zones.map(function(z) {
-    return '<button class="zone-tab" id="ztab-'+z.id+'" onclick="selectZone(\''+z.id+'\')">' +
-      z.id + ' — ' + z.name + '</button>';
+function buildZoneTabs() {
+  document.getElementById('zoneTabs').innerHTML = zones.map(function(z){
+    return '<button class="zone-tab" id="ztab-'+z.id+'" onclick="selectZone(\''+z.id+'\')">'+
+      z.id+'<span class="z-cnt" id="zcnt-'+z.id+'">0</span></button>';
   }).join('');
 }
 
-function selectZone(zoneId) {
-  activeZone = zoneId;
-  document.querySelectorAll('.zone-tab').forEach(function(t){ t.classList.remove('active'); });
-  const tab = document.getElementById('ztab-'+zoneId);
-  if (tab) tab.classList.add('active');
-  renderSpreadArea();
-  filterArtwork();
-  document.getElementById('zoneFilter').value = zoneId;
+function populateZoneFilter() {
+  const s = document.getElementById('zoneFilter');
+  s.innerHTML = '<option value="">All Zones</option>';
+  zones.forEach(function(z){
+    const o=document.createElement('option');o.value=z.id;o.textContent=z.id+' — '+z.name;s.appendChild(o);
+  });
 }
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 async function loadLayout() {
-  currentMonth = document.getElementById('selMonth').value;
-  currentYear  = document.getElementById('selYear').value;
-
-  showToast('Loading files…');
+  curMonth = document.getElementById('selMonth').value;
+  curYear  = document.getElementById('selYear').value;
+  showToast('Loading artwork…');
 
   try {
-    // Load artwork files from blob storage
-    const res  = await fetch(API + '/filesListFiles?year='+currentYear+'&month='+currentMonth, { credentials:'include' });
-    const data = await res.json();
-    allArtwork = (data.files || []).map(function(f){ return parseFilename(f.name, f); });
-    allArtwork = allArtwork.filter(function(a){ return a; });
+    // Load artwork files
+    const ar   = await fetch(API+'/getLayoutArtwork?month='+curMonth+'&year='+curYear,{credentials:'include'});
+    const ad   = await ar.json();
+    allArtwork = ad.files || [];
 
-    // Try to load saved layout
+    // Load saved layout
     try {
-      const lr   = await fetch(API + '/getLayoutData?month='+currentMonth+'&year='+currentYear, { credentials:'include' });
-      const ld   = await lr.json();
-      layouts    = ld.layout || {};
-    } catch(e) { layouts = {}; }
+      const lr = await fetch(API+'/getLayoutData?month='+curMonth+'&year='+curYear,{credentials:'include'});
+      const ld = await lr.json();
+      layouts  = ld.layout || {};
+    } catch(e){ layouts={}; }
 
-    // Init layouts for zones that don't have one
-    zones.forEach(function(z) {
-      if (!layouts[z.id]) {
-        const pages = z.pages || 16;
-        const numSpreads = pages / 2;
-        layouts[z.id] = { pages: pages, spreads: [] };
-        for (let i = 0; i < numSpreads; i++) {
-          layouts[z.id].spreads.push({ left: null, right: null });
-        }
-      }
+    // Init zone layouts
+    zones.forEach(function(z){
+      if (!layouts[z.id]) initZoneLayout(z);
     });
 
-    renderArtworkPanel();
-    if (activeZone) { renderSpreadArea(); }
-    else if (zones.length) { selectZone(zones[0].id); }
+    // Update zone art counts
+    updateZoneCounts();
+    renderArtPanel();
 
-    showToast('Loaded ' + allArtwork.length + ' files for ' + currentMonth + '/' + currentYear);
-  } catch(e) {
-    showToast('Error loading files: ' + e.message, true);
-  }
+    if (activeZone) renderSpreads();
+    else if (zones.length) selectZone(zones[0].id);
+
+    showToast('Loaded '+allArtwork.length+' files', false);
+  } catch(e){ showToast('Error: '+e.message, true); }
 }
 
-// ── Parse filename ────────────────────────────────────────────────────────────
-function parseFilename(fullPath, fileObj) {
-  const fname = fullPath.split('/').pop();
-  const noExt = fname.replace(/\.pdf$/i,'');
-  const parts = noExt.split('_');
-  if (parts.length < 3) return null;
-
-  const biz     = parts[0];
-  const dateStr = parts[1]; // MMYY
-  let   size    = '';
-  let   zoneStr = '';
-
-  // Find size (FP, HP, 2P)
-  for (let i = 2; i < parts.length; i++) {
-    if (/^(FP|HP|2P)$/i.test(parts[i])) { size = parts[i].toUpperCase(); }
-    if (/^Z/i.test(parts[i]))            { zoneStr = parts[i]; }
-  }
-  if (!size) return null;
-
-  const zones = parseZones(zoneStr);
-
-  return {
-    filename: fname,
-    path:     fullPath,
-    business: biz,
-    size,
-    zoneStr,
-    zones,
-    placed:   false,
-    id:       fullPath
-  };
+function initZoneLayout(zone) {
+  const pages = zone.pages || 16;
+  const spreads = [];
+  for (let i=0;i<pages/2;i++) spreads.push({left:null,right:null});
+  layouts[zone.id] = { pages, spreads };
 }
 
-// Parse zone string: Z1 → [1], Z1-3 → [1,2,3], Z1,4,5 → [1,4,5]
-function parseZones(zstr) {
-  if (!zstr) return [];
-  const s = zstr.replace(/^Z/i,'');
-  const result = [];
-  s.split(',').forEach(function(part) {
-    if (part.includes('-')) {
-      const bounds = part.split('-');
-      const start  = parseInt(bounds[0]);
-      const end    = parseInt(bounds[1]);
-      for (let n = start; n <= end; n++) result.push(n);
-    } else {
-      const n = parseInt(part);
-      if (!isNaN(n)) result.push(n);
-    }
+// ── Zone management ───────────────────────────────────────────────────────────
+function selectZone(zId) {
+  activeZone = zId;
+  document.querySelectorAll('.zone-tab').forEach(function(t){t.classList.remove('active');});
+  const tab = document.getElementById('ztab-'+zId);
+  if (tab) tab.classList.add('active');
+  document.getElementById('zoneFilter').value = zId;
+  filterArtwork();
+  renderSpreads();
+}
+
+function updateZoneCounts() {
+  zones.forEach(function(z){
+    const cnt = artworkForZone(z.id).length;
+    const el  = document.getElementById('zcnt-'+z.id);
+    if (el) el.textContent = cnt;
   });
-  return result;
 }
 
-function zoneNum(zoneId) {
-  return parseInt(zoneId.split('-')[0]);
-}
+// ── Artwork helpers ───────────────────────────────────────────────────────────
+function zoneNum(zId) { return parseInt(zId.split('-')[0]); }
 
-function artworkForZone(zoneId) {
-  const num = zoneNum(zoneId);
-  return allArtwork.filter(function(a) {
-    if (!a.zones.length) return true; // no zone = show in all
+function artworkForZone(zId) {
+  const num = zoneNum(zId);
+  return allArtwork.filter(function(a){
+    if (!a.zones || !a.zones.length) return true;
     return a.zones.indexOf(num) !== -1;
   });
 }
 
-// ── Artwork Panel ─────────────────────────────────────────────────────────────
-function populateZoneFilter() {
-  const sel = document.getElementById('zoneFilter');
-  sel.innerHTML = '<option value="">All Zones</option>';
-  zones.forEach(function(z) {
-    const o = document.createElement('option'); o.value = z.id;
-    o.textContent = z.id + ' — ' + z.name; sel.appendChild(o);
+function getPlacedIds() {
+  const placed = {};
+  Object.keys(layouts).forEach(function(zid){
+    const layout = layouts[zid];
+    if (!layout) return;
+    layout.spreads.forEach(function(sp){
+      ['left','right'].forEach(function(side){
+        const s = sp[side];
+        if (!s) return;
+        if (s.type==='hp-pair') {
+          if (s.left)  placed[s.left.id]  = true;
+          if (s.right) placed[s.right.id] = true;
+        } else if (s.id) placed[s.id] = true;
+      });
+    });
   });
+  return placed;
 }
 
-function filterArtwork() {
-  renderArtworkPanel();
-}
+// ── Artwork Panel ─────────────────────────────────────────────────────────────
+function filterArtwork() { renderArtPanel(); }
 
-function renderArtworkPanel() {
-  const zf  = document.getElementById('zoneFilter').value;
-  const q   = (document.getElementById('artSearch').value||'').toLowerCase();
-  const list= document.getElementById('artworkList');
+function renderArtPanel() {
+  const zf       = document.getElementById('zoneFilter').value;
+  const q        = (document.getElementById('artSearch').value||'').toLowerCase();
+  const placedIds= getPlacedIds();
+  const list     = document.getElementById('artList');
 
-  let filtered = allArtwork;
-  if (zf) filtered = artworkForZone(zf);
-  if (q)  filtered = filtered.filter(function(a){ return a.business.toLowerCase().includes(q); });
+  let filtered = zf ? artworkForZone(zf) : allArtwork;
+  if (q) filtered = filtered.filter(function(a){return a.business.toLowerCase().includes(q);});
+
+  // Filter out placed items
+  const unplaced = filtered.filter(function(a){ return !placedIds[a.id]; });
 
   if (!filtered.length) {
-    list.innerHTML = '<div class="panel-empty">' + (allArtwork.length ? 'No artwork matches filter' : 'Load a month to see artwork') + '</div>';
+    list.innerHTML='<div class="art-panel-empty">'+(allArtwork.length?'No artwork for this filter':'Load a month to see artwork')+'</div>';
+    return;
+  }
+  if (!unplaced.length && filtered.length) {
+    list.innerHTML='<div class="art-panel-empty" style="color:var(--green)">✓ All artwork placed!</div>';
     return;
   }
 
-  list.innerHTML = filtered.map(function(a) {
-    const sizeClass = a.size === 'FP' ? 'fp' : a.size === 'HP' ? 'hp' : 'two-p';
-    const sizeLabel = a.size === '2P' ? '2P Spread' : a.size;
-    return '<div class="art-card' + (a.placed?' placed':'') + '" draggable="true" ' +
-      'id="art-' + esc(a.id) + '" ' +
-      'ondragstart="onArtDragStart(event,\'' + esc(a.id) + '\')" ' +
-      'ondragend="onArtDragEnd(event)">' +
-      '<div class="art-thumb"><span style="font-size:16px">📄</span></div>' +
-      '<div class="art-info">' +
-        '<div class="art-biz">' + esc(a.business) + '</div>' +
-        '<div class="art-meta"><span class="size-tag '+sizeClass+'">'+sizeLabel+'</span></div>' +
-        '<div class="art-zones">' + (a.zoneStr || 'All zones') + '</div>' +
-      '</div>' +
+  list.innerHTML = unplaced.map(function(a){
+    const sc     = a.size==='FP'?'fp':a.size==='HP'?'hp':'two-p';
+    const cc     = a.size==='FP'?'fp-card':a.size==='HP'?'hp-card':'two-p-card';
+    const szLbl  = a.size==='2P'?'2P Spread':a.size;
+    const thumbHtml = a.thumbUrl
+      ? '<img src="'+a.thumbUrl+'" alt="'+esc(a.business)+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+        '<div class="thumb-na" style="display:none"><div class="na-label">N/A</div><div class="na-sub">No preview</div></div>'
+      : '<div class="thumb-na"><div class="na-label">N/A</div><div class="na-sub">No preview</div></div>' +
+        '<button class="btn-gen-thumb" onclick="event.stopPropagation();genThumb(\''+esc(a.id)+'\',\''+esc(a.path)+'\',this)">Generate</button>';
+
+    return '<div class="art-card '+cc+'" draggable="true" id="artcard-'+esc(a.id)+'" '+
+      'ondragstart="onArtDrag(event,\''+esc(a.id)+'\')" ondragend="onArtDragEnd(event)">'+
+      '<div class="thumb-wrap">'+thumbHtml+'</div>'+
+      '<div class="card-info">'+
+        '<div class="card-biz">'+esc(a.business)+'</div>'+
+        '<div class="card-meta"><span class="size-tag '+sc+'">'+szLbl+'</span></div>'+
+      '</div>'+
+      (a.zoneStr?'<div class="zones-tag" style="padding:0 6px 3px">'+esc(a.zoneStr)+'</div>':'')+
     '</div>';
   }).join('');
 }
 
-// ── Spread Area ───────────────────────────────────────────────────────────────
-function renderSpreadArea() {
+async function genThumb(artId, pdfPath, btn) {
+  btn.textContent = '…';
+  btn.disabled = true;
+  try {
+    const res  = await fetch(API+'/generateThumb',{
+      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+      body:JSON.stringify({pdfPath})
+    });
+    const data = await res.json();
+    if (data.url) {
+      const art = allArtwork.find(function(a){return a.id===artId;});
+      if (art) { art.thumbUrl=data.url; art.hasThumb=true; }
+      renderArtPanel();
+      showToast('Thumbnail generated!');
+    } else { btn.textContent='Retry'; btn.disabled=false; }
+  } catch(e){ btn.textContent='Retry'; btn.disabled=false; }
+}
+
+// ── Zoom ──────────────────────────────────────────────────────────────────────
+function applyZoom(val) {
+  zoomScale = val/100;
+  document.getElementById('zoomLabel').textContent = val+'%';
+  const grid = document.getElementById('spreadsGrid');
+  if (grid) grid.style.transform = 'scale('+zoomScale+')';
+}
+
+// ── Render Spreads ────────────────────────────────────────────────────────────
+function renderSpreads() {
   if (!activeZone) return;
-  const zone   = zones.find(function(z){ return z.id === activeZone; });
   const layout = layouts[activeZone];
+  const zone   = zones.find(function(z){return z.id===activeZone;});
   if (!layout) return;
 
-  const zName  = zone ? zone.name : activeZone;
-  const nPages = layout.pages;
-
-  let html = '<div class="zone-header">' +
-    '<div>' +
-      '<h2>' + esc(activeZone) + ' — ' + esc(zName) + '</h2>' +
-      '<div style="font-size:11px;color:var(--md);margin-top:2px">' + nPages + ' pages · ' + layout.spreads.length + ' spreads</div>' +
-    '</div>' +
-    '<div class="page-controls">' +
-      '<button class="btn-pages" onclick="removePages()">− 4 Pages</button>' +
-      '<span>' + nPages + ' pages</span>' +
-      '<button class="btn-pages" onclick="addPages()">+ 4 Pages</button>' +
-      '<button class="btn-email" onclick="emailToDesigner()">✉ Email to Designer</button>' +
-    '</div>' +
+  let html = '<div class="zone-toolbar">'+
+    '<div>'+
+      '<h2>'+esc(activeZone)+' — '+(zone?esc(zone.name):activeZone)+'</h2>'+
+      '<div class="pg-info">'+layout.pages+' pages · '+layout.spreads.length+' spreads</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:6px;align-items:center">'+
+      '<button class="btn-pg" onclick="removePgs()">− 4 Pages</button>'+
+      '<button class="btn-pg" onclick="addPgs()">+ 4 Pages</button>'+
+      '<button class="btn-email-designer" onclick="emailDesigner()">✉ Email to Designer</button>'+
+    '</div>'+
   '</div>';
 
-  layout.spreads.forEach(function(spread, si) {
-    const isTwoPage = spread.left && spread.left.size === '2P';
-    const pageNums  = 'Pages ' + ((si*2)+1) + '–' + ((si*2)+2);
+  html += '<div class="spreads-grid" id="spreadsGrid" style="transform-origin:top left">';
 
-    if (isTwoPage) {
-      html += renderTwoPageSpread(spread, si, pageNums);
+  layout.spreads.forEach(function(sp, si) {
+    const pageL = (si*2)+1;
+    const pageR = (si*2)+2;
+    const is2P  = sp.left && sp.left.size==='2P';
+
+    html += '<div class="spread-wrap">'+
+      '<div class="spread-label">Pages '+pageL+' – '+pageR+'</div>'+
+      '<div class="spread" id="sp-'+activeZone+'-'+si+'"'+
+        (is2P?' ondragover="dragOver2P(event)" ondrop="drop2P(event,\''+activeZone+'\','+si+')"':'')+'>';
+
+    if (is2P) {
+      html += render2PSpread(sp, si);
     } else {
-      html += '<div class="spread" id="spread-'+activeZone+'-'+si+'">' +
-        '<div class="spread-num">' + pageNums + '</div>' +
-        renderPageSide(spread.left, si, 'left', spread) +
-        renderPageSide(spread.right, si, 'right', spread) +
-      '</div>';
+      html += renderPageSide(sp.left, si, 'left');
+      html += renderPageSide(sp.right, si, 'right');
     }
+
+    html += '</div></div>';
   });
 
+  html += '</div>';
+
   document.getElementById('spreadArea').innerHTML = html;
-  initDropZones();
+
+  // Reapply zoom
+  const grid = document.getElementById('spreadsGrid');
+  if (grid) grid.style.transform = 'scale('+zoomScale+')';
+
+  // Init 2P drop on spreads that aren't already 2P
+  layout.spreads.forEach(function(sp, si) {
+    if (!sp.left || sp.left.size!=='2P') {
+      const el = document.getElementById('sp-'+activeZone+'-'+si);
+      if (el) {
+        el.addEventListener('dragover', function(e){
+          if (dragItem && dragItem.artwork && dragItem.artwork.size==='2P') e.preventDefault();
+        });
+        el.addEventListener('drop', function(e){
+          if (dragItem && dragItem.artwork && dragItem.artwork.size==='2P') drop2P(e, activeZone, si);
+        });
+      }
+    }
+  });
 }
 
-function renderTwoPageSpread(spread, si, pageNums) {
-  const a = spread.left;
-  return '<div class="spread" id="spread-'+activeZone+'-'+si+'" ' +
-    'ondragover="event.preventDefault()" ' +
-    'ondrop="onDropSpread(event,\''+activeZone+'\','+si+')">' +
-    '<div class="spread-num">' + pageNums + '</div>' +
-    '<div class="page-side two-page-left" style="flex:2;position:relative;cursor:grab;min-height:180px;background:#e8edf8;display:flex;align-items:center;justify-content:center" ' +
-    'draggable="true" ondragstart="onPlacedDragStart(event,\''+activeZone+'\','+si+',\'left\')">' +
-    '<div class="two-page-banner">2P SPREAD</div>' +
-    '<div style="text-align:center;z-index:1">' +
-      '<div style="font-size:13px;font-weight:700;color:var(--bl)">' + esc(a.business) + '</div>' +
-      '<div style="font-size:11px;color:var(--md)">' + a.filename + '</div>' +
-    '</div>' +
-    '<button class="btn-remove" style="position:absolute;top:6px;left:6px;background:var(--rd);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer" onclick="removeAd(\''+activeZone+'\','+si+',\'left\')">✕</button>' +
-    '</div>' +
-  '</div>';
-}
-
-function renderPageSide(slot, si, side, spread) {
-  const dropAttrs = 'ondragover="onDragOverSlot(event)" ondrop="onDropSlot(event,\''+activeZone+'\','+si+',\''+side+'\')"';
+function renderPageSide(slot, si, side) {
+  const da = 'ondragover="slotDragOver(event)" ondrop="slotDrop(event,\''+activeZone+'\','+si+',\''+side+'\')"';
 
   if (!slot) {
-    return '<div class="page-side" '+dropAttrs+'>' +
-      '<div class="slot empty-slot" '+dropAttrs+'>' +
-        '<span class="slot-hint">📄</span>' +
-        '<span>Drop FP or HP ads here</span>' +
-      '</div>' +
+    return '<div class="page-side" '+da+'>' +
+      '<div class="page-empty" '+da+'>'+
+        '<div style="font-size:18px">📄</div>'+
+        '<div class="drop-hint">Drop FP or HP</div>'+
+      '</div>'+
     '</div>';
   }
 
-  if (slot.type === 'hp-pair') {
-    return '<div class="page-side" '+dropAttrs+'>' +
-      '<div class="hp-container">' +
-        renderHpSlot(slot.left, si, side, 'left') +
+  if (slot.type==='hp-pair') {
+    return '<div class="page-side" '+da+'>'+
+      '<div class="hp-pair">'+
+        renderHpSlot(slot.left,  si, side, 'left')  +
         renderHpSlot(slot.right, si, side, 'right') +
-      '</div>' +
+      '</div>'+
     '</div>';
   }
 
   // FP
-  const a = slot;
-  return '<div class="page-side" '+dropAttrs+'>' +
-    '<div class="ad-in-slot" draggable="true" ' +
-    'ondragstart="onPlacedDragStart(event,\''+activeZone+'\','+si+',\''+side+'\')">' +
-      '<div class="ad-thumb"><span style="font-size:20px">📄</span></div>' +
-      '<div class="ad-name">' + esc(a.business) + '</div>' +
-      '<div style="font-size:9px;color:var(--md)">' + esc(a.filename) + '</div>' +
-      '<span class="ad-size-badge">FP</span>' +
-      '<button class="btn-remove" onclick="removeAd(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>' +
-    '</div>' +
+  const thumb = slot.thumbUrl
+    ? '<img src="'+slot.thumbUrl+'" alt="'+esc(slot.business)+'" loading="lazy">'
+    : '<div class="no-thumb"><span style="font-size:22px">📄</span><span>N/A</span></div>';
+
+  return '<div class="page-side" '+da+'>'+
+    '<div class="slot-fp" draggable="true" ondragstart="placedDragStart(event,\''+activeZone+'\','+si+',\''+side+'\')">'+
+      thumb+
+      '<div class="ad-label">'+esc(slot.business)+'</div>'+
+      '<span class="size-pip">FP</span>'+
+      '<button class="btn-rm" onclick="removeSlot(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>'+
+    '</div>'+
   '</div>';
 }
 
 function renderHpSlot(art, si, pageSide, half) {
-  const dropAttrs = 'ondragover="onDragOverSlot(event)" ondrop="onDropHp(event,\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')"';
+  const da = 'ondragover="hpDragOver(event)" ondrop="hpDrop(event,\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')"';
   if (!art) {
-    return '<div class="hp-slot empty-slot" '+dropAttrs+'>' +
-      '<span style="font-size:14px">📄</span><span style="font-size:9px">HP</span>' +
+    return '<div class="slot-hp empty" '+da+'>'+
+      '<span style="font-size:12px;color:#aaa">📄</span>'+
+      '<span style="font-size:8px;color:#aaa">HP</span>'+
     '</div>';
   }
-  return '<div class="hp-slot has-ad" '+dropAttrs+'>' +
-    '<div class="ad-in-slot" draggable="true" ' +
-    'ondragstart="onPlacedDragStart(event,\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">' +
-      '<div class="ad-thumb"><span style="font-size:16px">📄</span></div>' +
-      '<div class="ad-name">' + esc(art.business) + '</div>' +
-      '<span class="ad-size-badge" style="background:var(--amber)">HP</span>' +
-      '<button class="btn-remove" onclick="removeHpAd(\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">✕</button>' +
-    '</div>' +
+  const thumb = art.thumbUrl
+    ? '<img src="'+art.thumbUrl+'" alt="'+esc(art.business)+'" loading="lazy">'
+    : '<div class="no-thumb"><span style="font-size:14px">📄</span></div>';
+  return '<div class="slot-hp has-ad" '+da+' draggable="true" ondragstart="placedDragStart(event,\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">'+
+    thumb+
+    '<div class="ad-label">'+esc(art.business)+'</div>'+
+    '<span class="size-pip">HP</span>'+
+    '<button class="btn-rm" onclick="removeHp(\''+activeZone+'\','+si+',\''+pageSide+'\',\''+half+'\')">✕</button>'+
+  '</div>';
+}
+
+function render2PSpread(sp, si) {
+  const art   = sp.left;
+  const thumb = art.thumbUrl
+    ? '<img src="'+art.thumbUrl+'" alt="'+esc(art.business)+'" loading="lazy">'
+    : '<div class="no-thumb" style="inset:0;position:absolute;background:#1a2540;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px"><span style="font-size:28px">📄</span><span style="color:#3a4a70;font-size:11px">N/A</span></div>';
+  return '<div class="page-side two-page" style="flex:2;position:relative;" draggable="true" '+
+    'ondragstart="placedDragStart(event,\''+activeZone+'\','+si+',\'left\')">'+
+    '<div class="spread-2p">'+
+      thumb+
+      '<div class="spread-2p-gutter"></div>'+
+      '<div class="ad-label">'+esc(art.business)+'</div>'+
+      '<span class="size-pip">2P</span>'+
+    '</div>'+
+    '<button class="btn-rm" style="display:none" onmouseenter="this.style.display=\'flex\'" onclick="removeSlot(\''+activeZone+'\','+si+',\'left\')">✕</button>'+
   '</div>';
 }
 
 // ── Drag & Drop ───────────────────────────────────────────────────────────────
-function onArtDragStart(e, artId) {
-  dragItem = { type:'artwork', artwork: allArtwork.find(function(a){ return a.id === artId; }) };
+function onArtDrag(e, artId) {
+  dragItem = { type:'artwork', artwork: allArtwork.find(function(a){return a.id===artId;}) };
   e.dataTransfer.effectAllowed = 'copy';
 }
+function onArtDragEnd(e) {}
 
-function onArtDragEnd(e) {
-  // Keep dragItem until drop completes
-}
-
-function onPlacedDragStart(e, zoneId, si, side, half) {
+function placedDragStart(e, zId, si, side, half) {
   e.stopPropagation();
-  const layout = layouts[zoneId];
-  const spread = layout.spreads[si];
+  const layout = layouts[zId];
+  const sp     = layout.spreads[si];
   let art = null;
   if (half) {
-    art = spread[side] && spread[side].type === 'hp-pair' ? spread[side][half] : null;
+    art = sp[side] && sp[side].type==='hp-pair' ? sp[side][half] : null;
   } else {
-    art = spread[side];
+    art = sp[side] && sp[side].type==='hp-pair' ? null : sp[side];
+    if (!art && sp[side] && sp[side].size==='2P') art = sp[side];
   }
-  dragItem = { type:'placed', artwork: art, fromZone: zoneId, fromSpread: si, fromSide: side, fromHalf: half||null };
+  dragItem = { type:'placed', artwork:art, fromZone:zId, fromSpread:si, fromSide:side, fromHalf:half||null };
   e.dataTransfer.effectAllowed = 'move';
 }
 
-function onDragOverSlot(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = dragItem && dragItem.type === 'placed' ? 'move' : 'copy';
-}
-
-function onDropSlot(e, zoneId, si, side) {
+function slotDragOver(e) {
   e.preventDefault(); e.stopPropagation();
-  if (!dragItem) return;
-  const art = dragItem.artwork;
-  if (!art) return;
-
-  if (art.size === '2P') {
-    onDropSpread(e, zoneId, si);
-    return;
-  }
-
-  const layout = layouts[zoneId];
-  const spread = layout.spreads[si];
-
-  if (art.size === 'FP') {
-    // Clear source if moving
-    clearDragSource();
-    spread[side] = art;
-  } else if (art.size === 'HP') {
-    clearDragSource();
-    if (!spread[side] || spread[side].type !== 'hp-pair') {
-      spread[side] = { type:'hp-pair', left: art, right: null };
-    } else {
-      if (!spread[side].left)       spread[side].left  = art;
-      else if (!spread[side].right) spread[side].right = art;
-      else spread[side].left = art; // replace left
-    }
-  }
-
-  updatePlacedStatus();
-  renderSpreadArea();
-  renderArtworkPanel();
-  dragItem = null;
+  if (dragItem && dragItem.artwork && dragItem.artwork.size==='2P') return; // 2P goes to spread
+  e.dataTransfer.dropEffect = 'move';
 }
 
-function onDropHp(e, zoneId, si, pageSide, half) {
+function slotDrop(e, zId, si, side) {
   e.preventDefault(); e.stopPropagation();
   if (!dragItem || !dragItem.artwork) return;
   const art = dragItem.artwork;
-  if (art.size !== 'HP') { showToast('Only HP ads fit here', true); return; }
+  if (art.size==='2P') { drop2P(e, zId, si); return; }
 
-  const layout = layouts[zoneId];
-  const spread = layout.spreads[si];
-  clearDragSource();
+  const layout = layouts[zId];
+  const sp     = layout.spreads[si];
 
-  if (!spread[pageSide] || spread[pageSide].type !== 'hp-pair') {
-    spread[pageSide] = { type:'hp-pair', left: null, right: null };
+  // Bump existing art back to panel
+  if (art.size==='FP') {
+    if (sp[side] && sp[side].id && sp[side].id!==art.id) bumpBack(sp[side]);
+    else if (sp[side] && sp[side].type==='hp-pair') {
+      if (sp[side].left)  bumpBack(sp[side].left);
+      if (sp[side].right) bumpBack(sp[side].right);
+    }
+    clearDragSource();
+    sp[side] = art;
+  } else if (art.size==='HP') {
+    clearDragSource();
+    if (!sp[side] || sp[side].type!=='hp-pair') {
+      if (sp[side] && sp[side].id) bumpBack(sp[side]);
+      sp[side] = { type:'hp-pair', left:art, right:null };
+    } else {
+      if (!sp[side].left)       sp[side].left  = art;
+      else if (!sp[side].right) sp[side].right = art;
+      else { bumpBack(sp[side].left); sp[side].left = art; }
+    }
   }
-  spread[pageSide][half] = art;
 
-  updatePlacedStatus();
-  renderSpreadArea();
-  renderArtworkPanel();
-  dragItem = null;
+  refreshLayout();
 }
 
-function onDropSpread(e, zoneId, si) {
-  e.preventDefault();
-  if (!dragItem || !dragItem.artwork || dragItem.artwork.size !== '2P') return;
-  const layout = layouts[zoneId];
+function hpDragOver(e) { e.preventDefault(); e.stopPropagation(); }
+
+function hpDrop(e, zId, si, pageSide, half) {
+  e.preventDefault(); e.stopPropagation();
+  if (!dragItem || !dragItem.artwork) return;
+  const art = dragItem.artwork;
+  if (art.size!=='HP') { showToast('Only HP ads fit here', true); return; }
+
+  const sp = layouts[zId].spreads[si];
+  if (!sp[pageSide] || sp[pageSide].type!=='hp-pair') {
+    sp[pageSide] = { type:'hp-pair', left:null, right:null };
+  }
+  if (sp[pageSide][half]) bumpBack(sp[pageSide][half]);
   clearDragSource();
-  layout.spreads[si] = { left: dragItem.artwork, right: null, isTwoPage: true };
-  updatePlacedStatus();
-  renderSpreadArea();
-  renderArtworkPanel();
+  sp[pageSide][half] = art;
+  refreshLayout();
+}
+
+function dragOver2P(e) { e.preventDefault(); }
+
+function drop2P(e, zId, si) {
+  e.preventDefault(); e.stopPropagation();
+  if (!dragItem || !dragItem.artwork || dragItem.artwork.size!=='2P') return;
+  const sp = layouts[zId].spreads[si];
+  // Bump both sides
+  if (sp.left)  { if (sp.left.type==='hp-pair') { bumpBack(sp.left.left); bumpBack(sp.left.right); } else bumpBack(sp.left); }
+  if (sp.right) { if (sp.right.type==='hp-pair') { bumpBack(sp.right.left); bumpBack(sp.right.right); } else bumpBack(sp.right); }
+  clearDragSource();
+  layouts[zId].spreads[si] = { left: dragItem.artwork, right: null };
   dragItem = null;
+  refreshLayout();
+}
+
+function bumpBack(art) {
+  if (!art) return;
+  // Art is automatically shown again in panel since placed status is computed
 }
 
 function clearDragSource() {
-  if (!dragItem || dragItem.type !== 'placed') return;
+  if (!dragItem || dragItem.type!=='placed') { dragItem=null; return; }
   const layout = layouts[dragItem.fromZone];
-  if (!layout) return;
-  const spread = layout.spreads[dragItem.fromSpread];
+  if (!layout) { dragItem=null; return; }
+  const sp = layout.spreads[dragItem.fromSpread];
+  if (!sp) { dragItem=null; return; }
   if (dragItem.fromHalf) {
-    if (spread[dragItem.fromSide] && spread[dragItem.fromSide].type === 'hp-pair') {
-      spread[dragItem.fromSide][dragItem.fromHalf] = null;
-      if (!spread[dragItem.fromSide].left && !spread[dragItem.fromSide].right) {
-        spread[dragItem.fromSide] = null;
-      }
+    if (sp[dragItem.fromSide] && sp[dragItem.fromSide].type==='hp-pair') {
+      sp[dragItem.fromSide][dragItem.fromHalf] = null;
+      if (!sp[dragItem.fromSide].left && !sp[dragItem.fromSide].right) sp[dragItem.fromSide]=null;
     }
   } else {
-    spread[dragItem.fromSide] = null;
+    sp[dragItem.fromSide] = null;
   }
+  dragItem = null;
 }
 
-function initDropZones() {
-  // Allow dropping 2P on entire spread
-  document.querySelectorAll('.spread').forEach(function(el) {
-    el.addEventListener('dragover', function(e){ e.preventDefault(); });
-    el.addEventListener('drop', function(e){
-      if (dragItem && dragItem.artwork && dragItem.artwork.size === '2P') {
-        const parts = el.id.split('-');
-        const si    = parseInt(parts[parts.length-1]);
-        onDropSpread(e, activeZone, si);
-      }
-    });
-  });
+function removeSlot(zId, si, side) {
+  layouts[zId].spreads[si][side] = null;
+  refreshLayout();
 }
 
-// ── Remove ads ────────────────────────────────────────────────────────────────
-function removeAd(zoneId, si, side) {
-  layouts[zoneId].spreads[si][side] = null;
-  updatePlacedStatus(); renderSpreadArea(); renderArtworkPanel();
-}
-
-function removeHpAd(zoneId, si, pageSide, half) {
-  const pair = layouts[zoneId].spreads[si][pageSide];
-  if (pair && pair.type === 'hp-pair') {
+function removeHp(zId, si, pageSide, half) {
+  const pair = layouts[zId].spreads[si][pageSide];
+  if (pair && pair.type==='hp-pair') {
     pair[half] = null;
-    if (!pair.left && !pair.right) layouts[zoneId].spreads[si][pageSide] = null;
+    if (!pair.left && !pair.right) layouts[zId].spreads[si][pageSide] = null;
   }
-  updatePlacedStatus(); renderSpreadArea(); renderArtworkPanel();
+  refreshLayout();
 }
 
-function updatePlacedStatus() {
-  const placed = {};
-  Object.keys(layouts).forEach(function(zid) {
-    layouts[zid].spreads.forEach(function(sp) {
-      ['left','right'].forEach(function(side) {
-        const s = sp[side];
-        if (!s) return;
-        if (s.type === 'hp-pair') {
-          if (s.left)  placed[s.left.id]  = true;
-          if (s.right) placed[s.right.id] = true;
-        } else if (s.id) {
-          placed[s.id] = true;
-        }
-      });
+function refreshLayout() {
+  renderSpreads();
+  renderArtPanel();
+}
+
+// ── Pages ─────────────────────────────────────────────────────────────────────
+function addPgs() {
+  const l = layouts[activeZone];
+  l.pages += 4;
+  l.spreads.push({left:null,right:null});
+  l.spreads.push({left:null,right:null});
+  refreshLayout();
+}
+
+function removePgs() {
+  const l = layouts[activeZone];
+  if (l.pages <= 8) { showToast('Minimum 8 pages', true); return; }
+  const last2 = l.spreads.slice(-2);
+  const hasAds = last2.some(function(sp){ return sp.left||sp.right; });
+  if (hasAds && !confirm('Last 4 pages have ads placed. Remove anyway?')) return;
+  // Return any ads to pool
+  last2.forEach(function(sp){
+    ['left','right'].forEach(function(s){
+      if (sp[s] && sp[s].type==='hp-pair') { bumpBack(sp[s].left); bumpBack(sp[s].right); }
+      else if (sp[s]) bumpBack(sp[s]);
     });
   });
-  allArtwork.forEach(function(a){ a.placed = !!placed[a.id]; });
-}
-
-// ── Add/Remove pages ──────────────────────────────────────────────────────────
-function addPages() {
-  const layout = layouts[activeZone];
-  layout.pages += 4;
-  layout.spreads.push({ left:null, right:null });
-  layout.spreads.push({ left:null, right:null });
-  renderSpreadArea();
-}
-
-function removePages() {
-  const layout = layouts[activeZone];
-  if (layout.pages <= 8) { showToast('Minimum 8 pages', true); return; }
-  // Check if last 2 spreads are empty
-  const last2 = layout.spreads.slice(-2);
-  const hasAds = last2.some(function(sp){
-    return sp.left || sp.right;
-  });
-  if (hasAds && !confirm('Last 4 pages have ads. Remove anyway?')) return;
-  layout.spreads.splice(-2, 2);
-  layout.pages -= 4;
-  renderSpreadArea();
+  l.spreads.splice(-2,2);
+  l.pages -= 4;
+  refreshLayout();
 }
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 async function saveLayout() {
-  if (!currentMonth) { showToast('Load a month first', true); return; }
+  if (!curMonth) { showToast('Load a month first', true); return; }
   try {
-    const res = await fetch(API + '/saveLayoutData', {
-      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-      body: JSON.stringify({ month: currentMonth, year: currentYear, layout: layouts })
+    const res = await fetch(API+'/saveLayoutData',{
+      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+      body:JSON.stringify({month:curMonth,year:curYear,layout:layouts})
     });
     if (!res.ok) throw new Error('Save failed');
-    showToast('Layout saved!');
-  } catch(e) { showToast('Error: '+e.message, true); }
+    showToast('Layout saved!', false);
+  } catch(e){ showToast('Error: '+e.message, true); }
 }
 
-// ── Email to Designer ─────────────────────────────────────────────────────────
-async function emailToDesigner() {
+// ── Email Designer ────────────────────────────────────────────────────────────
+async function emailDesigner() {
   if (!activeZone) return;
-  const layout  = layouts[activeZone];
-  const zone    = zones.find(function(z){ return z.id === activeZone; });
-  const months  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const mLabel  = months[parseInt(currentMonth)-1] + ' ' + currentYear;
-  const designer= settings.designerEmail || 'sherry.workofheart@gmail.com';
-  const dName   = settings.designerName  || 'Sherry';
+  const l    = layouts[activeZone];
+  const zone = zones.find(function(z){return z.id===activeZone;});
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const mLabel = MONTHS[parseInt(curMonth)-1]+' '+curYear;
 
-  // Build page list
   let pageList = '';
-  layout.spreads.forEach(function(sp, si) {
-    const p1 = (si*2)+1, p2 = (si*2)+2;
-    const leftInfo  = slotSummary(sp.left);
-    const rightInfo = slotSummary(sp.right);
-    if (sp.left && sp.left.size === '2P') {
-      pageList += 'Pages ' + p1 + '-' + p2 + ': [2P SPREAD] ' + sp.left.business + ' (' + sp.left.filename + ')\n';
+  l.spreads.forEach(function(sp, si){
+    const p1=(si*2)+1, p2=(si*2)+2;
+    if (sp.left && sp.left.size==='2P') {
+      pageList += 'Pages '+p1+'-'+p2+': [2P SPREAD] '+sp.left.business+' ('+sp.left.filename+')\n';
     } else {
-      pageList += 'Page ' + p1 + ' (Left):  ' + leftInfo  + '\n';
-      pageList += 'Page ' + p2 + ' (Right): ' + rightInfo + '\n';
+      pageList += 'Page '+p1+' (Left):  '+slotText(sp.left)+'\n';
+      pageList += 'Page '+p2+' (Right): '+slotText(sp.right)+'\n';
     }
   });
 
   try {
-    const res = await fetch(API + '/sendLayoutEmail', {
-      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-      body: JSON.stringify({
-        to: designer,
-        toName: dName,
-        zone: activeZone,
-        zoneName: zone ? zone.name : activeZone,
-        month: mLabel,
-        pageList: pageList,
-        totalPages: layout.pages
+    const res = await fetch(API+'/sendLayoutEmail',{
+      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+      body:JSON.stringify({
+        to: settings.designerEmail||'sherry.workofheart@gmail.com',
+        toName: settings.designerName||'Sherry',
+        zone: activeZone, zoneName: zone?zone.name:activeZone,
+        month: mLabel, pageList, totalPages: l.pages
       })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Send failed');
-    showToast('Layout emailed to ' + dName + '! ✉');
-  } catch(e) { showToast('Error: '+e.message, true); }
+    if (!res.ok) throw new Error(data.error||'Failed');
+    showToast('Emailed to '+(settings.designerName||'Sherry')+'!', false);
+  } catch(e){ showToast('Error: '+e.message, true); }
 }
 
-function slotSummary(slot) {
+function slotText(slot) {
   if (!slot) return '(empty)';
-  if (slot.type === 'hp-pair') {
-    const l = slot.left  ? slot.left.business  + ' [HP]' : '(empty HP)';
-    const r = slot.right ? slot.right.business + ' [HP]' : '(empty HP)';
-    return l + '  |  ' + r;
+  if (slot.type==='hp-pair') {
+    const l = slot.left  ? slot.left.business+' [HP]'  : '(empty HP)';
+    const r = slot.right ? slot.right.business+' [HP]' : '(empty HP)';
+    return l+'  |  '+r;
   }
-  return slot.business + ' [' + slot.size + '] (' + slot.filename + ')';
+  return slot.business+' ['+slot.size+'] ('+slot.filename+')';
 }
 
 async function logout() {
@@ -761,12 +810,13 @@ async function logout() {
 }
 
 function showToast(msg, isErr) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show'+(isErr?' err':'');
-  setTimeout(function(){ t.className='toast'; }, 3000);
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(isErr===true?' err':isErr===false?' ok':'');
+  setTimeout(function(){t.className='toast';},3000);
 }
 
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 init();
 </script>
