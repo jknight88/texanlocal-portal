@@ -663,10 +663,12 @@ var BANK_DRAG = null; // art being dragged from bank
 
 function artDragStart(e, artId) {
   const art = allArtwork.find(function(a){ return a.id===artId; });
+  console.log('[DRAG] artDragStart', artId, art ? art.size : 'NOT FOUND');
   if (!art) return;
   BANK_DRAG = art;
   e.dataTransfer.effectAllowed = 'copy';
-  e.dataTransfer.setData('text/plain', artId);
+  try { e.dataTransfer.setData('text/plain', artId); } catch(ex){ console.error('setData failed',ex); }
+  console.log('[DRAG] BANK_DRAG set:', BANK_DRAG.business);
 }
 
 function artDragEnd(e) {
@@ -674,7 +676,8 @@ function artDragEnd(e) {
 }
 
 function slotDragOver(e, pageType) {
-  if (!BANK_DRAG) return;
+  if (!BANK_DRAG) { return; }
+  console.log('[DRAGOVER] slotDragOver', pageType, BANK_DRAG.size);
   const sz = BANK_DRAG.size;
   if (sz==='2P') return; // handled by spread
   if (pageType==='FC' && sz!=='FC') { e.dataTransfer.dropEffect='none'; return; }
@@ -686,8 +689,9 @@ function slotDragOver(e, pageType) {
 
 function slotDrop(e, zId, si, side, pageType, half) {
   e.preventDefault(); e.stopPropagation();
+  console.log('[DROP] slotDrop called', zId, si, side, pageType, half, 'BANK_DRAG=', BANK_DRAG ? BANK_DRAG.business : 'NULL');
   const art = BANK_DRAG;
-  if (!art) return;
+  if (!art) { console.warn('[DROP] No BANK_DRAG - drop ignored'); return; }
   si = parseInt(si);
   pageType = pageType || 'any';
 
