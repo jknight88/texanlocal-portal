@@ -9,8 +9,6 @@
     "@azure/keyvault-secrets": "^4.7.0",
     "uuid": "^9.0.0",
     "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "sharp": "^0.33.2",
-    "pdf-to-img": "^4.2.0"
+    "bcryptjs": "^2.4.3"
   }
 }
