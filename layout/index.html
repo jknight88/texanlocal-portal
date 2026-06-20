@@ -1231,9 +1231,10 @@ async function exportZip() {
       throw new Error(err.error || 'Export failed');
     }
 
-    // Download the ZIP
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
+    // Get as arraybuffer to preserve binary data exactly
+    const arrayBuf = await res.arrayBuffer();
+    const blob     = new Blob([arrayBuf], { type: 'application/zip' });
+    const url      = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     const zone = zones.find(function(z){ return z.id === activeZone; });
     const abbr = activeZone.split('-').slice(1).join('').toLowerCase();
