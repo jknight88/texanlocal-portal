@@ -778,7 +778,7 @@ function slotDragOver(e, pageType) {
 }
 
 function slotDrop(e, zId, si, side, pageType, half) {
-  e.preventDefault(); e.stopPropagation();
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   console.log('[DROP] slotDrop called', zId, si, side, pageType, half, 'BANK_DRAG=', BANK_DRAG ? BANK_DRAG.business : 'NULL');
   const art = BANK_DRAG;
   if (!art) { console.warn('[DROP] No BANK_DRAG - drop ignored'); return; }
@@ -829,7 +829,7 @@ function spreadDragOver(e) {
 }
 
 function spreadDrop(e, zId, si) {
-  e.preventDefault(); e.stopPropagation();
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   const art = BANK_DRAG;
   if (!art || art.size!=='2P') return;
   si = parseInt(si);
