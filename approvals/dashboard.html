@@ -289,12 +289,16 @@ function getStatus(client) {
 
 function updateSummary() {
   const counts = { none: 0, sent: 0, opened: 0, approved: 0, changes_requested: 0, no_file: 0 };
-  allClients.forEach(function(c) {
-    const s = getStatus(c);
-    if (counts[s] !== undefined) counts[s]++;
-    else counts.none++;
+  // Count from records
+  Object.values(allRecords).forEach(function(r) {
+    const s = r.status || 'none';
+    if (counts[s] !== undefined) counts[s]++; else counts.none++;
   });
-  const total = allClients.length;
+  // Count active clients with no record
+  allClients.forEach(function(c) {
+    if (!allRecords[normBiz(c.business)]) counts.none++;
+  });
+  const total = Object.keys(allRecords).length + allClients.filter(function(c){ return !allRecords[normBiz(c.business)]; }).length;
 
   document.getElementById('cnt-all').textContent     = total;
   document.getElementById('cnt-none').textContent    = counts.none;
@@ -313,8 +317,32 @@ function setFilter(f) {
 }
 
 function renderTable() {
-  const q        = (document.getElementById('searchInput').value || '').toLowerCase();
-  let filtered   = allClients.filter(function(c) {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+
+  // Build display list: start from approval records, add any clients not yet in records
+  const recordBusinesses = Object.keys(allRecords);
+  const displayClients = [];
+
+  // Add all clients that have approval records (including CSV-only clients)
+  recordBusinesses.forEach(function(normKey) {
+    const rec = allRecords[normKey];
+    displayClients.push({
+      id: rec.sessionId,
+      business: rec.business,
+      contact: rec.contact || '',
+      email: rec.email || '',
+      _fromRecord: true
+    });
+  });
+
+  // Also add active clients with NO record (not sent yet)
+  allClients.forEach(function(c) {
+    if (!allRecords[normBiz(c.business)]) {
+      displayClients.push(c);
+    }
+  });
+
+  let filtered = displayClients.filter(function(c) {
     if (q && !c.business.toLowerCase().includes(q) && !(c.contact||'').toLowerCase().includes(q)) return false;
     if (currentFilter === 'all') return true;
     const s = getStatus(c);
