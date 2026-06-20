@@ -60,11 +60,13 @@ select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:1
 .status-opened  .status-dot{background:#29b6f6}
 .status-approved .status-dot{background:#66bb6a}
 .status-changes .status-dot{background:#ef5350}
+.status-no_file .status-dot{background:#9e9e9e}
 .status-none    .status-text{color:#78909c}
 .status-sent    .status-text{color:#e65100}
 .status-opened  .status-text{color:#0277bd}
 .status-approved .status-text{color:var(--green)}
 .status-changes .status-text{color:#c62828}
+.status-no_file .status-text{color:#666}
 
 /* Action buttons */
 .btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px;white-space:nowrap}
@@ -286,7 +288,7 @@ function getStatus(client) {
 }
 
 function updateSummary() {
-  const counts = { none: 0, sent: 0, opened: 0, approved: 0, changes_requested: 0 };
+  const counts = { none: 0, sent: 0, opened: 0, approved: 0, changes_requested: 0, no_file: 0 };
   allClients.forEach(function(c) {
     const s = getStatus(c);
     if (counts[s] !== undefined) counts[s]++;
@@ -339,9 +341,9 @@ function renderTable() {
     filtered.map(function(c) {
       const rec = allRecords[normBiz(c.business)];
       const s   = getStatus(c);
-      const statusClass = 'status-' + (s === 'changes_requested' ? 'changes' : s === 'none' ? 'none' : s);
+      const statusClass = 'status-' + (s === 'changes_requested' ? 'changes' : s === 'no_file' ? 'no_file' : s === 'none' ? 'none' : s);
       const statusLabel = s === 'none' ? 'Not Sent' : s === 'sent' ? 'Awaiting' : s === 'opened' ? 'Opened' :
-                          s === 'approved' ? 'Approved' : s === 'changes_requested' ? 'Changes' : s;
+                          s === 'approved' ? 'Approved' : s === 'changes_requested' ? 'Changes' : s === 'no_file' ? 'No File' : s;
 
       const sentAt      = rec ? fmt(rec.sentAt) : '—';
       const openedAt    = rec ? (rec.openedAt ? fmt(rec.openedAt) + (rec.openCount > 1 ? ' ×'+rec.openCount : '') : '—') : '—';
