@@ -267,7 +267,29 @@ module.exports = async function(context, req) {
     try {
       const matchedFiles = await findPdfs(filesContainer, client.business, lookupYear, lookupMonth);
       if (!matchedFiles.length) {
-        results.push({ business: client.business, status: 'no_file' });
+        // Save a no_file record so it shows in the approval dashboard
+        const noFileId = uuidv4();
+        const now = new Date().toISOString();
+        await saveRecord(blobSvc, {
+          sessionId: noFileId,
+          business: client.business,
+          contact: client.contact || '',
+          email: client.email,
+          mailingMonth: String(mailingMonth).padStart(2, '0'),
+          mailingYear: String(mailingYear),
+          mailingMonthLabel: mailingMonthLabel,
+          deadline: deadline,
+          isResend: !!isResend,
+          filesUsed: [],
+          status: 'no_file',
+          sentAt: now,
+          openedAt: null,
+          openCount: 0,
+          respondedAt: null,
+          response: null,
+          notes: 'No matching PDF file found'
+        });
+        results.push({ business: client.business, status: 'no_file', sessionId: noFileId });
         continue;
       }
 
