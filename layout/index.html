@@ -8,7 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bl:#00205B;--rd:#BF0D3E;--bg:#c8cdd8;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
-body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;display:flex;flex-direction:column}
 
 /* Header */
 .hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.6rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
@@ -38,10 +38,10 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .zone-tab.active .z-cnt{background:var(--rd)}
 
 /* Workspace */
-.workspace{display:flex;flex:1;overflow:hidden;min-height:0}
+.workspace{display:flex;flex:1;overflow:hidden;min-height:0;height:calc(100vh - 110px)}
 
 /* Spread area */
-.spread-area{flex:1;overflow-y:auto;overflow-x:auto;padding:1rem;background:#1a1a2e;display:flex;flex-direction:column;gap:.5rem}
+.spread-area{flex:1;overflow-y:scroll;overflow-x:auto;padding:1rem;background:#1a1a2e;display:flex;flex-direction:column;gap:.5rem;height:100%}
 .zone-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.5rem .8rem;background:#111827;border-radius:6px;margin-bottom:.5rem;flex-shrink:0}
 .zone-toolbar h2{font-size:12px;font-weight:700;color:#fff}
 .zone-toolbar .pg-info{font-size:11px;color:rgba(255,255,255,.5)}
@@ -113,13 +113,13 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .spread-2p-gutter{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#1a1a2e;transform:translateX(-50%);z-index:4}
 
 /* Artwork panel */
-.art-panel{width:260px;background:#111827;border-left:1px solid #2a3550;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.art-panel{width:260px;background:#111827;border-left:1px solid #2a3550;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;height:100%}
 .art-panel-hdr{background:#0a0f1e;padding:.6rem .8rem;flex-shrink:0}
 .art-panel-hdr h3{color:#fff;font-size:11px;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
 .art-panel-filters{display:flex;flex-direction:column;gap:5px}
 .art-panel-filters select,.art-panel-filters input{width:100%;padding:4px 7px;border:1px solid #2a3550;border-radius:3px;font-size:11px;font-family:inherit;background:#1a2540;color:#fff;outline:none}
 .art-panel-filters select option{background:#1a2540}
-.art-list{flex:1;overflow-y:auto;padding:.5rem}
+.art-list{flex:1;overflow-y:scroll;padding:.5rem}
 
 /* Art card */
 .art-card{background:#1e2a42;border:1px solid #2a3550;border-radius:4px;margin-bottom:5px;cursor:grab;transition:all .15s;overflow:hidden}
@@ -292,7 +292,7 @@ async function loadLayout() {
 
   try {
     // Load artwork files
-    const ar   = await fetch(API+'/getLayoutArtwork?month='+curMonth+'&year='+curYear,{credentials:'include'});
+    const ar   = await fetch(API+'/getLayoutArtwork?month='+curMonth+'&year='+curYear,{credentials:'include',cache:'no-store'});
     const ad   = await ar.json();
     allArtwork = ad.files || [];
 
@@ -422,21 +422,30 @@ function renderArtPanel() {
 }
 
 async function genThumb(artId, pdfPath, btn) {
-  btn.textContent = '…';
-  btn.disabled = true;
+  const card = btn.closest('.art-card');
+  const wrap = card ? card.querySelector('.thumb-wrap') : null;
+  if (wrap) wrap.innerHTML = '<div class="thumb-loading">⏳ Generating…</div>';
+  btn.style.display = 'none';
   try {
     const res  = await fetch(API+'/generateThumb',{
       method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-      body:JSON.stringify({pdfPath})
+      body:JSON.stringify({pdfPath:pdfPath})
     });
     const data = await res.json();
     if (data.url) {
       const art = allArtwork.find(function(a){return a.id===artId;});
       if (art) { art.thumbUrl=data.url; art.hasThumb=true; }
+      showToast('Thumbnail generated!', false);
       renderArtPanel();
-      showToast('Thumbnail generated!');
-    } else { btn.textContent='Retry'; btn.disabled=false; }
-  } catch(e){ btn.textContent='Retry'; btn.disabled=false; }
+      if (activeZone) renderSpreads();
+    } else {
+      if (wrap) wrap.innerHTML = '<div class="thumb-na"><div class="na-label">N/A</div><div class="na-sub">'+( data.error||'Failed')+'</div></div>';
+      showToast('Failed: '+(data.error||'unknown'), true);
+    }
+  } catch(e){
+    if (wrap) wrap.innerHTML = '<div class="thumb-na"><div class="na-label">N/A</div></div>';
+    showToast('Error: '+e.message, true);
+  }
 }
 
 // ── Zoom ──────────────────────────────────────────────────────────────────────
@@ -444,7 +453,7 @@ function applyZoom(val) {
   zoomScale = val/100;
   document.getElementById('zoomLabel').textContent = val+'%';
   const grid = document.getElementById('spreadsGrid');
-  if (grid) grid.style.transform = 'scale('+zoomScale+')';
+  if (grid) grid.style.zoom = zoomScale;
 }
 
 // ── Render Spreads ────────────────────────────────────────────────────────────
@@ -480,6 +489,8 @@ function renderSpreads() {
 
     if (is2P) {
       html += render2PSpread(sp, si);
+      // Add invisible right page for drop target when 2P is placed
+      html += '<div style="display:none"></div>';
     } else {
       html += renderPageSide(sp.left, si, 'left');
       html += renderPageSide(sp.right, si, 'right');
@@ -494,22 +505,19 @@ function renderSpreads() {
 
   // Reapply zoom
   const grid = document.getElementById('spreadsGrid');
-  if (grid) grid.style.transform = 'scale('+zoomScale+')';
+  if (grid) grid.style.zoom = zoomScale;
 
-  // Init 2P drop on spreads that aren't already 2P
-  layout.spreads.forEach(function(sp, si) {
-    if (!sp.left || sp.left.size!=='2P') {
-      const el = document.getElementById('sp-'+activeZone+'-'+si);
-      if (el) {
-        el.addEventListener('dragover', function(e){
-          if (dragItem && dragItem.artwork && dragItem.artwork.size==='2P') e.preventDefault();
-        });
-        el.addEventListener('drop', function(e){
-          if (dragItem && dragItem.artwork && dragItem.artwork.size==='2P') drop2P(e, activeZone, si);
-        });
+  // Init drag events on all page sides using event delegation on spread area
+  const sa = document.getElementById('spreadArea');
+  if (sa && !sa._dragInited) {
+    sa._dragInited = true;
+    sa.addEventListener('dragover', function(e){
+      if (e.target.closest('.page-side') || e.target.closest('.slot-hp') || e.target.closest('.spread')) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
       }
-    }
-  });
+    });
+  }
 }
 
 function renderPageSide(slot, si, side) {
@@ -607,9 +615,9 @@ function placedDragStart(e, zId, si, side, half) {
 }
 
 function slotDragOver(e) {
-  e.preventDefault(); e.stopPropagation();
-  if (dragItem && dragItem.artwork && dragItem.artwork.size==='2P') return; // 2P goes to spread
-  e.dataTransfer.dropEffect = 'move';
+  e.preventDefault();
+  e.stopPropagation();
+  e.dataTransfer.dropEffect = 'copy';
 }
 
 function slotDrop(e, zId, si, side) {
