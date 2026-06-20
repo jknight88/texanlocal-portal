@@ -30,7 +30,7 @@ module.exports = async function(context, req) {
         const dl     = await container.getBlockBlobClient(blob.name).downloadToBuffer();
         const record = JSON.parse(dl.toString());
         // Filter by month/year if provided
-        if (month && year) {
+        if (month && year && month !== '') {
           if (record.mailingMonth !== String(month).padStart(2,'0') || record.mailingYear !== String(year)) continue;
         }
         records.push(record);
