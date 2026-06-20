@@ -195,7 +195,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
     </div>
   </div>
   <div style="display:flex;gap:6px;align-items:center">
-    <button class="btn-hdr" onclick="saveLayout()" style="background:rgba(255,255,255,.15)">💾 Save</button>
+    <button class="btn-hdr" onclick="saveLayout()" style="background:rgba(255,255,255,.15);display:" id="btnSave">💾 Save</button>
     <a href="/home" class="btn-hdr">← Home</a>
     <button class="btn-hdr" onclick="logout()">Sign Out</button>
   </div>
@@ -250,6 +250,10 @@ async function init() {
   const res   = await fetch(API+'/authVerify'+(token?'?token='+token:''),{credentials:'include'});
   if (!res.ok) { window.location.href='/'; return; }
 
+  // Store role for UI decisions
+  window._portalRole = user.role;
+  window._readOnly   = (user.role === 'designer');
+
   const now  = new Date();
   const ysel = document.getElementById('selYear');
   for (let y=now.getFullYear();y<=now.getFullYear()+1;y++) {
@@ -283,6 +287,13 @@ async function init() {
   window.addEventListener('resize', fixPanelTop);
 }
 
+function updateRoleUI() {
+  var btn = document.getElementById('btnEmailDesigner');
+  if (btn && window._portalRole === 'designer') btn.style.display = 'none';
+  var saveBtn = document.getElementById('btnSave');
+  if (saveBtn && window._readOnly) saveBtn.style.display = 'none';
+}
+
 function fixPanelTop() {
   var hdr  = document.querySelector('.hdr');
   var zbar = document.getElementById('zoneTabs');
@@ -303,6 +314,12 @@ function initDragDrop() {
   lastPointerX = null;
 
   // Track pointer X globally for HP half detection
+  if (window._readOnly) {
+    var panel = document.querySelector('.art-panel');
+    if (panel) panel.style.display = 'none';
+    var sa = document.getElementById('spreadArea');
+    if (sa) sa.style.paddingRight = '1rem';
+  }
   document.addEventListener('pointermove', function(e) { lastPointerX = e.clientX; });
   document.addEventListener('pointerup',   function(e) { lastPointerX = e.clientX; });
 
@@ -383,6 +400,7 @@ function initDragDrop() {
 
   // ── Drag from art bank ────────────────────────────────────────────────────
   document.getElementById('artList').addEventListener('pointerdown', function(e) {
+    if (window._readOnly) return;
     var card = e.target.closest('.art-card');
     if (!card) return;
     var artId = card.getAttribute('data-artid');
@@ -401,6 +419,7 @@ function initDragDrop() {
 
   // ── Drag from placed slots ────────────────────────────────────────────────
   document.getElementById('spreadArea').addEventListener('pointerdown', function(e) {
+    if (window._readOnly) return;
     // Must be on a placed slot but NOT on the ✕ remove button
     if (e.target.closest('.btn-rm') || e.target.closest('.btn-rm-2p')) return;
 
@@ -698,16 +717,17 @@ function renderSpreads() {
   const zone   = zones.find(function(z){return z.id===activeZone;});
   if (!layout) return;
 
+  const editControls = window._readOnly ? '' :
+    '<button class="btn-pg" onclick="removePgs()">− 4 Pages</button>'+
+    '<button class="btn-pg" onclick="addPgs()">+ 4 Pages</button>'+
+    '<button class="btn-email-designer" onclick="emailDesigner()" id="btnEmailDesigner">✉ Email to Designer</button>';
+
   let html = '<div class="zone-toolbar">'+
     '<div>'+
       '<h2>'+esc(activeZone)+' — '+(zone?esc(zone.name):activeZone)+'</h2>'+
-      '<div class="pg-info">'+layout.pages+' pages · '+(layout.spreads.length-2)+' interior spreads</div>'+
+      '<div class="pg-info">'+layout.pages+' pages · '+(layout.spreads.length-2)+' interior spreads'+(window._readOnly?' · <span style="color:#f5a623;font-weight:700">👁 View Only</span>':'')+'</div>'+
     '</div>'+
-    '<div style="display:flex;gap:6px;align-items:center">'+
-      '<button class="btn-pg" onclick="removePgs()">− 4 Pages</button>'+
-      '<button class="btn-pg" onclick="addPgs()">+ 4 Pages</button>'+
-      '<button class="btn-email-designer" onclick="emailDesigner()">✉ Email to Designer</button>'+
-    '</div>'+
+    '<div style="display:flex;gap:6px;align-items:center">'+editControls+'</div>'+
   '</div>';
 
   html += '<div class="spreads-grid" id="spreadsGrid">';
@@ -768,6 +788,7 @@ function renderSpreads() {
   // Reapply zoom after render
   applyZoom(Math.round(zoomScale * 100));
   fixPanelTop();
+  updateRoleUI();
 }
 
 function renderPageSide(slot, si, side, pageType) {
@@ -967,6 +988,7 @@ function selectArt(artId) {
 }
 
 function selectPlaced(zId, si, side, half) {
+  if (window._readOnly) return;
   si = parseInt(si);
   // If something is already selected, place it here instead
   if (SEL) {
