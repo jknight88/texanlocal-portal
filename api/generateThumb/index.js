@@ -59,11 +59,17 @@ module.exports = async function(context, req) {
       { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/pdf'}, body:pdfBuffer });
     if (!upRes.ok) throw new Error('OneDrive upload: '+upRes.status);
     const itemId = (await upRes.json()).id;
-    await new Promise(function(r){ setTimeout(r, 3000); });
-    try {
-      const thumbRes = await fetch('https://graph.microsoft.com/v1.0/users/'+FROM_EMAIL+'/drive/items/'+itemId+'/thumbnails/0/large/content',
+    // Wait for OneDrive to process, retry up to 3 times
+    let thumbRes = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await new Promise(function(r){ setTimeout(r, 3000); });
+      thumbRes = await fetch('https://graph.microsoft.com/v1.0/users/'+FROM_EMAIL+'/drive/items/'+itemId+'/thumbnails/0/large/content',
         { headers:{'Authorization':'Bearer '+token} });
-      if (!thumbRes.ok) throw new Error('Thumb: '+thumbRes.status);
+      if (thumbRes.ok) break;
+      context.log('Thumb attempt '+(attempt+1)+' failed: '+thumbRes.status);
+    }
+    try {
+      if (!thumbRes || !thumbRes.ok) throw new Error('Thumbnail not ready after retries: '+(thumbRes?thumbRes.status:'no response'));
       const imgBuf = Buffer.from(await thumbRes.arrayBuffer());
       await imgC.getBlockBlobClient(cacheName).upload(imgBuf, imgBuf.length, { overwrite:true, blobHTTPHeaders:{blobContentType:'image/jpeg'} });
       const url = getSasUrl(acct, key, CONTAINER_IMAGES, cacheName, 7);
