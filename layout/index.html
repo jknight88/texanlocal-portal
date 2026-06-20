@@ -530,7 +530,8 @@ function renderSpreads() {
     html += '<div class="spread-wrap">'+
       '<div class="spread-label">Pages '+pageL+' – '+pageR+'</div>'+
       '<div class="spread" id="sp-'+activeZone+'-'+si+'"'+
-        ' ondragover="dragOver2P(event)" ondrop="drop2P(event,\''+activeZone+'\','+si+')">';
+        ' data-zone="'+activeZone+'" data-si="'+si+'"'+
+        ' ondragover="spreadDragOver(event,this)" ondragleave="this.style.outline=\'\'" ondrop="spreadDrop(event,this)">';
 
     if (is2P) {
       html += render2PSpread(sp, si);
@@ -682,11 +683,12 @@ function placedDragStart(e, zId, si, side, half) {
 }
 
 function slotDragOver(e, pageType) {
-  e.preventDefault();
-  e.stopPropagation();
   if (!dragItem || !dragItem.artwork) return;
   const sz = dragItem.artwork.size;
-  if (sz==='2P') { e.dataTransfer.dropEffect='none'; return; }
+  // 2P is handled by the spread container - don't block it here, just don't claim it
+  if (sz==='2P') { return; } // let it bubble to spread
+  e.preventDefault();
+  e.stopPropagation();
   if (pageType==='FC' && sz!=='FC') { e.dataTransfer.dropEffect='none'; return; }
   if (pageType==='BP' && sz!=='BP') { e.dataTransfer.dropEffect='none'; return; }
   if (pageType==='any' && (sz==='FC'||sz==='BP')) { e.dataTransfer.dropEffect='none'; return; }
@@ -769,17 +771,19 @@ function dragOver2P(e) {
 
 function spreadDragOver(e, el) {
   if (!dragItem || !dragItem.artwork) return;
-  if (dragItem.artwork.size==='2P') {
+  if (dragItem.artwork.size === '2P') {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
-    el.style.outline = '2px solid #BF0D3E';
+    el.style.outline = '3px solid #BF0D3E';
+    el.style.outlineOffset = '-3px';
   }
 }
 
 function spreadDrop(e, el) {
   el.style.outline = '';
-  if (!dragItem || !dragItem.artwork || dragItem.artwork.size!=='2P') return;
+  if (!dragItem || !dragItem.artwork) return;
+  if (dragItem.artwork.size !== '2P') return;
   e.preventDefault();
   e.stopPropagation();
   const zId = el.getAttribute('data-zone');
@@ -811,19 +815,21 @@ function bumpBack(art) {
 
 function clearDragSource() {
   if (!dragItem || dragItem.type!=='placed') { dragItem=null; return; }
+function clearDragSource() {
+  if (!dragItem || dragItem.type !== 'placed') return;
   const layout = layouts[dragItem.fromZone];
-  if (!layout) { dragItem=null; return; }
+  if (!layout) return;
   const sp = layout.spreads[dragItem.fromSpread];
-  if (!sp) { dragItem=null; return; }
+  if (!sp) return;
   if (dragItem.fromHalf) {
     if (sp[dragItem.fromSide] && sp[dragItem.fromSide].type==='hp-pair') {
       sp[dragItem.fromSide][dragItem.fromHalf] = null;
-      if (!sp[dragItem.fromSide].left && !sp[dragItem.fromSide].right) sp[dragItem.fromSide]=null;
+      if (!sp[dragItem.fromSide].left && !sp[dragItem.fromSide].right) sp[dragItem.fromSide] = null;
     }
   } else {
     sp[dragItem.fromSide] = null;
   }
-  dragItem = null;
+  // Note: do NOT null dragItem here - caller does that after using artwork
 }
 
 function removeSlot(zId, si, side) {
