@@ -44,12 +44,13 @@ module.exports = async function(context, req) {
   const action    = req.query.action; // 'approved' or 'changes'
 
   if (sessionId && (action === 'approved' || action === 'changes')) {
+    let record = null;
     try {
       const blobSvc   = BlobServiceClient.fromConnectionString(STORAGE_CONN);
       const container = blobSvc.getContainerClient(CONTAINER);
       const blob      = container.getBlockBlobClient(sessionId + '.json');
       const dl        = await blob.downloadToBuffer();
-      const record    = JSON.parse(dl.toString());
+      record    = JSON.parse(dl.toString());
 
       const now = new Date().toISOString();
       record.respondedAt = now;
@@ -139,9 +140,11 @@ module.exports = async function(context, req) {
   }
 
   // Redirect to respond page
+  // Pass business name to respond page
+  const bizParam = record && record.business ? '&biz='+encodeURIComponent(record.business) : '';
   context.res = {
     status: 302,
-    headers: { 'Location': BASE_URL+'/respond?id='+sessionId+'&action='+action }
+    headers: { 'Location': BASE_URL+'/respond?id='+sessionId+'&action='+action+bizParam }
   };
   context.done();
 };
