@@ -814,8 +814,6 @@ function bumpBack(art) {
 }
 
 function clearDragSource() {
-  if (!dragItem || dragItem.type!=='placed') { dragItem=null; return; }
-function clearDragSource() {
   if (!dragItem || dragItem.type !== 'placed') return;
   const layout = layouts[dragItem.fromZone];
   if (!layout) return;
