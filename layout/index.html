@@ -38,10 +38,10 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .zone-tab.active .z-cnt{background:var(--rd)}
 
 /* Workspace */
-.workspace{display:flex;flex:1;overflow:hidden;min-height:0;height:calc(100vh - 110px)}
+.workspace{display:flex;flex:1;min-height:0;height:calc(100vh - 110px);overflow:hidden}
 
 /* Spread area */
-.spread-area{flex:1;overflow-y:scroll;overflow-x:auto;padding:1rem;background:#1a1a2e;display:flex;flex-direction:column;gap:.5rem;height:100%}
+.spread-area{flex:1;overflow-y:scroll;overflow-x:hidden;padding:1rem;background:#1a1a2e;display:flex;flex-direction:column;gap:.5rem;height:100%;min-height:0}
 .zone-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.5rem .8rem;background:#111827;border-radius:6px;margin-bottom:.5rem;flex-shrink:0}
 .zone-toolbar h2{font-size:12px;font-weight:700;color:#fff}
 .zone-toolbar .pg-info{font-size:11px;color:rgba(255,255,255,.5)}
@@ -113,13 +113,13 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
 .spread-2p-gutter{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#1a1a2e;transform:translateX(-50%);z-index:4}
 
 /* Artwork panel */
-.art-panel{width:260px;background:#111827;border-left:1px solid #2a3550;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;height:100%}
+.art-panel{width:260px;background:#111827;border-left:1px solid #2a3550;display:flex;flex-direction:column;flex-shrink:0;height:100%;min-height:0;overflow:hidden}
 .art-panel-hdr{background:#0a0f1e;padding:.6rem .8rem;flex-shrink:0}
 .art-panel-hdr h3{color:#fff;font-size:11px;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
 .art-panel-filters{display:flex;flex-direction:column;gap:5px}
 .art-panel-filters select,.art-panel-filters input{width:100%;padding:4px 7px;border:1px solid #2a3550;border-radius:3px;font-size:11px;font-family:inherit;background:#1a2540;color:#fff;outline:none}
 .art-panel-filters select option{background:#1a2540}
-.art-list{flex:1;overflow-y:scroll;padding:.5rem}
+.art-list{flex:1;overflow-y:scroll;padding:.5rem;min-height:0}
 
 /* Art card */
 .art-card{background:#1e2a42;border:1px solid #2a3550;border-radius:4px;margin-bottom:5px;cursor:grab;transition:all .15s;overflow:hidden}
@@ -321,8 +321,14 @@ async function loadLayout() {
 
 function initZoneLayout(zone) {
   const pages = zone.pages || 16;
+  // Structure: FC slot + interior spreads + BP slot
+  // Interior spreads = (pages - 2) / 2
+  // Total slots = 1 (FC) + interior + 1 (BP) = (pages/2) + 1
+  const interiorSpreads = (pages - 2) / 2;
   const spreads = [];
-  for (let i=0;i<pages/2;i++) spreads.push({left:null,right:null});
+  spreads.push({left:null, right:null}); // FC slot (only .left used)
+  for (let i=0;i<interiorSpreads;i++) spreads.push({left:null,right:null});
+  spreads.push({left:null, right:null}); // BP slot (only .right used)
   layouts[zone.id] = { pages, spreads };
 }
 
@@ -400,9 +406,9 @@ function renderArtPanel() {
   }
 
   list.innerHTML = unplaced.map(function(a){
-    const sc     = a.size==='FP'?'fp':a.size==='HP'?'hp':'two-p';
-    const cc     = a.size==='FP'?'fp-card':a.size==='HP'?'hp-card':'two-p-card';
-    const szLbl  = a.size==='2P'?'2P Spread':a.size;
+    const sc     = a.size==='FP'||a.size==='FC'||a.size==='BP'?'fp':a.size==='HP'?'hp':'two-p';
+    const cc     = a.size==='FP'||a.size==='FC'||a.size==='BP'?'fp-card':a.size==='HP'?'hp-card':'two-p-card';
+    const szLbl  = a.size==='2P'?'2P Spread':a.size==='FC'?'FC Cover':a.size==='BP'?'BP Back':a.size;
     const thumbHtml = a.thumbUrl
       ? '<img src="'+a.thumbUrl+'" alt="'+esc(a.business)+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
         '<div class="thumb-na" style="display:none"><div class="na-label">N/A</div><div class="na-sub">No preview</div></div>'
@@ -466,7 +472,7 @@ function renderSpreads() {
   let html = '<div class="zone-toolbar">'+
     '<div>'+
       '<h2>'+esc(activeZone)+' — '+(zone?esc(zone.name):activeZone)+'</h2>'+
-      '<div class="pg-info">'+layout.pages+' pages · '+layout.spreads.length+' spreads</div>'+
+      '<div class="pg-info">'+layout.pages+' pages · '+(layout.spreads.length-2)+' interior spreads</div>'+
     '</div>'+
     '<div style="display:flex;gap:6px;align-items:center">'+
       '<button class="btn-pg" onclick="removePgs()">− 4 Pages</button>'+
@@ -550,7 +556,7 @@ function renderPageSide(slot, si, side) {
     '<div class="slot-fp" draggable="true" ondragstart="placedDragStart(event,\''+activeZone+'\','+si+',\''+side+'\')">'+
       thumb+
       '<div class="ad-label">'+esc(slot.business)+'</div>'+
-      '<span class="size-pip">FP</span>'+
+      '<span class="size-pip">'+(slot.size||'FP')+'</span>'+
       '<button class="btn-rm" onclick="removeSlot(\''+activeZone+'\','+si+',\''+side+'\')">✕</button>'+
     '</div>'+
   '</div>';
@@ -602,39 +608,69 @@ function onArtDragEnd(e) {}
 function placedDragStart(e, zId, si, side, half) {
   e.stopPropagation();
   const layout = layouts[zId];
-  const sp     = layout.spreads[si];
+  if (!layout) return;
+  const sp = layout.spreads[si];
+  if (!sp) return;
   let art = null;
   if (half) {
-    art = sp[side] && sp[side].type==='hp-pair' ? sp[side][half] : null;
-  } else {
-    art = sp[side] && sp[side].type==='hp-pair' ? null : sp[side];
-    if (!art && sp[side] && sp[side].size==='2P') art = sp[side];
+    if (sp[side] && sp[side].type==='hp-pair') art = sp[side][half];
+  } else if (sp[side]) {
+    if (sp[side].type==='hp-pair') {
+      // Can't drag the whole hp-pair, only individual halves
+      return;
+    }
+    art = sp[side];
   }
-  dragItem = { type:'placed', artwork:art, fromZone:zId, fromSpread:si, fromSide:side, fromHalf:half||null };
+  if (!art) return;
+  dragItem = { type:'placed', artwork:art, fromZone:zId, fromSpread:parseInt(si), fromSide:side, fromHalf:half||null };
   e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', art.id || art.business);
 }
 
-function slotDragOver(e) {
+function slotDragOver(e, pageType) {
   e.preventDefault();
   e.stopPropagation();
+  if (!dragItem || !dragItem.artwork) return;
+  const sz = dragItem.artwork.size;
+  if (pageType==='FC' && sz!=='FC' && sz!=='FP') { e.dataTransfer.dropEffect='none'; return; }
+  if (pageType==='BP' && sz!=='BP' && sz!=='FP') { e.dataTransfer.dropEffect='none'; return; }
   e.dataTransfer.dropEffect = 'copy';
 }
 
-function slotDrop(e, zId, si, side) {
+function slotDrop(e, zId, si, side, pageType) {
   e.preventDefault(); e.stopPropagation();
   if (!dragItem || !dragItem.artwork) return;
   const art = dragItem.artwork;
-  if (art.size==='2P') { drop2P(e, zId, si); return; }
+  pageType = pageType || 'any';
+
+  // 2P drops on spread not individual side
+  if (art.size==='2P') {
+    if (pageType === 'FC' || pageType === 'BP') {
+      showToast('2P spread not allowed on this page', true); return;
+    }
+    drop2P(e, zId, si); return;
+  }
+
+  // Validate page type restrictions
+  if (pageType === 'FC' && art.size !== 'FC' && art.size !== 'FP') {
+    showToast('Page 1 is the Front Cover — only FC or FP ads here', true); return;
+  }
+  if (pageType === 'BP' && art.size !== 'BP' && art.size !== 'FP') {
+    showToast('Last page is the Back Page — only BP or FP ads here', true); return;
+  }
 
   const layout = layouts[zId];
   const sp     = layout.spreads[si];
 
-  // Bump existing art back to panel
-  if (art.size==='FP') {
-    if (sp[side] && sp[side].id && sp[side].id!==art.id) bumpBack(sp[side]);
-    else if (sp[side] && sp[side].type==='hp-pair') {
-      if (sp[side].left)  bumpBack(sp[side].left);
-      if (sp[side].right) bumpBack(sp[side].right);
+  // Handle FP
+  if (art.size==='FP' || art.size==='FC' || art.size==='BP') {
+    // Bump what's already there
+    if (sp[side]) {
+      if (sp[side].type==='hp-pair') {
+        bumpBack(sp[side].left); bumpBack(sp[side].right);
+      } else if (sp[side].id !== art.id) {
+        bumpBack(sp[side]);
+      }
     }
     clearDragSource();
     sp[side] = art;
@@ -650,6 +686,7 @@ function slotDrop(e, zId, si, side) {
     }
   }
 
+  dragItem = null;
   refreshLayout();
 }
 
@@ -671,17 +708,27 @@ function hpDrop(e, zId, si, pageSide, half) {
   refreshLayout();
 }
 
-function dragOver2P(e) { e.preventDefault(); }
+function dragOver2P(e) {
+  if (dragItem && dragItem.artwork && dragItem.artwork.size==='2P') {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
 
 function drop2P(e, zId, si) {
   e.preventDefault(); e.stopPropagation();
   if (!dragItem || !dragItem.artwork || dragItem.artwork.size!=='2P') return;
+  const totalSpreads = layouts[zId].spreads.length;
+  if (si === 0 || si === totalSpreads-1) {
+    showToast('2P spread cannot go on FC or BP pages', true); return;
+  }
   const sp = layouts[zId].spreads[si];
-  // Bump both sides
-  if (sp.left)  { if (sp.left.type==='hp-pair') { bumpBack(sp.left.left); bumpBack(sp.left.right); } else bumpBack(sp.left); }
+  if (sp.left)  { if (sp.left.type==='hp-pair')  { bumpBack(sp.left.left);  bumpBack(sp.left.right);  } else bumpBack(sp.left);  }
   if (sp.right) { if (sp.right.type==='hp-pair') { bumpBack(sp.right.left); bumpBack(sp.right.right); } else bumpBack(sp.right); }
+  const art2p = dragItem.artwork;
   clearDragSource();
-  layouts[zId].spreads[si] = { left: dragItem.artwork, right: null };
+  layouts[zId].spreads[si] = { left: art2p, right: null };
   dragItem = null;
   refreshLayout();
 }
@@ -731,25 +778,32 @@ function refreshLayout() {
 function addPgs() {
   const l = layouts[activeZone];
   l.pages += 4;
+  // Insert 2 new spreads before the BP slot (last element)
+  const bp = l.spreads.pop();
   l.spreads.push({left:null,right:null});
   l.spreads.push({left:null,right:null});
+  l.spreads.push(bp);
   refreshLayout();
 }
 
 function removePgs() {
   const l = layouts[activeZone];
   if (l.pages <= 8) { showToast('Minimum 8 pages', true); return; }
-  const last2 = l.spreads.slice(-2);
-  const hasAds = last2.some(function(sp){ return sp.left||sp.right; });
-  if (hasAds && !confirm('Last 4 pages have ads placed. Remove anyway?')) return;
-  // Return any ads to pool
-  last2.forEach(function(sp){
+  // Remove 2 interior spreads before BP slot
+  const len = l.spreads.length;
+  if (len < 4) { showToast('Cannot remove more pages', true); return; }
+  const toRemove = [l.spreads[len-3], l.spreads[len-2]];
+  const hasAds = toRemove.some(function(sp){ return sp&&(sp.left||sp.right); });
+  if (hasAds && !confirm('These pages have ads. Remove anyway?')) return;
+  toRemove.forEach(function(sp){
+    if (!sp) return;
     ['left','right'].forEach(function(s){
-      if (sp[s] && sp[s].type==='hp-pair') { bumpBack(sp[s].left); bumpBack(sp[s].right); }
-      else if (sp[s]) bumpBack(sp[s]);
+      if (!sp[s]) return;
+      if (sp[s].type==='hp-pair') { bumpBack(sp[s].left); bumpBack(sp[s].right); }
+      else bumpBack(sp[s]);
     });
   });
-  l.spreads.splice(-2,2);
+  l.spreads.splice(len-3, 2);
   l.pages -= 4;
   refreshLayout();
 }
@@ -776,13 +830,21 @@ async function emailDesigner() {
   const mLabel = MONTHS[parseInt(curMonth)-1]+' '+curYear;
 
   let pageList = '';
+  const totalSp = l.spreads.length;
   l.spreads.forEach(function(sp, si){
-    const p1=(si*2)+1, p2=(si*2)+2;
-    if (sp.left && sp.left.size==='2P') {
-      pageList += 'Pages '+p1+'-'+p2+': [2P SPREAD] '+sp.left.business+' ('+sp.left.filename+')\n';
+    if (si === 0) {
+      pageList += 'Page 1 (Front Cover): '+slotText(sp.left)+'\n';
+    } else if (si === totalSp-1) {
+      const lastPg = (totalSp-1)*2;
+      pageList += 'Page '+lastPg+' (Back Page): '+slotText(sp.right)+'\n';
     } else {
-      pageList += 'Page '+p1+' (Left):  '+slotText(sp.left)+'\n';
-      pageList += 'Page '+p2+' (Right): '+slotText(sp.right)+'\n';
+      const p1 = si*2, p2 = si*2+1;
+      if (sp.left && sp.left.size==='2P') {
+        pageList += 'Pages '+p1+'-'+p2+': [2P SPREAD] '+sp.left.business+' ('+sp.left.filename+')\n';
+      } else {
+        pageList += 'Page '+p1+' (Left):  '+slotText(sp.left)+'\n';
+        pageList += 'Page '+p2+' (Right): '+slotText(sp.right)+'\n';
+      }
     }
   });
 
