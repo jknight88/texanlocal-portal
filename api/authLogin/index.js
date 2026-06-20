@@ -1,4 +1,4 @@
-const jwt      = require('jsonwebtoken');
+const jwt      = require('jsonwebtoken'); 
 const bcrypt   = require('bcryptjs');
 const JWT_SECRET  = process.env.JWT_SECRET || 'e42f24e9f5cfe3558144a25a0b30c6458fc4bd5ab6a6271404a1e7b509404c72';
 const PORTAL_USERS = process.env.PORTAL_USERS;
