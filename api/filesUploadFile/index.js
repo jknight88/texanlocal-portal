@@ -50,26 +50,9 @@ module.exports = async function(context, req) {
       blobHTTPHeaders: { blobContentType: 'application/pdf' }
     });
 
-    // Convert first page to JPG using pdf-to-img and store as preview
-    let previewPath = null;
-    try {
-      const { pdf } = await import('pdf-to-img');
-      const pages   = await pdf(buffer, { scale: 1.5 });
-      for await (const page of pages) {
-        const jpgName    = filename.replace(/\.pdf$/i, '.jpg');
-        const jpgPath    = `${yr}/${mo}/previews/${jpgName}`;
-        const jpgBlob    = container.getBlockBlobClient(jpgPath);
-        await jpgBlob.upload(page, page.length, {
-          overwrite: true,
-          blobHTTPHeaders: { blobContentType: 'image/png' }
-        });
-        previewPath = jpgPath;
-        break; // first page only
-      }
-      context.log('Preview generated:', previewPath);
-    } catch(e) {
-      context.log.warn('Preview generation failed (non-fatal):', e.message);
-    }
+    // Preview generation moved to on-demand via generateThumb API
+    // Do NOT save previews to ad-proofs container (causes them to show in file manager)
+    const previewPath = null;
 
     context.res = {
       status: 200,
