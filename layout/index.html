@@ -211,6 +211,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#1a1a2e;min-height:100vh;
           <option value="">All Zones</option>
         </select>
         <input type="text" id="artSearch" placeholder="Search business…" oninput="filterArtwork()">
+        <button onclick="genAllThumbs()" style="background:#2a3550;color:#fff;border:1px solid #3a4a70;border-radius:3px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:2px">⚡ Generate All Thumbs</button>
       </div>
     </div>
     <div class="art-list" id="artList">
@@ -428,30 +429,41 @@ function renderArtPanel() {
 }
 
 async function genThumb(artId, pdfPath, btn) {
-  const card = btn.closest('.art-card');
+  const card = btn ? btn.closest('.art-card') : document.getElementById('artcard-'+artId.replace(/[^a-zA-Z0-9]/g,''));
   const wrap = card ? card.querySelector('.thumb-wrap') : null;
   if (wrap) wrap.innerHTML = '<div class="thumb-loading">⏳ Generating…</div>';
-  btn.style.display = 'none';
+  if (btn) btn.style.display = 'none';
   try {
-    const res  = await fetch(API+'/generateThumb',{
-      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-      body:JSON.stringify({pdfPath:pdfPath})
+    const res  = await fetch(API+'/generateThumb', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ pdfPath: pdfPath })
     });
     const data = await res.json();
     if (data.url) {
-      const art = allArtwork.find(function(a){return a.id===artId;});
+      const art = allArtwork.find(function(a){ return a.id===artId; });
       if (art) { art.thumbUrl=data.url; art.hasThumb=true; }
-      showToast('Thumbnail generated!', false);
+      showToast('Thumbnail ready!', false);
       renderArtPanel();
       if (activeZone) renderSpreads();
     } else {
-      if (wrap) wrap.innerHTML = '<div class="thumb-na"><div class="na-label">N/A</div><div class="na-sub">'+( data.error||'Failed')+'</div></div>';
-      showToast('Failed: '+(data.error||'unknown'), true);
+      if (wrap) wrap.innerHTML = '<div class="thumb-na"><div class="na-label">N/A</div><div class="na-sub">'+(data.error||'Failed')+'</div></div>';
+      showToast('Failed: '+(data.error||'error'), true);
     }
-  } catch(e){
+  } catch(e) {
     if (wrap) wrap.innerHTML = '<div class="thumb-na"><div class="na-label">N/A</div></div>';
     showToast('Error: '+e.message, true);
   }
+}
+
+async function genAllThumbs() {
+  const missing = allArtwork.filter(function(a){ return !a.hasThumb; });
+  if (!missing.length) { showToast('All thumbnails already generated!', false); return; }
+  showToast('Generating '+missing.length+' thumbnails — this may take a few minutes…');
+  for (let i=0; i<missing.length; i++) {
+    await genThumb(missing[i].id, missing[i].path, null);
+    await new Promise(function(r){ setTimeout(r, 1000); });
+  }
+  showToast('All thumbnails generated!', false);
 }
 
 // ── Zoom ──────────────────────────────────────────────────────────────────────
@@ -481,25 +493,51 @@ function renderSpreads() {
     '</div>'+
   '</div>';
 
-  html += '<div class="spreads-grid" id="spreadsGrid" style="transform-origin:top left">';
+  html += '<div class="spreads-grid" id="spreadsGrid">';
+
+  const totalSpreads = layout.spreads.length;
 
   layout.spreads.forEach(function(sp, si) {
-    const pageL = (si*2)+1;
-    const pageR = (si*2)+2;
-    const is2P  = sp.left && sp.left.size==='2P';
+    const isFC = (si === 0);
+    const isBP = (si === totalSpreads - 1);
+    const is2P = !isFC && !isBP && sp.left && sp.left.size === '2P';
+
+    if (isFC) {
+      // Page 1: Front Cover - standalone, centered, half width
+      html += '<div class="spread-wrap" style="grid-column:1/-1">'+
+        '<div class="spread-label">Page 1 — Front Cover</div>'+
+        '<div class="spread" id="sp-'+activeZone+'-'+si+'" style="max-width:calc(50% - 4px);margin:0 auto">'+
+          renderPageSide(sp.left, si, 'left', 'FC')+
+        '</div></div>';
+      return;
+    }
+
+    if (isBP) {
+      // Last page: Back Page - standalone, right-aligned, half width
+      const lastPageNum = (totalSpreads - 1) * 2;
+      html += '<div class="spread-wrap" style="grid-column:1/-1">'+
+        '<div class="spread-label">Page '+lastPageNum+' — Back Page</div>'+
+        '<div class="spread" id="sp-'+activeZone+'-'+si+'" style="max-width:calc(50% - 4px);margin:0 0 0 auto">'+
+          renderPageSide(sp.right, si, 'right', 'BP')+
+        '</div></div>';
+      return;
+    }
+
+    // Interior spread: pages si*2 and si*2+1
+    const pageL = si * 2;
+    const pageR = si * 2 + 1;
 
     html += '<div class="spread-wrap">'+
       '<div class="spread-label">Pages '+pageL+' – '+pageR+'</div>'+
       '<div class="spread" id="sp-'+activeZone+'-'+si+'"'+
-        (is2P?' ondragover="dragOver2P(event)" ondrop="drop2P(event,\''+activeZone+'\','+si+')"':'')+'>';
+        ' ondragover="dragOver2P(event)" ondrop="drop2P(event,\''+activeZone+'\','+si+')">';
 
     if (is2P) {
       html += render2PSpread(sp, si);
-      // Add invisible right page for drop target when 2P is placed
       html += '<div style="display:none"></div>';
     } else {
-      html += renderPageSide(sp.left, si, 'left');
-      html += renderPageSide(sp.right, si, 'right');
+      html += renderPageSide(sp.left,  si, 'left',  'any');
+      html += renderPageSide(sp.right, si, 'right', 'any');
     }
 
     html += '</div></div>';
@@ -526,14 +564,17 @@ function renderSpreads() {
   }
 }
 
-function renderPageSide(slot, si, side) {
-  const da = 'ondragover="slotDragOver(event)" ondrop="slotDrop(event,\''+activeZone+'\','+si+',\''+side+'\')"';
+function renderPageSide(slot, si, side, pageType) {
+  pageType = pageType || 'any';
+  const da = 'ondragover="slotDragOver(event,\''+pageType+'\')" ondrop="slotDrop(event,\''+activeZone+'\','+si+',\''+side+'\',\''+pageType+'\')"';
+  const hintText  = pageType==='FC' ? '🏠 Front Cover (FC/FP)' : pageType==='BP' ? '⬅ Back Page (BP/FP)' : 'Drop FP, HP, or 2P';
+  const hintColor = pageType==='FC'||pageType==='BP' ? '#BF0D3E' : '#aaa';
 
   if (!slot) {
-    return '<div class="page-side" '+da+'>' +
+    return '<div class="page-side" '+da+'>'+
       '<div class="page-empty" '+da+'>'+
-        '<div style="font-size:18px">📄</div>'+
-        '<div class="drop-hint">Drop FP or HP</div>'+
+        '<div style="font-size:20px">'+(pageType==='FC'?'🏠':pageType==='BP'?'⬅':'📄')+'</div>'+
+        '<div class="drop-hint" style="color:'+hintColor+'">'+hintText+'</div>'+
       '</div>'+
     '</div>';
   }
@@ -634,6 +675,7 @@ function slotDragOver(e, pageType) {
   const sz = dragItem.artwork.size;
   if (pageType==='FC' && sz!=='FC' && sz!=='FP') { e.dataTransfer.dropEffect='none'; return; }
   if (pageType==='BP' && sz!=='BP' && sz!=='FP') { e.dataTransfer.dropEffect='none'; return; }
+  if (sz==='2P') { e.dataTransfer.dropEffect='none'; return; } // 2P handled by spread
   e.dataTransfer.dropEffect = 'copy';
 }
 
@@ -643,21 +685,12 @@ function slotDrop(e, zId, si, side, pageType) {
   const art = dragItem.artwork;
   pageType = pageType || 'any';
 
-  // 2P drops on spread not individual side
   if (art.size==='2P') {
-    if (pageType === 'FC' || pageType === 'BP') {
-      showToast('2P spread not allowed on this page', true); return;
-    }
-    drop2P(e, zId, si); return;
+    if (pageType==='FC'||pageType==='BP') { showToast('2P spread cannot go on FC or BP pages',true); return; }
+    drop2P(e,zId,si); return;
   }
-
-  // Validate page type restrictions
-  if (pageType === 'FC' && art.size !== 'FC' && art.size !== 'FP') {
-    showToast('Page 1 is the Front Cover — only FC or FP ads here', true); return;
-  }
-  if (pageType === 'BP' && art.size !== 'BP' && art.size !== 'FP') {
-    showToast('Last page is the Back Page — only BP or FP ads here', true); return;
-  }
+  if (pageType==='FC' && art.size!=='FC' && art.size!=='FP') { showToast('Front Cover: FC or FP only',true); return; }
+  if (pageType==='BP' && art.size!=='BP' && art.size!=='FP') { showToast('Back Page: BP or FP only',true); return; }
 
   const layout = layouts[zId];
   const sp     = layout.spreads[si];
