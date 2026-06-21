@@ -391,8 +391,13 @@ function renderTable() {
       const sentAt      = rec ? fmt(rec.sentAt) : '—';
       const openedAt    = rec ? (rec.openedAt ? fmt(rec.openedAt) + (rec.openCount > 1 ? ' ×'+rec.openCount : '') : '—') : '—';
       const respondedAt = rec ? (rec.respondedAt ? fmt(rec.respondedAt) : '—') : '—';
-      const notes       = rec ? esc(rec.notes || '') : '';
+      const notes       = rec && s === 'changes_requested'
+        ? '<span style="color:#c62828;cursor:pointer;font-weight:600" onclick="openDetail(\''+esc(c.business)+'\')" title="Click to view changes">📋 View Changes</span>'
+        : rec ? esc(rec.notes || '') : '';
       const sessionId   = rec ? rec.sessionId : '';
+      const rowClick    = s === 'changes_requested'
+        ? 'onclick="openDetail(\''+esc(c.business)+'\')" style="cursor:pointer"'
+        : '';
 
       const actions = [];
       if (s === 'none') {
@@ -408,7 +413,7 @@ function renderTable() {
         actions.push('<button class="btn-sm btn-resend" onclick="resendProof(\'' + esc(c.business) + '\',\'' + esc(c.email) + '\',\'' + esc(c.contact||'') + '\')">↻ Resend</button>');
       }
 
-      return '<tr>' +
+      return '<tr ' + rowClick + '>' +
         '<td><div class="status-cell ' + statusClass + '"><span class="status-dot"></span><span class="status-text">' + statusLabel + '</span></div></td>' +
         '<td><strong>' + esc(c.business) + '</strong></td>' +
         '<td style="font-size:12px">' + esc((c.contact||'') + (c.lastName ? ' '+c.lastName : '')) + '</td>' +
@@ -517,6 +522,81 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 document.getElementById('modalOverlay').addEventListener('click', function(e) {
   if (e.target === e.currentTarget) closeModal();
 });
+
+// ── Change Request Detail Modal ───────────────────────────────────────────────
+async function openDetail(business) {
+  const normKey = normBiz(business);
+  const rec = allRecords[normKey];
+  if (!rec) return;
+
+  document.getElementById('detailTitle').textContent = 'Change Request — ' + business;
+
+  let html = '<div class="detail-section">';
+  html += '<h4>Submitted By</h4>';
+  html += '<div style="font-size:14px;font-weight:700;color:#1a1a2e">' + esc(rec.changeRequestor || rec.contact || 'Unknown') + '</div>';
+  if (rec.respondedAt) html += '<div style="font-size:12px;color:var(--md);margin-top:2px">' + new Date(rec.respondedAt).toLocaleString() + '</div>';
+  html += '</div>';
+
+  if (rec.changeNotes) {
+    html += '<div class="detail-section">';
+    html += '<h4>Changes Requested</h4>';
+    html += '<div class="change-notes">' + esc(rec.changeNotes) + '</div>';
+    html += '</div>';
+  } else {
+    html += '<div class="detail-section"><p style="color:var(--md);font-size:13px">No change notes recorded — client may have used the old email link.</p></div>';
+  }
+
+  const attList = rec.changeAttachments || (rec.changeAttachment ? [rec.changeAttachment] : []);
+  if (attList.length) {
+    html += '<div class="detail-section">';
+    html += '<h4>Attached Files (' + attList.length + ')</h4>';
+    for (const att of attList) {
+      if (!att || !att.blobName) continue;
+      html += '<div style="margin-bottom:10px">';
+      html += '<div style="font-size:13px;color:var(--bl);font-weight:600;margin-bottom:5px">📎 ' + esc(att.name) + '</div>';
+      if (att.type && att.type.startsWith('image/')) {
+        try {
+          const res  = await fetch(API + '/getAttachment?blobName=' + encodeURIComponent(att.blobName), { credentials:'include' });
+          const data = await res.json();
+          if (data.url) {
+            html += '<img src="' + data.url + '" style="max-width:100%;border-radius:4px;border:1px solid #e0e3ea;margin-bottom:5px">';
+            html += '<br><a href="' + data.url + '" download="' + esc(att.name) + '" class="btn-download">⬇ Download</a>';
+          }
+        } catch(e) { html += '<span style="color:var(--md);font-size:12px">Preview unavailable</span>'; }
+      } else {
+        html += '<a href="#" onclick="event.preventDefault();downloadAttachment(\'' + esc(att.blobName) + '\',\'' + esc(att.name) + '\')" class="btn-download">⬇ Download File</a>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  if (rec.filesUsed && rec.filesUsed.length) {
+    html += '<div class="detail-section">';
+    html += '<h4>Original Proof Files Sent</h4>';
+    html += rec.filesUsed.map(function(f){ return '<div style="font-size:12px;color:var(--md);margin-bottom:2px">📄 ' + esc(f.split('/').pop()) + '</div>'; }).join('');
+    html += '</div>';
+  }
+
+  document.getElementById('detailBody').innerHTML = html;
+  document.getElementById('detailOverlay').classList.add('show');
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('show');
+}
+
+async function downloadAttachment(blobName, fileName) {
+  try {
+    const res  = await fetch(API + '/getAttachment?blobName=' + encodeURIComponent(blobName), { credentials:'include' });
+    const data = await res.json();
+    if (data.url) {
+      const a = document.createElement('a');
+      a.href = data.url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+  } catch(e) { alert('Could not download file. Please try again.'); }
+}
 
 init();
 </script>
