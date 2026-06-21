@@ -58,9 +58,9 @@ h1{font-size:20px;font-weight:700;color:#1a1a2e;text-align:center;margin-bottom:
       </div>
       <div class="form-field">
         <label>Attach Reference File (optional)</label>
-        <input type="file" id="attachFile" accept="image/*,.pdf,.ai,.eps,.psd,.jpg,.jpeg,.png,.tif,.tiff"
+        <input type="file" id="attachFile" accept="image/*,.pdf,.ai,.eps,.psd,.jpg,.jpeg,.png,.tif,.tiff" multiple
           style="border:1px solid #c8cdd8;border-radius:5px;padding:8px;font-size:13px;background:#fafafa;cursor:pointer">
-        <div style="font-size:11px;color:#888;margin-top:4px">You can attach a new image, PDF, or design file</div>
+        <div style="font-size:11px;color:#888;margin-top:4px">You can attach multiple files — images, PDFs, or design files (max 20MB total)</div>
       </div>
       <div class="form-field">
         <label>Changes Needed *</label>
@@ -114,23 +114,26 @@ async function submitChanges() {
   msg.className   = 'status-msg';
   msg.style.display = 'none';
 
-  // Read attached file if any
-  let attachment = null;
-  if (fileInput && fileInput.files && fileInput.files[0]) {
-    const file = fileInput.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      showError('File too large — maximum 10MB. Please email large files directly.');
+  // Read attached files (multiple)
+  let attachments = [];
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    const files = Array.from(fileInput.files);
+    const totalSize = files.reduce(function(sum, f){ return sum + f.size; }, 0);
+    if (totalSize > 20 * 1024 * 1024) {
+      showError('Total file size too large — maximum 20MB. Please email large files directly.');
       btn.disabled = false; btn.textContent = 'Submit Change Request'; return;
     }
     try {
-      attachment = await new Promise(function(resolve, reject) {
-        const reader = new FileReader();
-        reader.onload  = function(e) { resolve({ name: file.name, type: file.type, data: e.target.result.split(',')[1] }); };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      attachments = await Promise.all(files.map(function(file) {
+        return new Promise(function(resolve, reject) {
+          const reader = new FileReader();
+          reader.onload  = function(e) { resolve({ name: file.name, type: file.type, data: e.target.result.split(',')[1] }); };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }));
     } catch(e) {
-      showError('Could not read the attached file. Please try again.');
+      showError('Could not read attached files. Please try again.');
       btn.disabled = false; btn.textContent = 'Submit Change Request'; return;
     }
   }
@@ -139,7 +142,7 @@ async function submitChanges() {
     const res  = await fetch('/api/submitChanges', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: id, clientName: name, changes: changes, business: business, attachment: attachment })
+      body: JSON.stringify({ sessionId: id, clientName: name, changes: changes, business: business, attachments: attachments })
     });
     const data = await res.json();
 
