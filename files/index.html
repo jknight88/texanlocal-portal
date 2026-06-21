@@ -7,7 +7,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
 body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
 
 .hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
@@ -18,81 +18,63 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
 .btn-hdr:hover{background:rgba(255,255,255,.2)}
 
-.main{max-width:1400px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
+.main{max-width:1300px;margin:0 auto;padding:1.5rem;flex:1}
 
-/* Controls */
-.controls{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+/* ── Controls ── */
+.controls{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap}
 .ctrl-group{display:flex;align-items:center;gap:6px}
 .ctrl-group label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.6px}
 select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;font-family:inherit;background:#fff;color:#1a1a2e;outline:none;cursor:pointer}
 select:focus{border-color:var(--rd)}
+.btn-load{background:var(--bl);color:#fff;border:none;padding:7px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-load:hover{background:#001844}
 .file-count{font-size:12px;color:var(--md);margin-left:auto}
 
-/* Month tabs */
-.month-tabs{display:flex;gap:0;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:1.2rem;flex-wrap:wrap}
-.month-tab{flex:1;min-width:60px;padding:.6rem .4rem;font-size:12px;font-weight:700;color:var(--md);cursor:pointer;border-right:1px solid #f0f2f5;text-align:center;transition:all .15s;user-select:none}
-.month-tab:last-child{border-right:none}
-.month-tab:hover{background:#f5f8ff;color:var(--bl)}
-.month-tab.active{background:var(--bl);color:#fff}
-.month-tab.has-files{position:relative}
-.month-tab.has-files::after{content:'•';position:absolute;top:4px;right:6px;color:var(--rd);font-size:10px}
-
-/* Upload zone */
-.upload-zone{border:2px dashed var(--br);border-radius:8px;padding:1.2rem 2rem;text-align:center;background:#fff;margin-bottom:1.2rem;cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;gap:16px;justify-content:center}
+/* ── Upload drop zone ── */
+.upload-zone{border:2px dashed var(--br);border-radius:8px;padding:2rem;text-align:center;background:#fff;margin-bottom:1.2rem;cursor:pointer;transition:all .2s;position:relative}
 .upload-zone:hover,.upload-zone.drag-over{border-color:var(--rd);background:#fff8f8}
 .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-zone .icon{font-size:22px}
-.upload-zone p{font-size:13px;color:var(--md)}
-.upload-zone strong{color:var(--bl)}
-.upload-progress{font-size:12px;color:var(--green);font-weight:600;display:none;margin-left:12px}
+.upload-zone .icon{font-size:28px;margin-bottom:8px}
+.upload-zone h3{font-size:15px;font-weight:700;color:var(--bl);margin-bottom:4px}
+.upload-zone p{font-size:12px;color:var(--md)}
+.upload-progress{margin-top:10px;font-size:12px;color:var(--green);font-weight:600;display:none}
 
-/* Layout */
-.workspace{display:flex;gap:1rem;align-items:flex-start;min-height:500px}
-.file-list-wrap{flex:1;min-width:0;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+/* ── File grid ── */
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
 
-/* File list table */
-.file-table{width:100%;border-collapse:collapse}
-.file-table thead{background:var(--bl)}
-.file-table thead th{color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:10px 14px;text-align:left}
-.file-table tbody tr{border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background .1s}
-.file-table tbody tr:hover{background:#f5f8ff}
-.file-table tbody tr.active{background:#e8ecf8;border-left:3px solid var(--rd)}
-.file-table tbody tr:last-child{border-bottom:none}
-.file-table td{padding:10px 14px;font-size:13px;vertical-align:middle}
-.td-icon{width:32px;font-size:18px;color:var(--rd)}
-.td-name{font-weight:600;color:var(--bl)}
-.td-size{color:var(--md);font-size:12px;white-space:nowrap}
-.td-date{color:var(--md);font-size:12px;white-space:nowrap}
-.td-actions{white-space:nowrap;text-align:right}
-.btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:4px}
-.btn-view{background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff}
-.btn-view:hover{background:#dde5ff}
+.file-card{background:#fff;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
+.file-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.file-thumb{height:120px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:40px;border-bottom:1px solid var(--br)}
+.file-info{padding:.8rem;flex:1}
+.file-name{font-size:12px;font-weight:700;color:var(--bl);word-break:break-all;margin-bottom:4px;line-height:1.4}
+.file-meta{font-size:11px;color:var(--md)}
+.file-actions{padding:.6rem .8rem;border-top:1px solid var(--br);display:flex;gap:6px}
+.btn-sm{padding:4px 10px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-download{background:var(--bl);color:#fff}
+.btn-delete{background:#f5f5f5;color:#e53935;border:1px solid #ffcdd2}
 .btn-download:hover{background:#001844}
-.btn-delete{background:#fff0f0;color:#e53935;border:1px solid #ffcdd2}
 .btn-delete:hover{background:#ffebee}
 
-/* Preview panel */
-.preview-panel{width:480px;flex-shrink:0;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.1);overflow:hidden;position:sticky;top:1rem;display:none;flex-direction:column}
-.preview-panel.visible{display:flex}
-.preview-hdr{background:var(--bl);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:3px solid var(--rd)}
-.preview-hdr span{color:#fff;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.preview-actions{display:flex;gap:6px;flex-shrink:0}
-.btn-preview-action{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
-.btn-preview-action:hover{background:rgba(255,255,255,.25)}
-.preview-frame{width:100%;height:680px;border:none;display:block;background:#f5f5f5}
-.preview-empty{height:680px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--md);gap:12px}
-.preview-empty .pi{font-size:48px}
+/* ── Empty state ── */
+.empty{text-align:center;padding:4rem 2rem;color:var(--md)}
+.empty .e-icon{font-size:48px;margin-bottom:12px}
+.empty h3{font-size:16px;color:var(--bl);margin-bottom:8px}
 
-/* Empty state */
-.empty-state{padding:4rem 2rem;text-align:center;color:var(--md)}
-.empty-state .ei{font-size:48px;margin-bottom:12px}
-.empty-state h3{font-size:16px;color:var(--bl);margin-bottom:6px}
-
-/* Toast */
+/* ── Toast ── */
 .toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
 .toast.show{opacity:1}
 .toast.err{background:var(--rd)}
+
+/* Preview modal */
+.preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:none;align-items:center;justify-content:center;padding:1rem}
+.preview-overlay.show{display:flex}
+.preview-box{background:#fff;border-radius:8px;overflow:hidden;max-width:95vw;max-height:95vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.preview-hdr{background:#00205B;padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.preview-hdr span{color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 4px;flex-shrink:0}
+.preview-img-wrap{overflow:auto;display:flex;align-items:center;justify-content:center}
+.preview-img-wrap img{display:block;max-width:90vw;max-height:85vh;width:auto;height:auto}
+.preview-footer{background:#f9fafc;padding:.5rem 1rem;font-size:12px;color:#666;text-align:center;flex-shrink:0;border-top:1px solid #e0e3ea}
 </style>
 </head>
 <body>
@@ -110,56 +92,44 @@ select:focus{border-color:var(--rd)}
 
 <div class="main">
 
+  <!-- Month/Year selector -->
   <div class="controls">
     <div class="ctrl-group">
-      <label>Year</label>
-      <select id="selYear" onchange="renderMonthTabs()"></select>
+      <label>Month</label>
+      <select id="selMonth">
+        <option value="01">January</option><option value="02">February</option>
+        <option value="03">March</option><option value="04">April</option>
+        <option value="05">May</option><option value="06">June</option>
+        <option value="07">July</option><option value="08">August</option>
+        <option value="09">September</option><option value="10">October</option>
+        <option value="11">November</option><option value="12">December</option>
+      </select>
     </div>
+    <div class="ctrl-group">
+      <label>Year</label>
+      <select id="selYear"></select>
+    </div>
+    <button class="btn-load" onclick="loadFiles()">Load Files</button>
     <div class="file-count" id="fileCount"></div>
   </div>
-
-  <!-- Month tabs -->
-  <div class="month-tabs" id="monthTabs"></div>
 
   <!-- Upload zone (admin only) -->
   <div class="upload-zone" id="uploadZone">
     <input type="file" id="fileInput" accept=".pdf" multiple onchange="handleFiles(this.files)">
-    <span class="icon">📤</span>
-    <p><strong>Drop PDFs here</strong> to upload &nbsp;·&nbsp; or click to browse</p>
-    <span class="upload-progress" id="uploadProgress"></span>
+    <div class="icon">📤</div>
+    <h3>Drop PDF files here to upload</h3>
+    <p>or click to browse &nbsp;·&nbsp; Files are stored as <code>BusinessName_MMYY_AdType.pdf</code></p>
+    <div class="upload-progress" id="uploadProgress"></div>
   </div>
 
-  <div class="workspace">
-
-    <!-- File list -->
-    <div class="file-list-wrap">
-      <div id="fileListContainer">
-        <div class="empty-state">
-          <div class="ei">📁</div>
-          <h3>Select a month above to view files</h3>
-        </div>
-      </div>
+  <!-- File grid -->
+  <div class="file-grid" id="fileGrid">
+    <div class="empty">
+      <div class="e-icon">📁</div>
+      <h3>Select a month and click Load Files</h3>
     </div>
-
-    <!-- Preview panel -->
-    <div class="preview-panel" id="previewPanel">
-      <div class="preview-hdr">
-        <span id="previewName">Preview</span>
-        <div class="preview-actions">
-          <button class="btn-preview-action" onclick="openFullWindow()">⛶ Full View</button>
-          <button class="btn-preview-action" onclick="downloadCurrent()">⬇ Download</button>
-          <button class="btn-preview-action" onclick="closePreview()">✕</button>
-        </div>
-      </div>
-      <div id="previewContent">
-        <div class="preview-empty">
-          <div class="pi">📄</div>
-          <p>Click a file to preview</p>
-        </div>
-      </div>
-    </div>
-
   </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -168,164 +138,94 @@ select:focus{border-color:var(--rd)}
 const API = '/api';
 let userRole = 'rep';
 let currentYear, currentMonth;
-let currentPreviewPath = null;
-let currentPreviewName = null;
-let currentPreviewUrl  = null;
-
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 async function init() {
   try {
-    const token = sessionStorage.getItem('txl_token');
-    const res = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
+    const res  = await fetch(API + '/auth/verify', { credentials: 'include' });
     if (!res.ok) { window.location.href = '/'; return; }
     const user = await res.json();
     userRole = user.role;
-    // designers can access file manager but not upload (handled below)
-    if (user.role !== 'admin') document.getElementById('uploadZone').style.display = 'none';
+    if (user.role === 'designer') { window.location.href = '/upload'; return; }
+
+    // Hide upload zone for reps
+    if (user.role !== 'admin') {
+      document.getElementById('uploadZone').style.display = 'none';
+    }
   } catch(e) { window.location.href = '/'; return; }
 
-  const yearSel  = document.getElementById('selYear');
+  // Populate year selector
+  const yearSel = document.getElementById('selYear');
   const thisYear = new Date().getFullYear();
   for (let y = thisYear; y >= thisYear - 3; y--) {
-    const o = document.createElement('option');
-    o.value = y; o.textContent = y; yearSel.appendChild(o);
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    yearSel.appendChild(opt);
   }
-  yearSel.value = thisYear;
 
+  // Default to current month (prior month for production files)
+  const now = new Date();
+  const prior = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  document.getElementById('selMonth').value = String(prior.getMonth() + 1).padStart(2, '0');
+  document.getElementById('selYear').value  = prior.getFullYear();
+
+  // Drag and drop
   const zone = document.getElementById('uploadZone');
   zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
-
-  renderMonthTabs();
-  // Auto-select current month
-  const now = new Date();
-  selectMonth(String(now.getMonth() + 1).padStart(2, '0'));
-}
-
-function renderMonthTabs() {
-  const year = document.getElementById('selYear').value;
-  const now  = new Date();
-  const tabs  = document.getElementById('monthTabs');
-  tabs.innerHTML = MONTHS.map((m, i) => {
-    const monthNum = String(i + 1).padStart(2, '0');
-    const isFuture = parseInt(year) === now.getFullYear() && i > now.getMonth();
-    return `<div class="month-tab${currentMonth === monthNum ? ' active' : ''}${isFuture ? ' style="opacity:.4;pointer-events:none"' : ''}" 
-      onclick="selectMonth('${monthNum}')">${m}</div>`;
-  }).join('');
-}
-
-function selectMonth(month) {
-  currentMonth = month;
-  currentYear  = document.getElementById('selYear').value;
-  // Update active tab
-  document.querySelectorAll('.month-tab').forEach((t, i) => {
-    t.classList.toggle('active', String(i + 1).padStart(2, '0') === month);
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
   });
-  closePreview();
+
   loadFiles();
 }
 
 async function loadFiles() {
-  const month = currentMonth;
-  const year  = currentYear;
-  if (!month || !year) return;
-  closePreview();
+  const month = document.getElementById('selMonth').value;
+  const year  = document.getElementById('selYear').value;
+  currentMonth = month; currentYear = year;
 
-  const container = document.getElementById('fileListContainer');
-  container.innerHTML = '<div class="empty-state"><div class="ei">⏳</div><h3>Loading…</h3></div>';
+  const grid = document.getElementById('fileGrid');
+  grid.innerHTML = '<div class="empty"><div class="e-icon">⏳</div><h3>Loading…</h3></div>';
 
   try {
-    const res  = await fetch(`${API}/filesListFiles?year=${year}&month=${month}`, { credentials: 'include' });
+    const res  = await fetch(`${API}/files/list?year=${year}&month=${month}`, { credentials: 'include' });
     const data = await res.json();
 
     if (!data.files || !data.files.length) {
-      container.innerHTML = `<div class="empty-state"><div class="ei">📭</div><h3>No files for ${month}/${year}</h3><p>Upload files using the area above</p></div>`;
+      grid.innerHTML = `<div class="empty"><div class="e-icon">📭</div><h3>No files for ${month}/${year}</h3><p>Upload files using the area above</p></div>`;
       document.getElementById('fileCount').textContent = '0 files';
       return;
     }
 
     document.getElementById('fileCount').textContent = data.files.length + ' file' + (data.files.length !== 1 ? 's' : '');
 
-    container.innerHTML = `<table class="file-table">
-      <thead><tr>
-        <th style="width:32px"></th>
-        <th>File Name</th>
-        <th>Size</th>
-        <th>Uploaded</th>
-        <th style="text-align:right">Actions</th>
-      </tr></thead>
-      <tbody>
-        ${data.files.map(f => `
-          <tr id="row-${safeId(f.fullPath)}" onclick="previewFile('${esc(f.fullPath)}','${esc(f.name)}')">
-            <td class="td-icon">📄</td>
-            <td class="td-name">${esc(f.name)}</td>
-            <td class="td-size">${f.sizeLabel}</td>
-            <td class="td-date">${formatDate(f.uploadedAt)}</td>
-            <td class="td-actions" onclick="event.stopPropagation()">
-              <button class="btn-sm btn-view" onclick="previewFile('${esc(f.fullPath)}','${esc(f.name)}')">👁 Preview</button>
-              <button class="btn-sm btn-download" onclick="downloadFile('${esc(f.fullPath)}','${esc(f.name)}')">⬇</button>
-              ${userRole === 'admin' ? `<button class="btn-sm btn-delete" onclick="deleteFile('${esc(f.fullPath)}','${esc(f.name)}')">🗑</button>` : ''}
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>`;
+    grid.innerHTML = data.files.map(f => `
+      <div class="file-card">
+        <div class="file-thumb">📄</div>
+        <div class="file-info">
+          <div class="file-name">${esc(f.name)}</div>
+          <div class="file-meta">${f.sizeLabel} &nbsp;·&nbsp; ${formatDate(f.uploadedAt)}</div>
+        </div>
+        <div class="file-actions">
+          <button class="btn-sm" style="background:#00205B;color:#fff;border-color:#00205B" onclick="previewFile('${esc(f.fullPath)}','${esc(f.name)}')">👁 Preview</button>
+          <button class="btn-sm btn-download" onclick="downloadFile('${esc(f.fullPath)}','${esc(f.name)}')">⬇ Download</button>
+          ${userRole === 'admin' ? `<button class="btn-sm btn-delete" onclick="deleteFile('${esc(f.fullPath)}','${esc(f.name)}')">🗑</button>` : ''}
+        </div>
+      </div>
+    `).join('');
 
   } catch(e) {
-    container.innerHTML = '<div class="empty-state"><div class="ei">⚠️</div><h3>Failed to load files</h3></div>';
+    grid.innerHTML = '<div class="empty"><div class="e-icon">⚠️</div><h3>Failed to load files</h3></div>';
   }
-}
-
-async function previewFile(fullPath, name) {
-  // Highlight row
-  document.querySelectorAll('.file-table tbody tr').forEach(r => r.classList.remove('active'));
-  const row = document.getElementById('row-' + safeId(fullPath));
-  if (row) row.classList.add('active');
-
-  currentPreviewPath = fullPath;
-  currentPreviewName = name;
-  currentPreviewUrl  = null;
-
-  const panel = document.getElementById('previewPanel');
-  panel.classList.add('visible');
-  document.getElementById('previewName').textContent = name;
-  document.getElementById('previewContent').innerHTML = '<div class="preview-empty"><div class="pi">⏳</div><p>Loading preview…</p></div>';
-
-  try {
-    const token = sessionStorage.getItem('txl_token');
-    const res   = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}&inline=true`, { credentials: 'include', headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
-    const data  = await res.json();
-    if (!data.url) throw new Error('No URL');
-    currentPreviewUrl = data.url;
-    document.getElementById('previewContent').innerHTML = `<iframe class="preview-frame" src="${data.url}" title="${esc(name)}"></iframe>`;
-  } catch(e) {
-    document.getElementById('previewContent').innerHTML = `<div class="preview-empty" style="color:var(--rd)"><div class="pi">⚠️</div><p>Could not load preview</p></div>`;
-  }
-}
-
-function openFullWindow() {
-  if (currentPreviewUrl) window.open(currentPreviewUrl, '_blank');
-}
-
-function downloadCurrent() {
-  if (currentPreviewPath && currentPreviewName) downloadFile(currentPreviewPath, currentPreviewName);
-}
-
-function closePreview() {
-  document.getElementById('previewPanel').classList.remove('visible');
-  document.querySelectorAll('.file-table tbody tr').forEach(r => r.classList.remove('active'));
-  currentPreviewPath = null; currentPreviewName = null; currentPreviewUrl = null;
 }
 
 async function downloadFile(fullPath, name) {
   try {
     showToast('Preparing download…');
-    const res  = await fetch(`${API}/filesGetDownloadUrl?path=${encodeURIComponent(fullPath)}`, { credentials: 'include' });
+    const res  = await fetch(`${API}/files/download?path=${encodeURIComponent(fullPath)}`, { credentials: 'include' });
     const data = await res.json();
-    if (!data.url) throw new Error('No URL');
+    if (!data.url) throw new Error('No URL returned');
     const a = document.createElement('a');
     a.href = data.url; a.download = name; a.target = '_blank';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -338,10 +238,11 @@ async function downloadFile(fullPath, name) {
 async function deleteFile(fullPath, name) {
   if (!confirm(`Delete "${name}"?\n\nThis cannot be undone.`)) return;
   try {
-    const res = await fetch(`${API}/filesDeleteFile?path=${encodeURIComponent(fullPath)}`, { method: 'DELETE', credentials: 'include' });
+    const res = await fetch(`${API}/files/delete?path=${encodeURIComponent(fullPath)}`, {
+      method: 'DELETE', credentials: 'include'
+    });
     if (!res.ok) throw new Error('Delete failed');
     showToast('File deleted');
-    if (currentPreviewPath === fullPath) closePreview();
     loadFiles();
   } catch(e) {
     showToast('Delete failed: ' + e.message, true);
@@ -351,51 +252,132 @@ async function deleteFile(fullPath, name) {
 async function handleFiles(fileList) {
   if (!fileList || !fileList.length) return;
   const prog = document.getElementById('uploadProgress');
-  prog.style.display = 'inline';
+  prog.style.display = 'block';
+
   for (let i = 0; i < fileList.length; i++) {
     const file = fileList[i];
-    if (!file.name.toLowerCase().endsWith('.pdf')) { showToast(`Skipped ${file.name}`, true); continue; }
-    prog.textContent = `Uploading ${i+1}/${fileList.length}: ${file.name}…`;
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      showToast(`Skipped ${file.name} — only PDFs accepted`, true);
+      continue;
+    }
+    prog.textContent = `Uploading ${i + 1} of ${fileList.length}: ${file.name}…`;
+
     try {
       const b64 = await fileToBase64(file);
-      const res = await fetch(`${API}/filesUploadFile`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ filename: file.name, fileBase64: b64, contentType: 'application/pdf', year: currentYear, month: currentMonth })
+      const res = await fetch(`${API}/files/upload`, {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          filename:    file.name,
+          fileBase64:  b64,
+          contentType: 'application/pdf',
+          year:        currentYear,
+          month:       currentMonth
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       showToast(`✓ Uploaded: ${file.name}`);
-    } catch(e) { showToast(`Failed: ${file.name} — ${e.message}`, true); }
+    } catch(e) {
+      showToast(`Failed: ${file.name} — ${e.message}`, true);
+    }
   }
+
   prog.style.display = 'none';
   document.getElementById('fileInput').value = '';
   loadFiles();
 }
 
-function fileToBase64(f) {
-  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(f); });
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
 }
 
 async function logout() {
-  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
-  sessionStorage.clear(); window.location.href = '/';
+  await fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' });
+  sessionStorage.clear();
+  window.location.href = '/';
 }
 
 function showToast(msg, isErr) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
+  t.textContent = msg;
+  t.className   = 'toast show' + (isErr ? ' err' : '');
   setTimeout(() => t.className = 'toast', 3000);
+}
+
+
+async function previewFile(fullPath, name) {
+  document.getElementById('previewName').textContent = name;
+  document.getElementById('previewImgWrap').innerHTML = '<div style="padding:2rem;text-align:center;color:#888">⏳ Loading preview…</div>';
+  document.getElementById('previewFooter').textContent = '';
+  document.getElementById('previewOverlay').classList.add('show');
+
+  try {
+    const res  = await fetch(`${API}/files/download?path=${encodeURIComponent(fullPath)}`, { credentials:'include' });
+    const data = await res.json();
+    if (!data.url) throw new Error('No URL');
+
+    const img = new Image();
+    img.onload = function() {
+      document.getElementById('previewImgWrap').innerHTML = '';
+      document.getElementById('previewImgWrap').appendChild(img);
+      document.getElementById('previewFooter').textContent =
+        img.naturalWidth + ' × ' + img.naturalHeight + ' px';
+    };
+    img.onerror = function() {
+      document.getElementById('previewImgWrap').innerHTML =
+        '<div style="padding:2rem;text-align:center">' +
+        '<div style="font-size:48px;margin-bottom:12px">📄</div>' +
+        '<div style="color:#444;font-size:14px;margin-bottom:16px">' + esc(name) + '</div>' +
+        '<a href="' + data.url + '" target="_blank" style="background:#00205B;color:#fff;padding:10px 20px;border-radius:5px;text-decoration:none;font-size:13px;font-weight:700">Open File</a>' +
+        '</div>';
+    };
+    img.src = data.url;
+    img.style.cssText = 'max-width:90vw;max-height:85vh;display:block';
+  } catch(e) {
+    document.getElementById('previewImgWrap').innerHTML =
+      '<div style="padding:2rem;text-align:center;color:#c62828">Failed to load preview</div>';
+  }
+}
+
+function closePreview() {
+  document.getElementById('previewOverlay').classList.remove('show');
+  document.getElementById('previewImgWrap').innerHTML = '';
 }
 
 function formatDate(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) +
+    ' ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
 }
 
-function safeId(s) { return String(s || '').replace(/[^a-z0-9]/gi, '_'); }
-function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 init();
 </script>
+
+<!-- Preview Modal -->
+<div class="preview-overlay" id="previewOverlay" onclick="if(event.target===this)closePreview()">
+  <div class="preview-box" id="previewBox">
+    <div class="preview-hdr">
+      <span id="previewName"></span>
+      <button class="preview-close" onclick="closePreview()">✕</button>
+    </div>
+    <div class="preview-img-wrap" id="previewImgWrap">
+      <div style="padding:2rem;text-align:center;color:#888">⏳ Loading preview…</div>
+    </div>
+    <div class="preview-footer" id="previewFooter"></div>
+  </div>
+</div>
+
 </body>
 </html>
