@@ -560,7 +560,7 @@ async function openDetail(business) {
           const data = await res.json();
           if (data.url) {
             html += '<img src="' + data.url + '" style="max-width:100%;border-radius:4px;border:1px solid #e0e3ea;margin-bottom:5px">';
-            html += '<br><a href="' + data.url + '" download="' + esc(att.name) + '" class="btn-download">⬇ Download</a>';
+            html += '<br><a href="#" onclick="event.preventDefault();downloadAttachment(\'' + esc(att.blobName) + '\',\'' + esc(att.name) + '\')" class="btn-download">⬇ Download</a>';
           }
         } catch(e) { html += '<span style="color:var(--md);font-size:12px">Preview unavailable</span>'; }
       } else {
@@ -591,9 +591,17 @@ async function downloadAttachment(blobName, fileName) {
     const res  = await fetch(API + '/getAttachment?blobName=' + encodeURIComponent(blobName), { credentials:'include' });
     const data = await res.json();
     if (data.url) {
-      const a = document.createElement('a');
-      a.href = data.url; a.download = fileName;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      // Fetch the actual file and force download
+      const fileRes  = await fetch(data.url);
+      const blob     = await fileRes.blob();
+      const url      = URL.createObjectURL(blob);
+      const a        = document.createElement('a');
+      a.href         = url;
+      a.download     = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   } catch(e) { alert('Could not download file. Please try again.'); }
 }
