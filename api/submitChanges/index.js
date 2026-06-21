@@ -31,7 +31,7 @@ async function getGraphToken() {
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res={status:200,headers:CORS,body:'{}'}; context.done(); return; }
 
-  const { sessionId, clientName, changes, business, attachment } = req.body || {};
+  const { sessionId, clientName, changes, business, attachments, attachment } = req.body || {};
   if (!sessionId || !clientName || !changes) {
     context.res={status:400,headers:CORS,body:JSON.stringify({error:'Missing required fields'})}; context.done(); return;
   }
@@ -72,19 +72,24 @@ module.exports = async function(context, req) {
       month     = record.mailingMonthLabel || '';
       filesUsed = record.filesUsed ? record.filesUsed.join(', ') : '';
 
-      // Save attachment to blob if provided
-      if (attachment && attachment.data && attachment.name) {
+      // Support both single attachment (legacy) and multiple attachments
+      const attachList = attachments && attachments.length ? attachments : (attachment ? [attachment] : []);
+      const savedAttachments = [];
+      for (const att of attachList) {
+      if (att && att.data && att.name) {
         try {
-          const attachBuf  = Buffer.from(attachment.data, 'base64');
-          const attachName = sessionId + '_attachment_' + attachment.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+          const attachBuf  = Buffer.from(att.data, 'base64');
+          const attachName = sessionId + '_attachment_' + savedAttachments.length + '_' + att.name.replace(/[^a-zA-Z0-9._-]/g,'_');
           const attachC    = blobSvc.getContainerClient('ad-approvals');
           await attachC.getBlockBlobClient(attachName).upload(attachBuf, attachBuf.length, {
             overwrite: true,
-            blobHTTPHeaders: { blobContentType: attachment.type || 'application/octet-stream' }
+            blobHTTPHeaders: { blobContentType: att.type || 'application/octet-stream' }
           });
-          record.changeAttachment = { name: attachment.name, blobName: attachName, type: attachment.type };
+          savedAttachments.push({ name: att.name, blobName: attachName, type: att.type });
         } catch(e) { context.log.warn('Attachment save failed:', e.message); }
       }
+      }
+      if (savedAttachments.length) record.changeAttachments = savedAttachments;
 
       const buf = Buffer.from(JSON.stringify(record));
       await blob.upload(buf, buf.length, { overwrite:true, blobHTTPHeaders:{blobContentType:'application/json'} });
@@ -108,7 +113,7 @@ module.exports = async function(context, req) {
           <div style="font-size:14px;color:#1a1a2e;line-height:1.7;white-space:pre-wrap">${changes}</div>
         </div>
         <div style="text-align:center">
-          <a href="${BASE_URL}/approvals/dashboard" style="background:#00205B;color:#fff;padding:11px 24px;border-radius:5px;text-decoration:none;font-size:13px;font-weight:700">View Approval Dashboard</a>
+          <a href="${BASE_URL}/files" style="background:#00205B;color:#fff;padding:11px 24px;border-radius:5px;text-decoration:none;font-size:13px;font-weight:700">Upload Revised Proof</a>
         </div>
       </div>
       <div style="border-top:3px solid #BF0D3E;padding:14px 28px;font-size:12px;color:#888">The Texan Local Portal · Automated Notification</div>
@@ -125,13 +130,16 @@ module.exports = async function(context, req) {
       ccRecipients: [{ emailAddress:{ address:repEmail, name:repName } }],
       from: { emailAddress:{ address:FROM_EMAIL, name:'The Texan Local' } }
     };
-    if (attachment && attachment.data && attachment.name) {
-      msgObj.attachments = [{
-        '@odata.type': '#microsoft.graph.fileAttachment',
-        name:          attachment.name,
-        contentType:   attachment.type || 'application/octet-stream',
-        contentBytes:  attachment.data
-      }];
+    const allAtts = attachments && attachments.length ? attachments : (attachment ? [attachment] : []);
+    if (allAtts.length) {
+      msgObj.attachments = allAtts.filter(function(a){ return a && a.data && a.name; }).map(function(a) {
+        return {
+          '@odata.type': '#microsoft.graph.fileAttachment',
+          name:          a.name,
+          contentType:   a.type || 'application/octet-stream',
+          contentBytes:  a.data
+        };
+      });
     }
     const sendRes = await fetch('https://graph.microsoft.com/v1.0/users/'+FROM_EMAIL+'/sendMail', {
       method:'POST',
