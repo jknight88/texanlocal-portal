@@ -20,18 +20,31 @@ module.exports = async function(context, req) {
     const container = blobSvc.getContainerClient(CONTAINER);
     await container.createIfNotExists();
 
-    const allRecords = [];
+    // List all blobs first, then fetch in parallel
+    const blobNames = [];
     for await (const blob of container.listBlobsFlat()) {
-      if (!blob.name.endsWith('.json')) continue;
-      try {
-        const dl     = await container.getBlockBlobClient(blob.name).downloadToBuffer();
-        const record = JSON.parse(dl.toString());
+      if (blob.name.endsWith('.json')) blobNames.push(blob.name);
+    }
+
+    const allRecords = [];
+    // Fetch in batches of 20 in parallel
+    const batchSize = 20;
+    for (let i = 0; i < blobNames.length; i += batchSize) {
+      const batch = blobNames.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map(async function(name) {
+        try {
+          const dl = await container.getBlockBlobClient(name).downloadToBuffer();
+          return JSON.parse(dl.toString());
+        } catch(e) { return null; }
+      }));
+      results.forEach(function(record) {
+        if (!record) return;
         if (month && year && month !== '') {
           if (record.mailingMonth !== String(month).padStart(2,'0') ||
-              record.mailingYear  !== String(year)) continue;
+              record.mailingYear  !== String(year)) return;
         }
         allRecords.push(record);
-      } catch(e) {}
+      });
     }
 
     // Deduplicate: keep only the latest record per business
