@@ -26,25 +26,12 @@ async function getGraphToken() {
   return d.access_token;
 }
 
-async function sendMail(token, to, toName, subject, html, cc) {
-  const msg = {
-    subject,
-    body: { contentType:'HTML', content:html },
-    toRecipients: [{ emailAddress:{ address:to, name:toName||to } }],
-    from: { emailAddress:{ address:FROM_EMAIL, name:'The Texan Local' } }
-  };
-  if (cc) msg.ccRecipients = [{ emailAddress:{ address:cc.address, name:cc.name||cc.address } }];
-  const r = await fetch('https://graph.microsoft.com/v1.0/users/'+FROM_EMAIL+'/sendMail', {
-    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-    body: JSON.stringify({ message:msg, saveToSentItems:true })
-  });
-  if (r.status !== 202) throw new Error('sendMail failed: '+r.status);
-}
+// sendMail inlined below with attachment support
 
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res={status:200,headers:CORS,body:'{}'}; context.done(); return; }
 
-  const { sessionId, clientName, changes, business } = req.body || {};
+  const { sessionId, clientName, changes, business, attachment } = req.body || {};
   if (!sessionId || !clientName || !changes) {
     context.res={status:400,headers:CORS,body:JSON.stringify({error:'Missing required fields'})}; context.done(); return;
   }
@@ -115,8 +102,28 @@ module.exports = async function(context, req) {
     const subject = 'Ad Changes Requested — ' + biz + (month ? ' ('+month+')' : '');
     const token   = await getGraphToken();
 
-    // Send to designer CC rep
-    await sendMail(token, designerEmail, designerName, subject, emailHtml, { address:repEmail, name:repName });
+    // Build message with optional attachment
+    const msgObj = {
+      subject,
+      body: { contentType:'HTML', content:emailHtml },
+      toRecipients: [{ emailAddress:{ address:designerEmail, name:designerName } }],
+      ccRecipients: [{ emailAddress:{ address:repEmail, name:repName } }],
+      from: { emailAddress:{ address:FROM_EMAIL, name:'The Texan Local' } }
+    };
+    if (attachment && attachment.data && attachment.name) {
+      msgObj.attachments = [{
+        '@odata.type': '#microsoft.graph.fileAttachment',
+        name:          attachment.name,
+        contentType:   attachment.type || 'application/octet-stream',
+        contentBytes:  attachment.data
+      }];
+    }
+    const sendRes = await fetch('https://graph.microsoft.com/v1.0/users/'+FROM_EMAIL+'/sendMail', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msgObj, saveToSentItems: true })
+    });
+    if (sendRes.status !== 202) throw new Error('sendMail failed: '+sendRes.status);
 
     context.res = { status:200, headers:CORS, body:JSON.stringify({ok:true}) };
   } catch(e) {
