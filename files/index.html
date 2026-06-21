@@ -65,7 +65,7 @@ select:focus{border-color:var(--rd)}
 .btn-preview-action{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
 .btn-preview-action:hover{background:rgba(255,255,255,.25)}
 /* Preview content auto-sizes */
-.preview-content{overflow:auto;flex:1;display:flex;align-items:flex-start;justify-content:center;background:#f5f5f5}
+.preview-content{overflow:auto;flex:1;display:flex;align-items:flex-start;justify-content:center;background:#222}
 .preview-content iframe{width:100%;height:100%;border:none;display:block;min-height:400px}
 .preview-content img{max-width:100%;height:auto;display:block}
 .preview-empty{padding:3rem 2rem;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--md);gap:12px;text-align:center;width:100%}
@@ -231,29 +231,44 @@ async function previewFile(fullPath, name) {
   document.getElementById('previewContent').innerHTML=
     '<div class="preview-empty"><div class="pi">⏳</div><p>Loading preview…</p></div>';
 
+  // Get download URL for Full View / Download
   try {
-    const res  = await fetch(API+'/filesGetDownloadUrl?path='+encodeURIComponent(fullPath)+'&inline=true', { credentials:'include' });
-    const data = await res.json();
-    if (!data.url) throw new Error('No URL');
-    currentPreviewUrl = data.url;
+    const dlRes  = await fetch(API+'/filesGetDownloadUrl?path='+encodeURIComponent(fullPath), { credentials:'include' });
+    const dlData = await dlRes.json();
+    if (dlData.url) currentPreviewUrl = dlData.url;
+  } catch(e) {}
 
-    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
-    if (isImage) {
-      // Image: use img tag so it sizes to natural dimensions
-      var img = document.createElement('img');
-      img.style.cssText = 'max-width:100%;height:auto;display:block';
-      img.src = data.url;
-      img.alt = name;
-      document.getElementById('previewContent').innerHTML = '';
+  // Get thumbnail SAS URL from ad-proof-images container
+  const cacheName = fullPath.replace(/\//g,'_').replace(/\.pdf$/i,'.jpg');
+  var thumbUrl = null;
+  try {
+    const tRes  = await fetch(API+'/getAttachment?blobName='+encodeURIComponent(cacheName)+'&container=ad-proof-images', { credentials:'include' });
+    const tData = await tRes.json();
+    if (tData.url) thumbUrl = tData.url;
+  } catch(e) {}
+
+  if (thumbUrl) {
+    var img = document.createElement('img');
+    img.style.cssText = 'width:100%;height:auto;display:block';
+    img.alt = name;
+    img.onload = function() {
+      document.getElementById('previewContent').innerHTML='';
+      document.getElementById('previewContent').style.background='#222';
       document.getElementById('previewContent').appendChild(img);
-    } else {
-      // PDF: use iframe, fills panel height
-      document.getElementById('previewContent').innerHTML =
-        '<iframe src="'+data.url+'" title="'+esc(name)+'" style="width:100%;height:calc(100vh - 180px);min-height:400px;border:none;display:block"></iframe>';
-    }
-  } catch(e) {
+    };
+    img.onerror = function() { showNoThumb(); };
+    img.src = thumbUrl;
+  } else {
+    showNoThumb();
+  }
+
+  function showNoThumb() {
+    document.getElementById('previewContent').style.background='#f5f5f5';
     document.getElementById('previewContent').innerHTML=
-      '<div class="preview-empty" style="color:var(--rd)"><div class="pi">⚠️</div><p>Could not load preview</p></div>';
+      '<div class="preview-empty"><div class="pi">📄</div><p style="font-size:13px">'+esc(name)+'</p>'+
+      '<p style="font-size:11px;color:var(--md)">No preview — use Full View to open</p>'+
+      (currentPreviewUrl?'<a href="'+currentPreviewUrl+'" target="_blank" style="background:var(--bl);color:#fff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:12px;font-weight:700;margin-top:8px;display:inline-block">Open PDF ↗</a>':'')+
+      '</div>';
   }
 }
 
