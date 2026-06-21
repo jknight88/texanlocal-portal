@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Helvetica Neue',Arial,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
-.card{background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.1);max-width:520px;width:100%;overflow:hidden}
+.card{background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.1);max-width:560px;width:100%;overflow:hidden}
 .card-top{border-top:6px solid #00205B}
 .card-top.approved{border-top-color:#43a047}
 .card-top.changes{border-top-color:#BF0D3E}
@@ -18,28 +18,37 @@ body{font-family:'Helvetica Neue',Arial,sans-serif;background:#f0f2f5;min-height
 .icon{font-size:42px;text-align:center;margin-bottom:1rem}
 h1{font-size:20px;font-weight:700;color:#1a1a2e;text-align:center;margin-bottom:.75rem}
 .message{font-size:14px;color:#444;text-align:center;line-height:1.7;margin-bottom:1.5rem}
-
-/* Changes form */
-.changes-form{display:none;margin-top:1rem}
-.form-field{margin-bottom:1rem}
+.changes-form{display:none;margin-top:.5rem}
+.form-field{margin-bottom:1.1rem}
 .form-field label{display:block;font-size:12px;font-weight:700;color:#4a4f5e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.form-field input,.form-field textarea{width:100%;border:1px solid #c8cdd8;border-radius:5px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;resize:vertical}
-.form-field input:focus,.form-field textarea:focus{border-color:#00205B}
+.form-field input[type=text],.form-field textarea{width:100%;border:1px solid #c8cdd8;border-radius:5px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;resize:vertical}
+.form-field input[type=text]:focus,.form-field textarea:focus{border-color:#00205B}
 .form-field textarea{min-height:120px}
+
+/* Drop zone */
+.drop-zone{border:2px dashed #c8cdd8;border-radius:8px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:#00205B;background:#f0f4ff}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone-icon{font-size:28px;margin-bottom:6px}
+.drop-zone-text{font-size:13px;font-weight:600;color:#4a4f5e}
+.drop-zone-sub{font-size:11px;color:#888;margin-top:3px}
+.file-list{margin-top:.6rem;display:flex;flex-direction:column;gap:4px}
+.file-item{display:flex;align-items:center;justify-content:space-between;background:#f0f4ff;border:1px solid #c8d8ff;border-radius:4px;padding:5px 10px;font-size:12px}
+.file-item-name{color:#00205B;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.file-item-size{color:#888;margin:0 8px;flex-shrink:0}
+.file-item-rm{background:none;border:none;color:#BF0D3E;cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0}
+
 .submit-btn{width:100%;background:#BF0D3E;color:#fff;border:none;padding:13px;border-radius:5px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:.5rem;transition:background .15s}
 .submit-btn:hover{background:#a00a34}
 .submit-btn:disabled{background:#ccc;cursor:not-allowed}
-
-/* Status messages */
-.status-msg{display:none;padding:12px 16px;border-radius:5px;font-size:13px;font-weight:600;text-align:center;margin-top:1rem}
+.status-msg{display:none;padding:12px 16px;border-radius:5px;font-size:13px;font-weight:600;text-align:center;margin-top:1rem;line-height:1.5}
 .status-msg.success{background:#e8f5e9;color:#1a5c1a;border:1px solid #a5d6a7;display:block}
 .status-msg.error{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;display:block}
-
 .footer{text-align:center;padding:1rem 2rem;border-top:1px solid #f0f2f5;font-size:11px;color:#aaa}
 </style>
 </head>
 <body>
-<div class="card" id="card">
+<div class="card">
   <div class="card-top" id="cardTop"></div>
   <div class="card-body">
     <div class="logo">
@@ -50,28 +59,30 @@ h1{font-size:20px;font-weight:700;color:#1a1a2e;text-align:center;margin-bottom:
     <h1 id="title"></h1>
     <p class="message" id="message"></p>
 
-    <!-- Changes form (shown only for changes action) -->
     <div class="changes-form" id="changesForm">
       <div class="form-field">
         <label>Your Name *</label>
         <input type="text" id="clientName" placeholder="Enter your name" required>
       </div>
       <div class="form-field">
-        <label>Attach Reference File (optional)</label>
-        <input type="file" id="attachFile" accept="image/*,.pdf,.ai,.eps,.psd,.jpg,.jpeg,.png,.tif,.tiff" multiple
-          style="border:1px solid #c8cdd8;border-radius:5px;padding:8px;font-size:13px;background:#fafafa;cursor:pointer">
-        <div style="font-size:11px;color:#888;margin-top:4px">You can attach multiple files — images, PDFs, or design files (max 20MB total)</div>
-      </div>
-      <div class="form-field">
         <label>Changes Needed *</label>
         <textarea id="changesText" placeholder="Please describe the changes you need on your ad..." required></textarea>
+      </div>
+      <div class="form-field">
+        <label>Attach Files (optional)</label>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="attachFile" accept="image/*,.pdf,.ai,.eps,.psd,.jpg,.jpeg,.png,.tif,.tiff" multiple onchange="handleFiles(this.files)">
+          <div class="drop-zone-icon">📎</div>
+          <div class="drop-zone-text">Drop files here or click to browse</div>
+          <div class="drop-zone-sub">Images, PDFs, design files — max 20MB total</div>
+        </div>
+        <div class="file-list" id="fileList"></div>
       </div>
       <button class="submit-btn" id="submitBtn" onclick="submitChanges()">Submit Change Request</button>
       <div class="status-msg" id="statusMsg"></div>
     </div>
-
   </div>
-  <div class="footer">The Texan Local &nbsp;·&nbsp; Internal Use Only</div>
+  <div class="footer">The Texan Local &nbsp;·&nbsp; Automated Ad Approval System</div>
 </div>
 
 <script>
@@ -80,100 +91,140 @@ const id       = params.get('id')     || '';
 const action   = params.get('action') || '';
 const business = params.get('biz')    || '';
 
+// File storage
+var selectedFiles = [];
+
 if (action === 'approved') {
   document.getElementById('cardTop').classList.add('approved');
-  document.getElementById('icon').textContent    = '✅';
-  document.getElementById('title').textContent   = 'Ad Approved!';
+  document.getElementById('icon').textContent  = '✅';
+  document.getElementById('title').textContent = 'Ad Approved!';
   document.getElementById('message').textContent = 'Thank you for approving your ad. Your ad will run as shown in the upcoming mailing. We appreciate your business!';
-
 } else if (action === 'changes') {
   document.getElementById('cardTop').classList.add('changes');
   document.getElementById('icon').textContent  = '✏️';
   document.getElementById('title').textContent = 'Request Changes';
-  document.getElementById('message').textContent = 'Please describe the changes you need and we\'ll get them taken care of right away.';
+  document.getElementById('message').textContent = business
+    ? 'Hi! Please describe the changes needed for your ' + business + ' ad and we\'ll get them taken care of right away.'
+    : 'Please describe the changes needed and we\'ll get them taken care of right away.';
   document.getElementById('changesForm').style.display = 'block';
-
 } else {
-  document.getElementById('icon').textContent    = '❓';
-  document.getElementById('title').textContent   = 'Invalid Link';
-  document.getElementById('message').textContent = 'This link appears to be invalid. Please contact us directly.';
+  document.getElementById('icon').textContent  = '❓';
+  document.getElementById('title').textContent = 'Invalid Link';
+  document.getElementById('message').textContent = 'This link appears to be invalid or has expired. Please contact us directly.';
+}
+
+// Drag and drop
+var dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', function(){ dz.classList.remove('drag-over'); });
+dz.addEventListener('drop', function(e){
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(fileList) {
+  var files = Array.from(fileList);
+  files.forEach(function(f) {
+    // Avoid duplicates by name+size
+    var exists = selectedFiles.some(function(e){ return e.name===f.name && e.size===f.size; });
+    if (!exists) selectedFiles.push(f);
+  });
+  renderFileList();
+  // Reset input so same file can be re-added after removal
+  document.getElementById('attachFile').value = '';
+}
+
+function removeFile(idx) {
+  selectedFiles.splice(idx, 1);
+  renderFileList();
+}
+
+function renderFileList() {
+  var list = document.getElementById('fileList');
+  if (!selectedFiles.length) { list.innerHTML = ''; return; }
+  list.innerHTML = selectedFiles.map(function(f, i) {
+    var kb = (f.size/1024).toFixed(0);
+    var sz = f.size > 1024*1024 ? (f.size/1024/1024).toFixed(1)+'MB' : kb+'KB';
+    return '<div class="file-item">' +
+      '<span class="file-item-name">📄 '+escHtml(f.name)+'</span>' +
+      '<span class="file-item-size">'+sz+'</span>' +
+      '<button class="file-item-rm" onclick="removeFile('+i+')" title="Remove">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function readFileAsBase64(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload  = function(e){ resolve({ name: file.name, type: file.type, size: file.size, data: e.target.result.split(',')[1] }); };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 async function submitChanges() {
-  const name       = document.getElementById('clientName').value.trim();
-  const changes    = document.getElementById('changesText').value.trim();
-  const fileInput  = document.getElementById('attachFile');
-  const btn        = document.getElementById('submitBtn');
-  const msg        = document.getElementById('statusMsg');
+  var name    = document.getElementById('clientName').value.trim();
+  var changes = document.getElementById('changesText').value.trim();
+  var btn     = document.getElementById('submitBtn');
+  var msg     = document.getElementById('statusMsg');
 
-  if (!name)    { showError('Please enter your name.'); return; }
-  if (!changes) { showError('Please describe the changes needed.'); return; }
+  if (!name)    { showMsg('Please enter your name.', 'error'); return; }
+  if (!changes) { showMsg('Please describe the changes needed.', 'error'); return; }
+
+  // Check total size
+  var totalSize = selectedFiles.reduce(function(s,f){ return s+f.size; }, 0);
+  if (totalSize > 20*1024*1024) {
+    showMsg('Total file size exceeds 20MB. Please remove some files or email large files directly.', 'error'); return;
+  }
 
   btn.disabled    = true;
   btn.textContent = 'Sending…';
-  msg.className   = 'status-msg';
   msg.style.display = 'none';
 
-  // Read attached files (multiple)
-  let attachments = [];
-  if (fileInput && fileInput.files && fileInput.files.length > 0) {
-    const files = Array.from(fileInput.files);
-    const totalSize = files.reduce(function(sum, f){ return sum + f.size; }, 0);
-    if (totalSize > 20 * 1024 * 1024) {
-      showError('Total file size too large — maximum 20MB. Please email large files directly.');
-      btn.disabled = false; btn.textContent = 'Submit Change Request'; return;
-    }
-    try {
-      attachments = await Promise.all(files.map(function(file) {
-        return new Promise(function(resolve, reject) {
-          const reader = new FileReader();
-          reader.onload  = function(e) { resolve({ name: file.name, type: file.type, data: e.target.result.split(',')[1] }); };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }));
-    } catch(e) {
-      showError('Could not read attached files. Please try again.');
-      btn.disabled = false; btn.textContent = 'Submit Change Request'; return;
-    }
-  }
-
   try {
-    const res  = await fetch('/api/submitChanges', {
+    // Read all files as base64
+    var attachments = [];
+    for (var i=0; i<selectedFiles.length; i++) {
+      try {
+        var att = await readFileAsBase64(selectedFiles[i]);
+        attachments.push(att);
+      } catch(e) { console.warn('Could not read file:', selectedFiles[i].name); }
+    }
+
+    var res = await fetch('/api/submitChanges', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId: id, clientName: name, changes: changes, business: business, attachments: attachments })
     });
-    const data = await res.json();
+    var data = await res.json();
 
     if (res.ok && data.ok) {
       btn.style.display = 'none';
       document.getElementById('clientName').disabled  = true;
       document.getElementById('changesText').disabled = true;
-      document.getElementById('icon').textContent     = '✅';
-      document.getElementById('title').textContent    = 'Changes Submitted!';
-      document.getElementById('message').textContent  = 'Your change request has been sent to our team. We\'ll get back to you with a revised proof shortly.';
-      showSuccess('✓ Your change request was sent successfully!');
+      document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('fileList').style.display = 'none';
+      document.getElementById('icon').textContent    = '✅';
+      document.getElementById('title').textContent   = 'Changes Submitted!';
+      document.getElementById('message').textContent = 'Thank you! Your change request has been sent to our design team. We\'ll send you an updated proof shortly.';
+      showMsg('✓ Your change request was sent successfully!', 'success');
     } else {
       throw new Error(data.error || 'Send failed');
     }
   } catch(e) {
     btn.disabled    = false;
     btn.textContent = 'Submit Change Request';
-    showError('Could not send your request. Please email your changes directly to <a href="mailto:josh@thetexanlocal.com">josh@thetexanlocal.com</a> to make sure we receive them.');
+    showMsg('We couldn\'t send your request automatically. Please email your changes directly to <a href="mailto:josh@thetexanlocal.com" style="color:#c62828">josh@thetexanlocal.com</a> to make sure we receive them.', 'error');
   }
 }
 
-function showSuccess(msg) {
-  const el = document.getElementById('statusMsg');
-  el.innerHTML = msg;
-  el.className = 'status-msg success';
-}
-
-function showError(msg) {
-  const el = document.getElementById('statusMsg');
-  el.innerHTML = msg;
-  el.className = 'status-msg error';
+function showMsg(html, type) {
+  var el = document.getElementById('statusMsg');
+  el.innerHTML  = html;
+  el.className  = 'status-msg ' + type;
 }
 </script>
 </body>
