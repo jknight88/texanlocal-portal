@@ -71,6 +71,21 @@ module.exports = async function(context, req) {
       biz       = record.business || business || '';
       month     = record.mailingMonthLabel || '';
       filesUsed = record.filesUsed ? record.filesUsed.join(', ') : '';
+
+      // Save attachment to blob if provided
+      if (attachment && attachment.data && attachment.name) {
+        try {
+          const attachBuf  = Buffer.from(attachment.data, 'base64');
+          const attachName = sessionId + '_attachment_' + attachment.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+          const attachC    = blobSvc.getContainerClient('ad-approvals');
+          await attachC.getBlockBlobClient(attachName).upload(attachBuf, attachBuf.length, {
+            overwrite: true,
+            blobHTTPHeaders: { blobContentType: attachment.type || 'application/octet-stream' }
+          });
+          record.changeAttachment = { name: attachment.name, blobName: attachName, type: attachment.type };
+        } catch(e) { context.log.warn('Attachment save failed:', e.message); }
+      }
+
       const buf = Buffer.from(JSON.stringify(record));
       await blob.upload(buf, buf.length, { overwrite:true, blobHTTPHeaders:{blobContentType:'application/json'} });
     } catch(e) { context.log.warn('Record update failed:', e.message); }
