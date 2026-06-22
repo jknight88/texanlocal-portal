@@ -155,7 +155,7 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
   <div class="view-tabs">
     <button class="view-tab active" id="tab-month"    onclick="setView('month')">📅 Monthly Bookings</button>
     <button class="view-tab"        id="tab-renewals" onclick="setView('renewals')">🔄 Renewals</button>
-    <button class="view-tab"        id="tab-contracts" onclick="setView('contracts')">📋 All Contracts</button>
+    <button class="view-tab"        id="tab-agreements" onclick="setView('agreements')">📋 All Agreements</button>
   </div>
 
   <!-- Month selector (shown for month view) -->
@@ -171,7 +171,7 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
     </select>
     <select id="selYear"></select>
     <button class="btn-load" onclick="loadMonthData()">Load</button>
-    <button class="btn-add" onclick="openModal()">+ Add Contract</button>
+    <button class="btn-add" onclick="openModal()">+ Add Agreement</button>
   </div>
 
   <!-- Content area -->
@@ -185,7 +185,7 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-hdr">
-      <h2 id="modalTitle">Add Contract</h2>
+      <h2 id="modalTitle">Add Agreement</h2>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body">
@@ -200,7 +200,7 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
         <div class="form-field"><label>State</label><input type="text" id="m-state" value="TX" style="width:80px"></div>
         <div class="form-field"><label>ZIP</label><input type="text" id="m-zip" style="width:100px"></div>
 
-        <div class="section-hdr">Contract Details</div>
+        <div class="section-hdr">Agreement Details</div>
         <div class="form-field"><label>Signed Date *</label><input type="date" id="m-signedDate"></div>
         <div class="form-field"><label>Term *</label>
           <select id="m-term">
@@ -321,7 +321,7 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" id="saveBtn" onclick="saveContract()">Save Contract</button>
+      <button class="btn-save" id="saveBtn" onclick="saveContract()">Save Agreement</button>
     </div>
   </div>
 </div>
@@ -374,7 +374,7 @@ function setView(v) {
     loadMonthData();
   } else if (v==='renewals') {
     loadRenewals();
-  } else {
+  } else if (v==='agreements') {
     loadContracts();
   }
 }
@@ -536,10 +536,10 @@ async function loadContracts() {
 function renderContracts(contracts) {
   const area = document.getElementById('contentArea');
   let html = '<div style="display:flex;justify-content:flex-end;margin-bottom:.8rem">'+
-    '<button class="btn-add" onclick="openModal()">+ Add Contract</button></div>';
-  html += '<div class="card"><div class="card-hdr"><h3>All Contracts ('+contracts.length+')</h3></div>';
+    '<button class="btn-add" onclick="openModal()">+ Add Agreement</button></div>';
+  html += '<div class="card"><div class="card-hdr"><h3>All Agreements ('+contracts.length+')</h3></div>';
   if (!contracts.length) {
-    html += '<div class="empty"><div class="ei">📋</div><p>No contracts yet</p></div>';
+    html += '<div class="empty"><div class="ei">📋</div><p>No agreements yet</p></div>';
   } else {
     html += '<table class="contracts-table"><thead><tr>'+
       '<th>Business</th><th>Signed</th><th>Term</th><th>Zones / Products</th><th>Monthly</th><th>Status</th><th>Actions</th>'+
@@ -569,7 +569,7 @@ function renderContracts(contracts) {
 
 // ── CONTRACT MODAL ────────────────────────────────────────────────────────────
 function openModal(contractData) {
-  document.getElementById('modalTitle').textContent = contractData ? 'Edit Contract' : 'Add Contract';
+  document.getElementById('modalTitle').textContent = contractData ? 'Edit Agreement' : 'Add Agreement';
   if (!contractData) {
     // Reset form
     ['business','contact','email','phone','addr','city','zip','notes','rep','firstMonth','monthly'].forEach(function(f){
@@ -742,11 +742,11 @@ async function saveContract() {
     document.getElementById('saveBtn').dataset.contractId='';
     closeModal();
     if (currentView==='month') loadMonthData();
-    else if (currentView==='contracts') loadContracts();
+    else if (currentView==='agreements') loadContracts();
   } catch(e) {
     showToast('Error: '+e.message, true);
   } finally {
-    btn.disabled=false; btn.textContent='Save Contract';
+    btn.disabled=false; btn.textContent='Save Agreement';
   }
 }
 
@@ -860,12 +860,12 @@ async function deleteContract() {
     loadContracts();
   } catch(e) {
     showToast('Delete failed: '+e.message, true);
-    btn.disabled=false; btn.textContent='🗑 Delete Contract';
+    btn.disabled=false; btn.textContent='🗑 Delete Agreement';
   }
 }
 
 function openModalWithData(c) {
-  document.getElementById('modalTitle').textContent = 'Edit Contract';
+  document.getElementById('modalTitle').textContent = 'Edit Agreement';
   document.getElementById('m-business').value  = c.business||'';
   document.getElementById('m-contact').value   = c.contact||'';
   document.getElementById('m-email').value     = c.email||'';
@@ -956,13 +956,13 @@ init();
 <div class="detail-overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
   <div class="detail-modal">
     <div class="detail-modal-hdr">
-      <h2 id="detailBizName">Contract Details</h2>
+      <h2 id="detailBizName">Agreement Details</h2>
       <button class="modal-close" onclick="closeDetail()">✕</button>
     </div>
     <div class="detail-modal-body" id="detailBody"></div>
     <div class="detail-footer">
-      <button class="btn-detail-delete" id="detailDeleteBtn" onclick="deleteContract()">🗑 Delete Contract</button>
-      <button class="btn-detail-edit"   id="detailEditBtn"   onclick="editFromDetail()">✏ Edit Contract</button>
+      <button class="btn-detail-delete" id="detailDeleteBtn" onclick="deleteContract()">🗑 Delete Agreement</button>
+      <button class="btn-detail-edit"   id="detailEditBtn"   onclick="editFromDetail()">✏ Edit Agreement</button>
     </div>
   </div>
 </div>
