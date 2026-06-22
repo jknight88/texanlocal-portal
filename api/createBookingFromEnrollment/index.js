@@ -32,6 +32,27 @@ module.exports = async function(context, req) {
       context.res={status:200,headers:CORS,body:JSON.stringify({ok:true,alreadyExists:true,contractId:record.bookingContractId})}; context.done(); return;
     }
 
+    // Check if a booking already exists with this enrollmentId even if record wasn't updated
+    try {
+      const portalC = blobSvc.getContainerClient('portal-data');
+      const cNames  = [];
+      for await (const b of portalC.listBlobsFlat({ prefix:'contracts/' })) {
+        if (b.name.endsWith('.json')) cNames.push(b.name);
+      }
+      for (const name of cNames) {
+        try {
+          const cb = JSON.parse((await portalC.getBlockBlobClient(name).downloadToBuffer()).toString());
+          if (cb.enrollmentId === sessionId) {
+            // Found existing — update enrollment record and return
+            record.bookingContractId = cb.contractId;
+            const updBuf = Buffer.from(JSON.stringify(record));
+            await blob.upload(updBuf, updBuf.length, { overwrite:true, blobHTTPHeaders:{blobContentType:'application/json'} });
+            context.res={status:200,headers:CORS,body:JSON.stringify({ok:true,alreadyExists:true,contractId:cb.contractId})}; context.done(); return;
+          }
+        } catch(e) {}
+      }
+    } catch(e) { context.log.warn('Could not check existing contracts:', e.message); }
+
     // Build contract payload from enrollment record
     const fd = record.formData || {};
     const termStr = (fd.term||record.term||'12').toString().replace(/\s*months?/i,'').trim();
