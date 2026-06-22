@@ -304,4 +304,413 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 init();
 </script>
 </body>
+</html>  const tiles = [
+  // Row 1
+  {
+    id: 'enrollment',
+    icon: '📝', iconClass: 'icon-enroll',
+    title: 'Enrollment',
+    desc: 'Digital enrollment forms with e-signature. Send, sign in person, or countersign agreements.',
+    href: '/enrollment',
+    footer: 'New enrollment',
+    roles: ['admin']
+  },
+  {
+    id: 'approvals',
+    icon: '✅', iconClass: 'icon-approvals',
+    title: 'Ad Approvals',
+    desc: 'Send proof emails, track client responses, manage change requests and approval workflow.',
+    href: '/approvals',
+    footer: 'Send approvals',
+    roles: ['admin']
+  },
+  {
+    id: 'bookings',
+    icon: '📋', iconClass: 'icon-dashboard',
+    title: 'Bookings',
+    desc: 'Manage agreements, monthly ad bookings, zone revenue summaries and renewal tracking.',
+    href: '/bookings',
+    footer: 'Open bookings',
+    roles: ['admin']
+  },
+  {
+    id: 'files',
+    icon: '📁', iconClass: 'icon-files',
+    title: 'File Manager',
+    desc: 'Upload, preview and manage ad proof PDFs. Rename files and view upload timestamps.',
+    href: '/files',
+    footer: 'Browse files',
+    roles: ['admin']
+  },
+  {
+    id: 'layout',
+    icon: '📰', iconClass: 'icon-dashboard',
+    title: 'Magazine Layout',
+    desc: 'Build and manage zone magazine layouts. Drag and drop artwork onto pages.',
+    href: '/layout',
+    footer: 'Open layout builder',
+    roles: ['admin', 'designer']
+  },
+  // Row 2
+  {
+    id: 'emails',
+    icon: '✉️', iconClass: 'icon-dashboard',
+    title: 'Emails',
+    desc: 'Compose and send emails to clients and prospects. Save templates, embed images, track opens.',
+    href: '/emails',
+    footer: 'Compose email',
+    roles: ['admin']
+  },
+  {
+    id: 'clients',
+    icon: '🏢', iconClass: 'icon-clients',
+    title: 'Clients',
+    desc: 'Manage active and past advertising clients. Track status, zones, and contact information.',
+    href: '/clients',
+    footer: 'View clients',
+    roles: ['admin']
+  },
+  {
+    id: 'prospects',
+    icon: '🎯', iconClass: 'icon-prospects',
+    title: 'Prospects',
+    desc: 'Track leads, log contact activity, schedule follow-ups and convert prospects to clients.',
+    href: '/prospects',
+    footer: 'View prospects',
+    roles: ['admin']
+  },
+  {
+    id: 'setup',
+    icon: '⚙️', iconClass: 'icon-setup',
+    title: 'Company Setup',
+    desc: 'Configure zones, publication info, designer contact and portal settings.',
+    href: '/setup',
+    footer: 'Open settings',
+    roles: ['admin']
+  },
+  // Designer tiles
+  {
+    id: 'upload',
+    icon: '📤', iconClass: 'icon-files',
+    title: 'Upload Proofs',
+    desc: 'Upload completed ad proof PDFs to the portal file manager.',
+    href: '/upload',
+    footer: 'Upload files',
+    roles: ['designer']
+  },
+  {
+    id: 'files-designer',
+    icon: '📁', iconClass: 'icon-files',
+    title: 'File Manager',
+    desc: 'View and download ad proof files.',
+    href: '/files',
+    footer: 'Browse files',
+    roles: ['designer']
+  }
+];!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Portal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
+.hdr-title h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.hdr-title p{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.hdr-r{display:flex;align-items:center;gap:12px}
+.user-pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;font-size:12px;color:#fff}
+.role-pill{background:var(--rd);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px}
+.btn-logout{background:transparent;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit}
+.btn-logout:hover{background:rgba(255,255,255,.1);color:#fff}
+
+.main{max-width:1200px;margin:0 auto;padding:2rem;flex:1;width:100%}
+
+.welcome{margin-bottom:1.8rem}
+.welcome h2{font-family:'Playfair Display',serif;font-size:24px;color:var(--bl);margin-bottom:4px}
+.welcome p{font-size:14px;color:var(--md)}
+
+/* Module grid — auto-fit so tiles fill width regardless of count */
+.modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+
+.module-card{background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;cursor:pointer;border:none;font-family:inherit;text-align:left}
+.module-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.13)}
+
+.module-top{padding:1.1rem 1.1rem .7rem;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.module-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.icon-enroll{background:#e8ecf5}
+.icon-approval{background:#e8f5e9}
+.icon-files{background:#fff3e0}
+.icon-dashboard{background:#f3e5f5}
+.icon-clients{background:#e3f2fd}
+.icon-upload{background:#fce4ec}
+.icon-prospects{background:#fff8e1}
+.icon-settings{background:#e0f7fa}
+
+.module-badge{background:var(--rd);color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;min-width:22px;text-align:center}
+.module-badge.zero{background:#e0e3ea;color:#888}
+
+.module-info{padding:0 1.1rem 1rem;flex:1}
+.module-info h3{font-size:13px;font-weight:700;color:var(--bl);margin-bottom:4px}
+.module-info p{font-size:11px;color:var(--md);line-height:1.5}
+
+.module-footer{background:var(--bg);padding:.5rem 1.1rem;font-size:10px;color:var(--md);border-top:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
+.module-footer .stat{color:var(--bl);font-weight:600}
+
+/* Activity */
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--md);margin-bottom:.8rem}
+.activity-card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.activity-hdr{background:var(--bl);padding:.65rem 1.2rem}
+.activity-hdr span{color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.activity-list{padding:.4rem 0}
+.activity-item{display:flex;align-items:center;gap:10px;padding:.55rem 1.2rem;border-bottom:1px solid #f0f2f5;font-size:12px}
+.activity-item:last-child{border-bottom:none}
+.a-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.a-dot.sent{background:var(--bl)} .a-dot.opened{background:var(--amber)}
+.a-dot.approved{background:var(--green)} .a-dot.changes{background:var(--rd)}
+.a-dot.signed{background:var(--green)} .a-dot.upload{background:#9c27b0}
+.a-time{color:#aaa;margin-left:auto;white-space:nowrap;font-size:11px}
+.empty-feed{padding:2rem;text-align:center;color:var(--md);font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
+    <div class="hdr-title">
+      <h1>The Texan Local</h1>
+      <p>Staff Portal</p>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="user-pill" id="userPill">Loading…</div>
+    <div class="role-pill" id="rolePill"></div>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="welcome">
+    <h2 id="welcomeMsg">Welcome</h2>
+    <p id="welcomeDate"></p>
+  </div>
+
+  <div class="modules" id="moduleGrid"></div>
+
+  <div class="section-title">Recent Activity</div>
+  <div class="activity-card">
+    <div class="activity-hdr"><span>Latest Updates</span></div>
+    <div class="activity-list" id="activityList">
+      <div class="empty-feed">Loading activity…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+
+// ── All available modules ─────────────────────────────────────────────────────
+// roles: which roles can see this tile
+const ALL_MODULES = [
+  {
+    id: 'enrollment',
+    icon: '📋', iconClass: 'icon-enroll',
+    title: 'Enrollment',
+    desc: 'Send advertising agreements and track client e-sign status.',
+    href: '/enrollment/dashboard',
+    footer: 'View enrollment dashboard',
+    roles: ['admin', 'rep']
+  },
+  {
+    id: 'approvals',
+    icon: '📊', iconClass: 'icon-approval',
+    title: 'Ad Approvals',
+    desc: 'Send proofs, track approvals, upload files and manage all client ad statuses.',
+    href: '/approvals/dashboard',
+    footer: 'View approval dashboard',
+    roles: ['admin']
+  },
+  {
+    id: 'files',
+    icon: '📁', iconClass: 'icon-files',
+    title: 'File Manager',
+    desc: 'Browse, preview, and download ad proof PDFs by mailing month.',
+    href: '/files',
+    footer: 'Browse files',
+    roles: ['admin', 'designer']
+  },
+  {
+    id: 'clients',
+    icon: '👥', iconClass: 'icon-clients',
+    title: 'Clients',
+    desc: 'Manage active clients, past clients, and prospects. Import from CSV.',
+    href: '/clients',
+    footer: 'Manage clients',
+    roles: ['admin', 'rep']
+  },
+  {
+    id: 'prospects',
+    icon: '🎯', iconClass: 'icon-prospects',
+    title: 'Prospects',
+    desc: 'Track potential advertisers, log contacts and set follow-up reminders.',
+    href: '/prospects',
+    footer: 'View prospects',
+    roles: ['admin', 'rep']
+  },
+  {
+    id: 'bookings',
+    icon: '📋', iconClass: 'icon-dashboard',
+    title: 'Bookings',
+    desc: 'Manage contracts, monthly ad bookings, zone revenue summaries and renewal tracking.',
+    href: '/bookings',
+    footer: 'Open bookings',
+    roles: ['admin']
+  },
+  {
+    id: 'layout',
+    icon: '📰', iconClass: 'icon-dashboard',
+    title: 'Magazine Layout',
+    desc: 'Build and manage zone magazine layouts. Drag and drop artwork onto pages.',
+    href: '/layout',
+    footer: 'Open layout builder',
+    roles: ['admin', 'designer']
+  },
+  {
+    id: 'setup',
+    icon: '⚙️', iconClass: 'icon-settings',
+    title: 'Company Setup',
+    desc: 'Configure zones, publication info, designer contact and default settings.',
+    href: '/setup',
+    footer: 'Manage settings',
+    roles: ['admin']
+  },
+  {
+    id: 'upload',
+    icon: '⬆️', iconClass: 'icon-upload',
+    title: 'Upload Proofs',
+    desc: 'Upload completed ad proof PDFs. Bulk upload or name individually.',
+    href: '/upload',
+    footer: 'Add new files',
+    roles: ['designer'],
+    footer: 'Add new files'
+  }
+];
+
+async function init() {
+  // Auth
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
+  if (!res.ok) { window.location.href = '/'; return; }
+  const user = await res.json();
+
+  // Header
+  document.getElementById('userPill').textContent = user.name || user.username;
+  document.getElementById('rolePill').textContent = user.role;
+
+  // Welcome
+  const now  = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = (user.name || user.username).split(' ')[0];
+  document.getElementById('welcomeMsg').textContent = greeting + ', ' + firstName + '!';
+  document.getElementById('welcomeDate').textContent = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+
+  // Render tiles for this role
+  renderModules(user.role);
+
+  // Load activity
+  loadActivity(user.role);
+}
+
+function renderModules(role) {
+  const grid    = document.getElementById('moduleGrid');
+  const visible = ALL_MODULES.filter(function(m) { return m.roles.indexOf(role) > -1; });
+
+  grid.innerHTML = visible.map(function(m) {
+    return '<button class="module-card" onclick="nav(\'' + m.href + '\')">' +
+      '<div class="module-top">' +
+        '<div class="module-icon ' + m.iconClass + '">' + m.icon + '</div>' +
+        '<div class="module-badge zero" id="badge-' + m.id + '">—</div>' +
+      '</div>' +
+      '<div class="module-info">' +
+        '<h3>' + m.title + '</h3>' +
+        '<p>' + m.desc + '</p>' +
+      '</div>' +
+      '<div class="module-footer">' +
+        '<span class="stat" id="stat-' + m.id + '">' + m.footer + '</span>' +
+        '<span>→</span>' +
+      '</div>' +
+    '</button>';
+  }).join('');
+}
+
+async function loadActivity(role) {
+  const list = document.getElementById('activityList');
+  const items = [];
+
+  try {
+    if (role === 'admin') {
+      // Load recent approvals
+      const now   = new Date();
+      const month = String(now.getMonth() + 1).padStart(2,'0');
+      const year  = now.getFullYear();
+      const res   = await fetch(API + '/getApprovalsDashboard?month=' + month + '&year=' + year, { credentials: 'include' });
+      const data  = await res.json();
+      (data.records || []).slice(0,10).forEach(function(r) {
+        const s = r.status;
+        items.push({
+          dot: s === 'approved' ? 'approved' : s === 'changes_requested' ? 'changes' : s === 'opened' ? 'opened' : 'sent',
+          text: r.business + ' — ' + (s === 'approved' ? 'Approved' : s === 'changes_requested' ? 'Requested changes' : s === 'opened' ? 'Opened proof' : 'Proof sent'),
+          time: r.respondedAt || r.openedAt || r.sentAt
+        });
+      });
+    }
+  } catch(e) {}
+
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-feed">No recent activity</div>';
+    return;
+  }
+
+  items.sort(function(a,b) { return new Date(b.time) - new Date(a.time); });
+  list.innerHTML = items.slice(0,10).map(function(item) {
+    return '<div class="activity-item">' +
+      '<div class="a-dot ' + item.dot + '"></div>' +
+      '<span>' + esc(item.text) + '</span>' +
+      '<span class="a-time">' + fmtTime(item.time) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function nav(href) { window.location.href = href; }
+
+async function logout() {
+  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+function fmtTime(iso) {
+  if (!iso) return '';
+  const d   = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 60000);
+  if (diff < 1)   return 'just now';
+  if (diff < 60)  return diff + 'm ago';
+  if (diff < 1440) return Math.floor(diff/60) + 'h ago';
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+init();
+</script>
+</body>
 </html>
