@@ -136,6 +136,13 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
 .btn-detail-edit{background:var(--bl);color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-detail-delete{background:#fff0f0;color:#c62828;border:1px solid #ffcdd2;padding:8px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-detail-delete:hover{background:#ffebee}
+
+.log-search{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.log-search input{flex:1;padding:8px 12px;border:1px solid var(--br);border-radius:5px;font-size:13px;font-family:inherit;outline:none}
+.log-search input:focus{border-color:var(--bl)}
+.log-action-skip{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase}
+.log-action-cancelled{background:#ffebee;color:#c62828;border:1px solid #ffcdd2;display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase}
+.log-makeup{font-size:11px;color:var(--green);font-weight:600;margin-top:2px}
 </style>
 </head>
 <body>
@@ -376,6 +383,8 @@ function setView(v) {
     loadRenewals();
   } else if (v==='agreements') {
     loadContracts();
+  } else if (v==='log') {
+    loadLog();
   }
 }
 
@@ -438,7 +447,7 @@ function renderMonthView(data, label) {
         '<td class="td-rate">$'+parseFloat(b.rate).toLocaleString('en-US',{minimumFractionDigits:2})+'</td>'+
         '<td><span class="status-badge sb-'+b.status+'">'+b.status.replace('_',' ')+'</span></td>'+
         '<td>'+
-          '<select onchange="updateStatus(\''+b.bookingId+'\',this.value)" style="font-size:11px;padding:2px 4px;border:1px solid var(--br);border-radius:3px">'+
+          '<select onchange="updateStatus(\''+b.bookingId+'\',this.value,this)" data-prev="'+b.status+'" style="font-size:11px;padding:2px 4px;border:1px solid var(--br);border-radius:3px">'+
             statusOptions(b.status)+
           '</select>'+
         '</td>'+
@@ -456,23 +465,124 @@ function sumCard(title, val, sub, cls) {
 }
 
 function statusOptions(current) {
-  return ['booked','artwork_received','approved','printed','cancelled'].map(function(s) {
-    return '<option value="'+s+'"'+(s===current?' selected':'')+'>'+s.replace('_',' ')+'</option>';
+  return ['booked','artwork_received','approved','printed','skipped','cancelled'].map(function(s) {
+    const lbl = s==='skipped'?'⏭ Skip (add makeup month)':s==='cancelled'?'✕ Cancel':s.replace('_',' ');
+    return '<option value="'+s+'"'+(s===current?' selected':'')+'>'+lbl+'</option>';
   }).join('');
 }
 
-async function updateStatus(bookingId, status) {
+async function updateStatus(bookingId, status, selectEl) {
   try {
-    const res = await fetch(API+'/updateBooking', {
-      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-      body: JSON.stringify({ bookingId, status })
-    });
-    if (!res.ok) throw new Error('Failed');
-    showToast('Status updated');
-  } catch(e) { showToast('Update failed', true); }
+    if (status === 'skipped' || status === 'cancelled') {
+      const action  = status === 'skipped' ? 'skip' : 'cancel';
+      const label   = status === 'skipped' ? 'Skip' : 'Cancel';
+      const confirm1 = confirm(
+        label + ' this ad booking?\n\n' +
+        (action === 'skip'
+          ? 'A makeup month will be added to the end of the agreement at the same rate.'
+          : 'This permanently removes this month\'s revenue. The agreement continues for other months.')
+      );
+      if (!confirm1) {
+        if (selectEl) selectEl.value = selectEl.dataset.prev || 'booked';
+        return;
+      }
+      const reason = prompt('Reason (optional):') || '';
+      const res = await fetch(API+'/skipBooking', {
+        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+        body: JSON.stringify({ bookingId, action, reason })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error||'Failed');
+      if (action === 'skip' && data.makeupBooking) {
+        showToast('✓ Skipped — makeup month added: '+data.makeupBooking.monthYear, false);
+      } else {
+        showToast('✓ '+(action==='skip'?'Skipped':'Cancelled'));
+      }
+    } else {
+      const res = await fetch(API+'/updateBooking', {
+        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+        body: JSON.stringify({ bookingId, status })
+      });
+      if (!res.ok) throw new Error('Failed');
+      showToast('Status updated');
+    }
+    if (selectEl) selectEl.dataset.prev = status;
+    // Reload to reflect revenue changes
+    setTimeout(function(){ if(currentView==='month') loadMonthData(); }, 800);
+  } catch(e) { showToast('Update failed: '+e.message, true); }
 }
 
 // ── RENEWALS VIEW ─────────────────────────────────────────────────────────────
+
+async function loadLog() {
+  const area = document.getElementById('contentArea');
+  area.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading log…</p></div>';
+  try {
+    const res  = await fetch(API+'/getBookingLog', { credentials:'include' });
+    const data = await res.json();
+    renderLog(data.entries||[]);
+  } catch(e) {
+    area.innerHTML = '<div class="empty"><div class="ei">⚠️</div><p>Failed: '+esc(e.message)+'</p></div>';
+  }
+}
+
+let _logEntries = [];
+function renderLog(entries) {
+  _logEntries = entries;
+  const area = document.getElementById('contentArea');
+  let html = '<div class="log-search">'+
+    '<input type="text" id="logSearch" placeholder="Search by client, zone, product…" oninput="filterLog()">'+
+    '<span style="font-size:12px;color:var(--md)">'+entries.length+' entries</span>'+
+  '</div>';
+  html += '<div id="logTable">'+buildLogTable(entries)+'</div>';
+  area.innerHTML = html;
+}
+
+function filterLog() {
+  const q = document.getElementById('logSearch').value.toLowerCase();
+  const filtered = q ? _logEntries.filter(function(e) {
+    return (e.business||'').toLowerCase().includes(q) ||
+           (e.zone||'').toLowerCase().includes(q) ||
+           (e.product||'').toLowerCase().includes(q) ||
+           (e.reason||'').toLowerCase().includes(q) ||
+           (e.monthYear||'').includes(q);
+  }) : _logEntries;
+  document.getElementById('logTable').innerHTML = buildLogTable(filtered);
+}
+
+function buildLogTable(entries) {
+  if (!entries.length) return '<div class="empty"><div class="ei">📓</div><p>No cancelled or skipped entries</p></div>';
+  return '<div class="card"><table>'+
+    '<thead><tr>'+
+      '<th>Date</th><th>Business</th><th>Zone</th><th>Product</th>'+
+      '<th>Month</th><th>Rate</th><th>Action</th><th>Reason</th>'+
+    '</tr></thead>'+
+    '<tbody>'+
+    entries.map(function(e) {
+      const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const [my, mm] = (e.monthYear||'-').split('-');
+      const moLbl = mm ? MONTHS_S[parseInt(mm)-1]+' '+my : e.monthYear||'—';
+      return '<tr>'+
+        '<td style="font-size:12px;color:var(--md);white-space:nowrap">'+fmtDateTime(e.actionDate)+'</td>'+
+        '<td class="td-biz">'+esc(e.business)+'</td>'+
+        '<td class="td-zone">'+esc(e.zone)+'</td>'+
+        '<td style="font-size:12px">'+esc(e.product)+'</td>'+
+        '<td style="font-size:12px;white-space:nowrap">'+moLbl+'</td>'+
+        '<td class="td-rate">$'+parseFloat(e.rate||0).toFixed(2)+'</td>'+
+        '<td><span class="log-action-'+e.action+'">'+esc(e.action)+'</span></td>'+
+        '<td style="font-size:12px;color:var(--md)">'+esc(e.reason||'—')+'</td>'+
+      '</tr>';
+    }).join('')+
+    '</tbody></table></div>';
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+
+    ' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+}
+
 async function loadRenewals() {
   const area = document.getElementById('contentArea');
   area.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading renewals…</p></div>';
@@ -743,6 +853,7 @@ async function saveContract() {
     closeModal();
     if (currentView==='month') loadMonthData();
     else if (currentView==='agreements') loadContracts();
+    else if (currentView==='log') loadLog();
   } catch(e) {
     showToast('Error: '+e.message, true);
   } finally {
