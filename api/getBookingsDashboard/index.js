@@ -117,7 +117,7 @@ module.exports = async function(context, req) {
     });
 
     bookingsWithStatus.sort(function(a,b){
-      return (a.zone||'').localeCompare(b.zone||'') || (a.business||'').localeCompare(b.business||'');
+      return (a.business||'').localeCompare(b.business||'') || (a.zone||'').localeCompare(b.zone||'');
     });
 
     // Zone summaries
