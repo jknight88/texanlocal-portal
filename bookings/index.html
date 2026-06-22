@@ -456,34 +456,81 @@ function renderMonthView(data, label) {
     html += '</div>';
   }
 
-  // Bookings table
-  html += '<div class="card"><div class="card-hdr"><h3>'+esc(label)+' — All Bookings</h3></div>';
-  if (!data.bookings || !data.bookings.length) {
-    html += '<div class="empty"><div class="ei">📭</div><p>No bookings for this month</p></div>';
-  } else {
-    html += '<table><thead><tr>'+
-      '<th>Business</th><th>Zone</th><th>Product</th><th>Month #</th><th>Rate/Mo</th><th>Art / Approval</th><th>Actions</th>'+
-      '</tr></thead><tbody>';
-    data.bookings.forEach(function(b) {
-      const isCombo = b.isComboMonth;
-      html += '<tr>'+
-        '<td class="td-biz">'+esc(b.business)+'</td>'+
-        '<td class="td-zone">'+esc(b.zone)+'</td>'+
-        '<td class="td-product'+(isCombo?' td-combo':'')+'">'+esc(b.product)+'</td>'+
-        '<td style="font-size:12px;color:var(--md)">'+b.termIndex+' of '+b.totalTermMonths+'</td>'+
-        '<td class="td-rate">$'+parseFloat(b.rate).toLocaleString('en-US',{minimumFractionDigits:2})+'</td>'+
-        '<td><span class="art-status as-'+b.artStatus+'">'+artStatusLabel(b.artStatus)+'</span></td>'+
-        '<td style="white-space:nowrap">'+
-          '<button class="btn-action-skip" onclick="doSkip(\''+b.bookingId+'\')">⏭ Skip</button>'+
-          '<button class="btn-action-cancel" onclick="doCancel(\''+b.bookingId+'\')">✕ Cancel</button>'+
-        '</td>'+
-      '</tr>';
-    });
-    html += '</tbody></table>';
-  }
-  html += '</div>';
+  // Store bookings for sub-tab filtering
+  window._monthBookings = data.bookings || [];
+
+  // Build zone list from bookings
+  const zoneSet = {};
+  (data.bookings||[]).forEach(function(b){ if(b.zone) zoneSet[b.zone]=true; });
+  const zoneList = Object.keys(zoneSet).sort();
+
+  // Zone sub-tabs
+  html += '<div class="zone-subtabs" id="zoneSubtabs">'+
+    '<button class="zone-stab active" id="stab-all" onclick="showZoneTab(\'all\')">All Bookings</button>'+
+    zoneList.map(function(z){
+      return '<button class="zone-stab" id="stab-'+z.replace(/[^a-z0-9]/gi,'-')+'" onclick="showZoneTab(\''+z+'\')">'+esc(z)+'</button>';
+    }).join('')+
+  '</div>';
+  html += '<div id="zoneBookingsTable"></div>';
+
   area.innerHTML = html;
+  renderZoneBookings('all');
 }
+
+function renderZoneBookings(zone) {
+  const bookings = window._monthBookings || [];
+  const filtered = zone === 'all' ? bookings : bookings.filter(function(b){ return b.zone === zone; });
+
+  // Update active sub-tab
+  document.querySelectorAll('.zone-stab').forEach(function(t){ t.classList.remove('active'); });
+  const tabEl = document.getElementById('stab-'+(zone==='all'?'all':zone.replace(/[^a-z0-9]/gi,'-')));
+  if (tabEl) tabEl.classList.add('active');
+
+  const wrap = document.getElementById('zoneBookingsTable');
+  if (!wrap) return;
+
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="card"><div class="empty"><div class="ei">📭</div><p>No bookings'+(zone!=='all'?' for '+esc(zone):'')+'</p></div></div>';
+    return;
+  }
+
+  let thtml = '<div class="card">';
+  // Legend
+  thtml += '<div style="display:flex;gap:14px;align-items:center;padding:.55rem 1rem;background:#f9fafc;border-bottom:1px solid #f0f2f5;font-size:11px;color:var(--md)">'+
+    '<span><span class="fc-badge">FC</span> Front Cover</span>'+
+    '<span><span class="bp-badge">BP</span> Back Page</span>'+
+    '<span>— highlighted for quick visibility</span>'+
+  '</div>';
+  thtml += '<table><thead><tr>'+
+    '<th>Business</th>'+(zone==='all'?'<th>Zone</th>':'')+
+    '<th>Product</th><th>Month #</th><th>Rate/Mo</th><th>Art / Approval</th><th>Actions</th>'+
+    '</tr></thead><tbody>';
+
+  filtered.forEach(function(b) {
+    const isFC    = /Front Cover|^FC/i.test(b.product) || b.size === 'FC';
+    const isBP    = /Back Page|Back Cover|^BP/i.test(b.product) || b.size === 'BP';
+    const isCombo = b.isComboMonth;
+    const rowCls  = isFC ? ' class="row-fc"' : isBP ? ' class="row-bp"' : '';
+    const badge   = isFC ? '<span class="fc-badge">FC</span>' : isBP ? '<span class="bp-badge">BP</span>' : '';
+    thtml += '<tr'+rowCls+'>'+
+      '<td class="td-biz">'+esc(b.business)+'</td>'+
+      (zone==='all'?'<td class="td-zone">'+esc(b.zone)+'</td>':'')+
+      '<td class="td-product'+(isCombo?' td-combo':'')+'">'+esc(b.product)+badge+'</td>'+
+      '<td style="font-size:12px;color:var(--md)">'+b.termIndex+' of '+b.totalTermMonths+'</td>'+
+      '<td class="td-rate">$'+parseFloat(b.rate||0).toLocaleString('en-US',{minimumFractionDigits:2})+'</td>'+
+      '<td><span class="art-status as-'+b.artStatus+'">'+artStatusLabel(b.artStatus)+'</span></td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="btn-action-skip" onclick="doSkip(\''+b.bookingId+'\')">⏭ Skip</button>'+
+        '<button class="btn-action-cancel" onclick="doCancel(\''+b.bookingId+'\')">✕ Cancel</button>'+
+      '</td>'+
+    '</tr>';
+  });
+  thtml += '</tbody></table></div>';
+  wrap.innerHTML = thtml;
+}
+
+function showZoneTab(zone) { renderZoneBookings(zone); }
+
 
 function sumCard(title, val, sub, cls) {
   return '<div class="sum-card'+( cls?' '+cls:'')+'">' +
