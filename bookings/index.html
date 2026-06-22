@@ -113,6 +113,29 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
 .toast.ok{background:var(--green)}
 .contracts-table .td-term{font-size:12px;color:var(--md)}
 .contracts-table .td-zones{font-size:11px;color:var(--md);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Detail modal */
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto}
+.detail-overlay.show{display:flex}
+.detail-modal{background:#fff;border-radius:8px;width:100%;max-width:680px;box-shadow:0 8px 40px rgba(0,0,0,.4);overflow:hidden}
+.detail-modal-hdr{background:var(--bl);padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--rd);gap:8px}
+.detail-modal-hdr h2{color:#fff;font-size:15px;font-weight:700;flex:1}
+.detail-modal-body{padding:1.4rem}
+.detail-section{margin-bottom:1.1rem;padding-bottom:1.1rem;border-bottom:1px solid #f0f2f5}
+.detail-section:last-child{border-bottom:none;margin-bottom:0}
+.detail-section h4{font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem .8rem}
+.detail-row{display:flex;flex-direction:column;gap:2px}
+.detail-lbl{font-size:10px;color:var(--md);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.detail-val{font-size:13px;color:#1a1a2e;font-weight:600}
+.detail-zone-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f9fafc;border:1px solid var(--br);border-radius:4px;margin-bottom:4px;font-size:13px}
+.detail-zone-name{color:var(--bl);font-weight:700}
+.detail-zone-product{color:var(--md)}
+.detail-zone-rate{color:var(--green);font-weight:700}
+.detail-footer{padding:1rem 1.4rem;border-top:1px solid #f0f2f5;display:flex;gap:8px;justify-content:space-between;align-items:center}
+.btn-detail-edit{background:var(--bl);color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-detail-delete{background:#fff0f0;color:#c62828;border:1px solid #ffcdd2;padding:8px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-detail-delete:hover{background:#ffebee}
 </style>
 </head>
 <body>
@@ -193,8 +216,6 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
             <option value="enrollment">Enrollment Form</option>
           </select>
         </div>
-        <div class="form-field"><label>First Month Payment</label><input type="text" id="m-firstMonth" placeholder="$0.00"></div>
-        <div class="form-field"><label>Monthly Charge</label><input type="text" id="m-monthly" placeholder="$0.00"></div>
         <div class="form-field full"><label>Notes</label><textarea id="m-notes" rows="2"></textarea></div>
 
         <div class="section-hdr">Ad Zones & Products</div>
@@ -209,10 +230,93 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
         <button class="btn-add-zone" onclick="addZoneRow()">+ Add Zone</button>
       </div>
 
-      <div style="margin-top:1rem;padding:.75rem;background:#f0f4ff;border-radius:5px;font-size:12px;color:var(--bl)">
-        <strong>Total Monthly:</strong> <span id="m-totalCalc" style="font-size:14px;font-weight:700">$0.00</span>
-        &nbsp;&nbsp;&nbsp;
-        <strong>Bookings to create:</strong> <span id="m-bookingCount">0</span>
+
+      <!-- Add-Ons -->
+      <div style="margin-top:1.2rem">
+        <div style="font-size:12px;font-weight:700;color:var(--bl);text-transform:uppercase;letter-spacing:.5px;padding:.5rem 0 .6rem;border-bottom:2px solid #f0f2f5;margin-bottom:.8rem">Add-Ons</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+
+          <!-- Setup Fee -->
+          <div style="display:grid;grid-template-columns:auto 1fr 120px;align-items:center;gap:10px;padding:8px 10px;background:#f9fafc;border:1px solid var(--br);border-radius:5px">
+            <input type="checkbox" id="ao-setup" checked onchange="updateCalc()" style="width:16px;height:16px;cursor:pointer">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--bl)">One-Time Setup Fee</div>
+              <div style="font-size:11px;color:var(--md)">Added to first month only • New clients</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:13px;color:var(--md)">$</span>
+              <input type="number" id="ao-setup-amt" value="100" min="0" step="1" oninput="updateCalc()"
+                style="width:80px;padding:5px 7px;border:1px solid var(--br);border-radius:3px;font-size:13px;font-family:inherit">
+            </div>
+          </div>
+
+          <!-- Call Tracking -->
+          <div style="display:grid;grid-template-columns:auto 1fr 120px;align-items:center;gap:10px;padding:8px 10px;background:#f9fafc;border:1px solid var(--br);border-radius:5px">
+            <input type="checkbox" id="ao-call" onchange="updateCalc()" style="width:16px;height:16px;cursor:pointer">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--bl)">Call Tracking</div>
+              <div style="font-size:11px;color:var(--md)">Recurring monthly add-on</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:13px;color:var(--md)">$</span>
+              <input type="number" id="ao-call-amt" value="0" min="0" step="1" oninput="updateCalc()"
+                style="width:80px;padding:5px 7px;border:1px solid var(--br);border-radius:3px;font-size:13px;font-family:inherit">
+            </div>
+          </div>
+
+          <!-- Premium Placement -->
+          <div style="display:grid;grid-template-columns:auto 1fr 120px;align-items:center;gap:10px;padding:8px 10px;background:#f9fafc;border:1px solid var(--br);border-radius:5px">
+            <input type="checkbox" id="ao-premium" onchange="updateCalc()" style="width:16px;height:16px;cursor:pointer">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--bl)">Premium Placement</div>
+              <div style="font-size:11px;color:var(--md)">Recurring monthly add-on</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:13px;color:var(--md)">$</span>
+              <input type="number" id="ao-premium-amt" value="0" min="0" step="1" oninput="updateCalc()"
+                style="width:80px;padding:5px 7px;border:1px solid var(--br);border-radius:3px;font-size:13px;font-family:inherit">
+            </div>
+          </div>
+
+          <!-- Custom Add-On -->
+          <div style="display:grid;grid-template-columns:auto 1fr 120px;align-items:center;gap:10px;padding:8px 10px;background:#f9fafc;border:1px solid var(--br);border-radius:5px">
+            <input type="checkbox" id="ao-custom" onchange="updateCalc()" style="width:16px;height:16px;cursor:pointer">
+            <div>
+              <input type="text" id="ao-custom-name" value="" placeholder="Other add-on name…" oninput="updateCalc()"
+                style="font-size:13px;font-weight:600;color:var(--bl);border:none;border-bottom:1px solid var(--br);background:transparent;outline:none;width:100%;padding:2px 0">
+              <div style="font-size:11px;color:var(--md)">
+                <label style="cursor:pointer"><input type="radio" name="ao-custom-freq" value="onetime" onchange="updateCalc()"> One-time</label>
+                &nbsp;
+                <label style="cursor:pointer"><input type="radio" name="ao-custom-freq" value="recurring" checked onchange="updateCalc()"> Recurring</label>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:13px;color:var(--md)">$</span>
+              <input type="number" id="ao-custom-amt" value="0" min="0" step="1" oninput="updateCalc()"
+                style="width:80px;padding:5px 7px;border:1px solid var(--br);border-radius:3px;font-size:13px;font-family:inherit">
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Totals -->
+      <div style="margin-top:1.2rem;border:1px solid #c0ccff;border-radius:6px;overflow:hidden">
+        <div style="background:#f0f4ff;padding:.6rem 1rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">First Month Total</div>
+            <div style="font-size:20px;font-weight:700;color:var(--rd)" id="m-firstMonthCalc">$0.00</div>
+            <div style="font-size:11px;color:var(--md)">Zones + recurring add-ons + one-time fees</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Monthly Recurring</div>
+            <div style="font-size:20px;font-weight:700;color:var(--green)" id="m-monthlyCalc">$0.00</div>
+            <div style="font-size:11px;color:var(--md)">Zones + recurring add-ons only</div>
+          </div>
+        </div>
+        <div style="background:#fff;padding:.5rem 1rem;font-size:12px;color:var(--md);border-top:1px solid #e0e8ff">
+          <strong>Booking slots to create:</strong> <span id="m-bookingCount">0</span>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -471,7 +575,18 @@ function openModal(contractData) {
     document.getElementById('m-source').value='manual';
     document.getElementById('m-signedDate').value=new Date().toISOString().split('T')[0];
     document.getElementById('zonesContainer').innerHTML='';
+    // Reset add-ons
+    document.getElementById('ao-setup').checked=true;
+    document.getElementById('ao-setup-amt').value='100';
+    document.getElementById('ao-call').checked=false;
+    document.getElementById('ao-call-amt').value='0';
+    document.getElementById('ao-premium').checked=false;
+    document.getElementById('ao-premium-amt').value='0';
+    document.getElementById('ao-custom').checked=false;
+    document.getElementById('ao-custom-amt').value='0';
+    document.getElementById('ao-custom-name').value='';
     addZoneRow();
+    document.getElementById('saveBtn').dataset.contractId='';
   }
   updateCalc();
   document.getElementById('modalOverlay').classList.add('show');
@@ -502,23 +617,40 @@ function addZoneRow(zone) {
 }
 
 function updateCalc() {
-  const rows   = document.querySelectorAll('.zone-row');
-  const term   = parseInt(document.getElementById('m-term').value)||12;
-  let total    = 0;
-  let bookings = 0;
+  const rows = document.querySelectorAll('.zone-row');
+  const term = parseInt(document.getElementById('m-term').value)||12;
+  let zoneTotal = 0;
+  let bookings  = 0;
   rows.forEach(function(row) {
     const selects = row.querySelectorAll('select');
     const inputs  = row.querySelectorAll('input');
-    const product  = selects[1] ? selects[1].value : '';
-    const startMo  = inputs[0] ? inputs[0].value : '';
-    const rate     = parseFloat(inputs[1] ? inputs[1].value : 0) || 0;
+    const product = selects[1] ? selects[1].value : '';
+    const startMo = inputs[0] ? inputs[0].value   : '';
+    const rate    = parseFloat(inputs[1] ? inputs[1].value : 0) || 0;
     if (product && startMo && rate) {
-      total    += rate;
-      bookings += term;
+      zoneTotal += rate;
+      bookings  += term;
     }
   });
-  document.getElementById('m-totalCalc').textContent  = '$'+total.toFixed(2);
-  document.getElementById('m-bookingCount').textContent = bookings;
+
+  // Add-ons
+  var aoSetup    = document.getElementById('ao-setup').checked    ? (parseFloat(document.getElementById('ao-setup-amt').value)||0)   : 0;
+  var aoCall     = document.getElementById('ao-call').checked     ? (parseFloat(document.getElementById('ao-call-amt').value)||0)     : 0;
+  var aoPremium  = document.getElementById('ao-premium').checked  ? (parseFloat(document.getElementById('ao-premium-amt').value)||0)  : 0;
+  var aoCustomOn = document.getElementById('ao-custom').checked;
+  var aoCustomAmt= aoCustomOn ? (parseFloat(document.getElementById('ao-custom-amt').value)||0) : 0;
+  var aoCustomFreq = (document.querySelector('input[name="ao-custom-freq"]:checked')||{}).value||'recurring';
+  var aoCustomRecurring = aoCustomOn && aoCustomFreq==='recurring' ? aoCustomAmt : 0;
+  var aoCustomOnetime   = aoCustomOn && aoCustomFreq==='onetime'   ? aoCustomAmt : 0;
+
+  // Recurring = zones + call + premium + custom(if recurring)
+  var monthly   = zoneTotal + aoCall + aoPremium + aoCustomRecurring;
+  // First month = monthly + one-time setup + custom(if one-time)
+  var firstMonth = monthly + aoSetup + aoCustomOnetime;
+
+  document.getElementById('m-firstMonthCalc').textContent = '$'+firstMonth.toFixed(2);
+  document.getElementById('m-monthlyCalc').textContent    = '$'+monthly.toFixed(2);
+  document.getElementById('m-bookingCount').textContent   = bookings;
 }
 
 async function saveContract() {
@@ -572,6 +704,7 @@ async function saveContract() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error||'Save failed');
     showToast('✓ Contract saved! '+data.bookingsCreated+' booking slots created.', false);
+    document.getElementById('saveBtn').dataset.contractId='';
     closeModal();
     if (currentView==='month') loadMonthData();
     else if (currentView==='contracts') loadContracts();
@@ -582,8 +715,160 @@ async function saveContract() {
   }
 }
 
-function viewContract(contractId) {
-  showToast('Contract detail view coming soon');
+// Store currently viewed contract for edit/delete
+var _currentContract = null;
+
+async function viewContract(contractId) {
+  try {
+    const res  = await fetch(API+'/getContracts', { credentials:'include' });
+    const data = await res.json();
+    const c    = (data.contracts||[]).find(function(x){ return x.contractId===contractId; });
+    if (!c) { showToast('Contract not found', true); return; }
+    _currentContract = c;
+
+    document.getElementById('detailBizName').textContent = c.business;
+
+    const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    let html = '';
+
+    // Client info
+    html += '<div class="detail-section"><h4>Client</h4><div class="detail-grid">';
+    html += drow('Business',  c.business);
+    html += drow('Contact',   c.contact||'—');
+    html += drow('Email',     c.email||'—');
+    html += drow('Phone',     c.phone||'—');
+    if (c.addr) html += drow('Address', (c.addr||'') + (c.city?', '+c.city:'') + (c.state?' '+c.state:'') + (c.zip?' '+c.zip:''));
+    html += '</div></div>';
+
+    // Contract details
+    html += '<div class="detail-section"><h4>Contract</h4><div class="detail-grid">';
+    html += drow('Signed',     fmt(c.signedDate));
+    html += drow('Term',       c.term+' Months');
+    html += drow('Source',     c.source||'manual');
+    html += drow('Rep',        c.rep||'—');
+    html += drow('Status',     c.status||'active');
+    html += drow('Created',    fmt(c.createdAt));
+    html += '</div></div>';
+
+    // Zones
+    if (c.zones && c.zones.length) {
+      html += '<div class="detail-section"><h4>Ad Zones & Products</h4>';
+      c.zones.forEach(function(z) {
+        const [yr, mo] = (z.startMonth||'').split('-');
+        const moLabel  = mo ? MONTHS_FULL[parseInt(mo)-1]+' '+(yr||'') : '—';
+        html += '<div class="detail-zone-row">'+
+          '<span class="detail-zone-name">'+esc(z.zoneName)+'</span>'+
+          '<span class="detail-zone-product">'+esc(z.product)+'</span>'+
+          '<span style="font-size:11px;color:var(--md)">Starts '+moLabel+'</span>'+
+          '<span class="detail-zone-rate">$'+parseFloat(z.rate||0).toFixed(2)+'/mo</span>'+
+        '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Add-ons
+    if (c.addons && c.addons.length) {
+      html += '<div class="detail-section"><h4>Add-Ons</h4>';
+      c.addons.forEach(function(a) {
+        html += '<div class="detail-zone-row">'+
+          '<span class="detail-zone-name">'+esc(a.name)+'</span>'+
+          '<span style="font-size:11px;color:var(--md)">'+a.type+'</span>'+
+          '<span class="detail-zone-rate">$'+parseFloat(a.amount||0).toFixed(2)+(a.type==='recurring'?'/mo':' one-time')+'</span>'+
+        '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Totals
+    html += '<div class="detail-section"><h4>Totals</h4><div class="detail-grid">';
+    html += drow('First Month', c.firstMonth||'—');
+    html += drow('Monthly',     c.monthly||'—');
+    if (c.notes) html += '<div class="detail-row" style="grid-column:1/-1">'+
+      '<span class="detail-lbl">Notes</span><span class="detail-val">'+esc(c.notes)+'</span></div>';
+    html += '</div></div>';
+
+    document.getElementById('detailBody').innerHTML = html;
+    document.getElementById('detailOverlay').classList.add('show');
+  } catch(e) { showToast('Error loading contract: '+e.message, true); }
+}
+
+function drow(label, val) {
+  return '<div class="detail-row"><span class="detail-lbl">'+label+'</span><span class="detail-val">'+esc(String(val||'—'))+'</span></div>';
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('show');
+  _currentContract = null;
+}
+
+function editFromDetail() {
+  if (!_currentContract) return;
+  closeDetail();
+  openModalWithData(_currentContract);
+}
+
+async function deleteContract() {
+  if (!_currentContract) return;
+  const c = _currentContract;
+  if (!confirm('Delete contract for "'+c.business+'"?\n\nThis will also delete all '+c.term+'-month booking slots.\n\nThis cannot be undone.')) return;
+  const btn = document.getElementById('detailDeleteBtn');
+  btn.disabled=true; btn.textContent='Deleting…';
+  try {
+    const res  = await fetch(API+'/deleteContract', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ contractId: c.contractId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Delete failed');
+    showToast('Contract deleted ('+data.deleted+' booking slots removed)', false);
+    closeDetail();
+    loadContracts();
+  } catch(e) {
+    showToast('Delete failed: '+e.message, true);
+    btn.disabled=false; btn.textContent='🗑 Delete Contract';
+  }
+}
+
+function openModalWithData(c) {
+  document.getElementById('modalTitle').textContent = 'Edit Contract';
+  document.getElementById('m-business').value  = c.business||'';
+  document.getElementById('m-contact').value   = c.contact||'';
+  document.getElementById('m-email').value     = c.email||'';
+  document.getElementById('m-phone').value     = c.phone||'';
+  document.getElementById('m-addr').value      = c.addr||'';
+  document.getElementById('m-city').value      = c.city||'';
+  document.getElementById('m-state').value     = c.state||'TX';
+  document.getElementById('m-zip').value       = c.zip||'';
+  document.getElementById('m-term').value      = String(c.term||'12').replace(' months','');
+  document.getElementById('m-source').value    = c.source||'manual';
+  document.getElementById('m-signedDate').value= (c.signedDate||'').split('T')[0]||new Date().toISOString().split('T')[0];
+  document.getElementById('m-notes').value     = c.notes||'';
+  document.getElementById('m-rep').value       = c.rep||'';
+
+  // Reset and populate add-ons
+  document.getElementById('ao-setup').checked=false; document.getElementById('ao-setup-amt').value='100';
+  document.getElementById('ao-call').checked=false;  document.getElementById('ao-call-amt').value='0';
+  document.getElementById('ao-premium').checked=false; document.getElementById('ao-premium-amt').value='0';
+  document.getElementById('ao-custom').checked=false;  document.getElementById('ao-custom-amt').value='0';
+  document.getElementById('ao-custom-name').value='';
+
+  (c.addons||[]).forEach(function(a) {
+    if (a.name==='Setup Fee')         { document.getElementById('ao-setup').checked=true;   document.getElementById('ao-setup-amt').value=a.amount; }
+    else if (a.name==='Call Tracking') { document.getElementById('ao-call').checked=true;    document.getElementById('ao-call-amt').value=a.amount; }
+    else if (a.name==='Premium Placement') { document.getElementById('ao-premium').checked=true; document.getElementById('ao-premium-amt').value=a.amount; }
+    else { document.getElementById('ao-custom').checked=true; document.getElementById('ao-custom-name').value=a.name; document.getElementById('ao-custom-amt').value=a.amount; }
+  });
+
+  // Populate zones
+  document.getElementById('zonesContainer').innerHTML='';
+  (c.zones||[]).forEach(function(z){ addZoneRow(z); });
+  if (!(c.zones||[]).length) addZoneRow();
+
+  // Pass contractId for update
+  document.getElementById('saveBtn').dataset.contractId = c.contractId;
+
+  updateCalc();
+  document.getElementById('modalOverlay').classList.add('show');
 }
 
 function fmt(iso) {
@@ -598,11 +883,54 @@ function showToast(msg, isErr) {
   t.textContent=msg; t.className='toast show'+(isErr?' err':isErr===false?' ok':'');
   setTimeout(function(){ t.className='toast'; }, 3500);
 }
+async function openModalFromTable(contractId) {
+  try {
+    const res  = await fetch(API+'/getContracts', { credentials:'include' });
+    const data = await res.json();
+    const c    = (data.contracts||[]).find(function(x){ return x.contractId===contractId; });
+    if (c) openModalWithData(c);
+  } catch(e) { showToast('Error: '+e.message, true); }
+}
+
+async function deleteFromTable(contractId) {
+  try {
+    const res  = await fetch(API+'/getContracts', { credentials:'include' });
+    const data = await res.json();
+    const c    = (data.contracts||[]).find(function(x){ return x.contractId===contractId; });
+    if (!c) return;
+    if (!confirm('Delete contract for "'+c.business+'"?\n\nThis will also delete all booking slots. Cannot be undone.')) return;
+    const res2  = await fetch(API+'/deleteContract', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ contractId })
+    });
+    const data2 = await res2.json();
+    if (!res2.ok) throw new Error(data2.error||'Delete failed');
+    showToast('Deleted ('+data2.deleted+' slots removed)', false);
+    loadContracts();
+  } catch(e) { showToast('Error: '+e.message, true); }
+}
+
 async function logout(){
   await fetch(API+'/authLogout',{method:'POST',credentials:'include'});
   sessionStorage.clear(); window.location.href='/';
 }
 init();
 </script>
+
+<!-- Contract Detail Modal -->
+<div class="detail-overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-modal">
+    <div class="detail-modal-hdr">
+      <h2 id="detailBizName">Contract Details</h2>
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-modal-body" id="detailBody"></div>
+    <div class="detail-footer">
+      <button class="btn-detail-delete" id="detailDeleteBtn" onclick="deleteContract()">🗑 Delete Contract</button>
+      <button class="btn-detail-edit"   id="detailEditBtn"   onclick="editFromDetail()">✏ Edit Contract</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
