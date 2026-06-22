@@ -281,7 +281,14 @@ module.exports = async function(context, req) {
           })
         });
         const saveData = await saveRes.json();
-        if (saveData.ok) context.log('Auto-created booking:', saveData.contractId, 'slots:', saveData.bookingsCreated);
+        if (saveData.ok) {
+          context.log('Auto-created booking:', saveData.contractId, 'slots:', saveData.bookingsCreated);
+          // Save contractId back to enrollment record
+          record.bookingContractId = saveData.contractId;
+          const updatedWithBooking = Buffer.from(JSON.stringify(record));
+          await container.getBlockBlobClient(`${sessionId}.json`)
+            .upload(updatedWithBooking, updatedWithBooking.length, { overwrite:true, blobHTTPHeaders:{blobContentType:'application/json'} });
+        }
         else context.log.warn('saveContract failed:', saveData.error);
       }
     } catch(bookingErr) {
