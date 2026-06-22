@@ -225,8 +225,12 @@ async function completeSigning(){
     if(resp.ok && data.ok){
       document.getElementById('load-spinner').style.display='none';
       document.getElementById('load-title').textContent='Agreement Complete!';
+      var bookingBadge = data.bookingCreated
+        ? '<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:4px;padding:8px 14px;margin:10px 0;font-size:12px;color:#1a5c1a;font-weight:700;">✓ Booking created automatically in the Bookings module</div>'
+        : '<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:4px;padding:8px 14px;margin:10px 0;font-size:12px;color:#e65100;font-weight:700;">⚠ Booking was not created automatically — use the Enrollment Dashboard to retry</div>';
       document.getElementById('load-msg').innerHTML =
         'The agreement is fully executed. The client has been emailed their signed copy.<br><br>'
+        + bookingBadge
         +'<a href="/dashboard" style="background:var(--rd);color:#fff;padding:10px 22px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:700;display:inline-block;margin-top:8px;">Go to Dashboard</a>'
         +'&nbsp;&nbsp;<a href="/" style="background:rgba(255,255,255,.15);color:#fff;padding:10px 22px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:700;display:inline-block;margin-top:8px;border:1px solid rgba(255,255,255,.3);">New Enrollment</a>';
     } else {
