@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Bookings</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.hdr-r{display:flex;gap:8px;align-items:center}
+.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block;white-space:nowrap}
+.btn-hdr:hover{background:rgba(255,255,255,.2)}
+.btn-hdr.active{background:rgba(255,255,255,.25);border-color:#fff}
+.main{max-width:1400px;margin:0 auto;padding:1.5rem;flex:1;width:100%}
+
+/* View tabs */
+.view-tabs{display:flex;gap:0;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:1.2rem}
+.view-tab{flex:1;padding:.65rem;font-size:13px;font-weight:700;color:var(--md);cursor:pointer;border-right:1px solid #f0f2f5;text-align:center;transition:all .15s;user-select:none;background:none;border-top:none;border-bottom:none;font-family:inherit}
+.view-tab:last-child{border-right:none}
+.view-tab:hover{background:#f5f8ff;color:var(--bl)}
+.view-tab.active{background:var(--bl);color:#fff}
+
+/* Month selector bar */
+.month-bar{background:#fff;border-radius:8px;padding:.9rem 1.2rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.month-bar label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px}
+select,input[type=text],input[type=number],input[type=date],textarea{font-family:inherit}
+.month-bar select{padding:6px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;background:#fff;outline:none;cursor:pointer}
+.btn-load{background:var(--bl);color:#fff;border:none;padding:7px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-load:hover{background:#001844}
+.btn-add{background:var(--green);color:#fff;border:none;padding:7px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:auto}
+.btn-add:hover{background:#144d14}
+
+/* Summary cards */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.2rem}
+.sum-card{background:#fff;border-radius:8px;padding:1rem 1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.sum-card h4{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.sum-card .val{font-size:26px;font-weight:700;color:var(--bl)}
+.sum-card .sub{font-size:11px;color:var(--md);margin-top:2px}
+.sum-card.revenue .val{color:var(--green)}
+.sum-card.warn .val{color:var(--amber)}
+
+/* Zone summary */
+.zone-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.8rem;margin-bottom:1.2rem}
+.zone-card{background:#fff;border-radius:8px;padding:.9rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.07);border-left:4px solid var(--bl)}
+.zone-card h4{font-size:12px;font-weight:700;color:var(--bl);margin-bottom:6px}
+.zone-card .zcount{font-size:20px;font-weight:700;color:var(--bl)}
+.zone-card .zrev{font-size:13px;color:var(--green);font-weight:700;margin-top:2px}
+
+/* Bookings table */
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;margin-bottom:1.2rem}
+.card-hdr{background:var(--bl);padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between}
+.card-hdr h3{color:#fff;font-size:13px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--bl)}
+thead th{color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:left}
+tbody tr{border-bottom:1px solid #f0f2f5;transition:background .1s}
+tbody tr:hover{background:#f5f8ff}
+tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
+.td-biz{font-weight:700;color:var(--bl)}
+.td-zone{font-size:12px;color:var(--md)}
+.td-product{font-size:12px}
+.td-combo{color:var(--rd);font-weight:700}
+.td-rate{font-weight:700;color:var(--green)}
+.status-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase}
+.sb-booked{background:#e3f2fd;color:#1565c0}
+.sb-artwork_received{background:#e8f5e9;color:#2e7d32}
+.sb-approved{background:#f3e5f5;color:#6a1b9a}
+.sb-printed{background:#e0f2f1;color:#00695c}
+.sb-cancelled{background:#f5f5f5;color:#757575}
+.btn-sm{padding:3px 9px;border-radius:3px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px}
+.renewal-soon{background:#fff3e0;border-left:4px solid var(--amber)}
+.renewal-upcoming{background:#fff}
+
+/* Empty state */
+.empty{padding:3rem;text-align:center;color:var(--md)}
+.empty .ei{font-size:40px;margin-bottom:10px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:8px;width:100%;max-width:800px;box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden}
+.modal-hdr{background:var(--bl);padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--rd)}
+.modal-hdr h2{color:#fff;font-size:14px;font-weight:700}
+.modal-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+.modal-body{padding:1.5rem;max-height:80vh;overflow-y:auto}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.form-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+.form-field{display:flex;flex-direction:column;gap:4px}
+.form-field.full{grid-column:1/-1}
+.form-field label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px}
+.form-field input,.form-field select,.form-field textarea{padding:8px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--bl)}
+.section-hdr{font-size:12px;font-weight:700;color:var(--bl);text-transform:uppercase;letter-spacing:.5px;padding:.6rem 0 .4rem;border-bottom:2px solid #f0f2f5;margin-bottom:.6rem;grid-column:1/-1}
+/* Zones builder */
+.zones-builder{margin-top:.5rem;grid-column:1/-1}
+.zone-row{display:grid;grid-template-columns:1.4fr 1.6fr 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px;padding:8px;background:#f9fafc;border:1px solid var(--br);border-radius:5px}
+.zone-row input,.zone-row select{padding:6px 8px;border:1px solid var(--br);border-radius:3px;font-size:12px;font-family:inherit;outline:none;width:100%}
+.btn-rm-zone{background:none;border:none;color:#ccc;font-size:16px;cursor:pointer;padding:0 4px}
+.btn-rm-zone:hover{color:var(--rd)}
+.btn-add-zone{background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid #f0f2f5;display:flex;gap:8px;justify-content:flex-end}
+.btn-save{background:var(--bl);color:#fff;border:none;padding:9px 22px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-cancel{background:#f5f5f5;color:var(--md);border:1px solid var(--br);padding:9px 18px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.err{background:var(--rd)}
+.toast.ok{background:var(--green)}
+.contracts-table .td-term{font-size:12px;color:var(--md)}
+.contracts-table .td-zones{font-size:11px;color:var(--md);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-l">
+    <img class="hdr-logo" src="/assets/logo.png" alt="" onerror="this.style.display='none'">
+    <h1>Bookings</h1>
+  </div>
+  <div class="hdr-r">
+    <a href="/home" class="btn-hdr">← Portal Home</a>
+    <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+<div class="main">
+
+  <!-- View tabs -->
+  <div class="view-tabs">
+    <button class="view-tab active" id="tab-month"    onclick="setView('month')">📅 Monthly Bookings</button>
+    <button class="view-tab"        id="tab-renewals" onclick="setView('renewals')">🔄 Renewals</button>
+    <button class="view-tab"        id="tab-contracts" onclick="setView('contracts')">📋 All Contracts</button>
+  </div>
+
+  <!-- Month selector (shown for month view) -->
+  <div class="month-bar" id="monthBar">
+    <label>Month</label>
+    <select id="selMonth">
+      <option value="01">January</option><option value="02">February</option>
+      <option value="03">March</option><option value="04">April</option>
+      <option value="05">May</option><option value="06">June</option>
+      <option value="07">July</option><option value="08">August</option>
+      <option value="09">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+    <select id="selYear"></select>
+    <button class="btn-load" onclick="loadMonthData()">Load</button>
+    <button class="btn-add" onclick="openModal()">+ Add Contract</button>
+  </div>
+
+  <!-- Content area -->
+  <div id="contentArea">
+    <div class="empty"><div class="ei">📅</div><p>Select a month and click Load</p></div>
+  </div>
+
+</div>
+
+<!-- Contract Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2 id="modalTitle">Add Contract</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="section-hdr">Client Information</div>
+        <div class="form-field"><label>Business Name *</label><input type="text" id="m-business" placeholder="Acme Plumbing"></div>
+        <div class="form-field"><label>Contact Name</label><input type="text" id="m-contact"></div>
+        <div class="form-field"><label>Email</label><input type="text" id="m-email"></div>
+        <div class="form-field"><label>Phone</label><input type="text" id="m-phone"></div>
+        <div class="form-field"><label>Address</label><input type="text" id="m-addr"></div>
+        <div class="form-field cols3"><label>City</label><input type="text" id="m-city"></div>
+        <div class="form-field"><label>State</label><input type="text" id="m-state" value="TX" style="width:80px"></div>
+        <div class="form-field"><label>ZIP</label><input type="text" id="m-zip" style="width:100px"></div>
+
+        <div class="section-hdr">Contract Details</div>
+        <div class="form-field"><label>Signed Date *</label><input type="date" id="m-signedDate"></div>
+        <div class="form-field"><label>Term *</label>
+          <select id="m-term">
+            <option value="6">6 Months (Limited)</option>
+            <option value="12" selected>12 Months (Premium)</option>
+            <option value="24">24 Months (Elite)</option>
+          </select>
+        </div>
+        <div class="form-field"><label>Rep</label><input type="text" id="m-rep"></div>
+        <div class="form-field"><label>Source</label>
+          <select id="m-source">
+            <option value="manual">Manual Entry</option>
+            <option value="enrollment">Enrollment Form</option>
+          </select>
+        </div>
+        <div class="form-field"><label>First Month Payment</label><input type="text" id="m-firstMonth" placeholder="$0.00"></div>
+        <div class="form-field"><label>Monthly Charge</label><input type="text" id="m-monthly" placeholder="$0.00"></div>
+        <div class="form-field full"><label>Notes</label><textarea id="m-notes" rows="2"></textarea></div>
+
+        <div class="section-hdr">Ad Zones & Products</div>
+      </div>
+
+      <!-- Zones builder -->
+      <div class="zones-builder">
+        <div style="display:grid;grid-template-columns:1.4fr 1.6fr 1fr 1fr auto;gap:6px;padding:0 8px 6px;font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.4px">
+          <span>Zone</span><span>Product</span><span>Start Month</span><span>Rate/Mo</span><span></span>
+        </div>
+        <div id="zonesContainer"></div>
+        <button class="btn-add-zone" onclick="addZoneRow()">+ Add Zone</button>
+      </div>
+
+      <div style="margin-top:1rem;padding:.75rem;background:#f0f4ff;border-radius:5px;font-size:12px;color:var(--bl)">
+        <strong>Total Monthly:</strong> <span id="m-totalCalc" style="font-size:14px;font-weight:700">$0.00</span>
+        &nbsp;&nbsp;&nbsp;
+        <strong>Bookings to create:</strong> <span id="m-bookingCount">0</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="saveBtn" onclick="saveContract()">Save Contract</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let currentView = 'month';
+let currentMonth = '';
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const ZONES = ['01-NBE','02-NBW','03-BSB','04-SMW','05-SCG','06-TPC','07-STP','08-DSB'];
+const PRODUCTS = ['Full Page','Half Page','2-Page Spread','Back Page','FC + 2','FC + 1','BC+2','BC+1','Combo A','Combo B','Postcards 10k','Postcards 20k'];
+
+async function init() {
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API+'/authVerify'+(token?'?token='+token:''), { credentials:'include' });
+  if (!res.ok) { window.location.href='/'; return; }
+  const user = await res.json();
+  if (user.role !== 'admin') { window.location.href='/home'; return; }
+
+  // Year selector
+  const now  = new Date();
+  const ysel = document.getElementById('selYear');
+  for (let y=now.getFullYear()-1; y<=now.getFullYear()+2; y++) {
+    const o=document.createElement('option'); o.value=y; o.textContent=y; ysel.appendChild(o);
+  }
+  // Default to next month
+  const next = new Date(now.getFullYear(), now.getMonth()+1, 1);
+  document.getElementById('selMonth').value = String(next.getMonth()+1).padStart(2,'0');
+  ysel.value = next.getFullYear();
+
+  // Default signed date to today
+  document.getElementById('m-signedDate').value = now.toISOString().split('T')[0];
+
+  // Add initial zone row
+  addZoneRow();
+}
+
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+v).classList.add('active');
+  document.getElementById('monthBar').style.display = v==='month' ? 'flex' : 'none';
+
+  if (v==='month') {
+    loadMonthData();
+  } else if (v==='renewals') {
+    loadRenewals();
+  } else {
+    loadContracts();
+  }
+}
+
+// ── MONTH VIEW ────────────────────────────────────────────────────────────────
+async function loadMonthData() {
+  const month = document.getElementById('selMonth').value;
+  const year  = document.getElementById('selYear').value;
+  currentMonth = year+'-'+month;
+  const area  = document.getElementById('contentArea');
+  area.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>';
+
+  try {
+    const res  = await fetch(API+'/getBookingsDashboard?month='+currentMonth, { credentials:'include' });
+    const data = await res.json();
+    if (!data.bookings) throw new Error(data.error||'Load failed');
+    renderMonthView(data, MONTHS[parseInt(month)-1]+' '+year);
+  } catch(e) {
+    area.innerHTML = '<div class="empty"><div class="ei">⚠️</div><p>Failed to load: '+esc(e.message)+'</p></div>';
+  }
+}
+
+function renderMonthView(data, label) {
+  const s = data.summary || {};
+  const area = document.getElementById('contentArea');
+
+  let html = '<div class="summary-grid">';
+  html += sumCard('Total Bookings', s.totalBookings||0, 'ads booked this month', '');
+  html += sumCard('Total Revenue', '$'+(s.totalRevenue||0).toLocaleString('en-US',{minimumFractionDigits:2}), 'monthly recurring', 'revenue');
+  html += sumCard('Zones Active', s.zoneCount||0, 'of '+ZONES.length+' zones', '');
+  html += sumCard('Avg Zone Revenue', '$'+(s.avgZoneRevenue||0).toLocaleString('en-US',{minimumFractionDigits:2}), 'per active zone', 'revenue');
+  html += '</div>';
+
+  // Zone summary cards
+  if (data.zones && data.zones.length) {
+    html += '<div class="zone-grid">';
+    data.zones.forEach(function(z) {
+      html += '<div class="zone-card"><h4>'+esc(z.zone)+'</h4>'+
+        '<div class="zcount">'+z.count+' ad'+(z.count!==1?'s':'')+'</div>'+
+        '<div class="zrev">$'+z.revenue.toLocaleString('en-US',{minimumFractionDigits:2})+'/mo</div>'+
+        '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Bookings table
+  html += '<div class="card"><div class="card-hdr"><h3>'+esc(label)+' — All Bookings</h3></div>';
+  if (!data.bookings || !data.bookings.length) {
+    html += '<div class="empty"><div class="ei">📭</div><p>No bookings for this month</p></div>';
+  } else {
+    html += '<table><thead><tr>'+
+      '<th>Business</th><th>Zone</th><th>Product</th><th>Month #</th><th>Rate/Mo</th><th>Status</th><th>Actions</th>'+
+      '</tr></thead><tbody>';
+    data.bookings.forEach(function(b) {
+      const isCombo = b.isComboMonth;
+      html += '<tr>'+
+        '<td class="td-biz">'+esc(b.business)+'</td>'+
+        '<td class="td-zone">'+esc(b.zone)+'</td>'+
+        '<td class="td-product'+(isCombo?' td-combo':'')+'">'+esc(b.product)+'</td>'+
+        '<td style="font-size:12px;color:var(--md)">'+b.termIndex+' of '+b.totalTermMonths+'</td>'+
+        '<td class="td-rate">$'+parseFloat(b.rate).toLocaleString('en-US',{minimumFractionDigits:2})+'</td>'+
+        '<td><span class="status-badge sb-'+b.status+'">'+b.status.replace('_',' ')+'</span></td>'+
+        '<td>'+
+          '<select onchange="updateStatus(\''+b.bookingId+'\',this.value)" style="font-size:11px;padding:2px 4px;border:1px solid var(--br);border-radius:3px">'+
+            statusOptions(b.status)+
+          '</select>'+
+        '</td>'+
+      '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function sumCard(title, val, sub, cls) {
+  return '<div class="sum-card'+( cls?' '+cls:'')+'">' +
+    '<h4>'+title+'</h4><div class="val">'+val+'</div><div class="sub">'+sub+'</div></div>';
+}
+
+function statusOptions(current) {
+  return ['booked','artwork_received','approved','printed','cancelled'].map(function(s) {
+    return '<option value="'+s+'"'+(s===current?' selected':'')+'>'+s.replace('_',' ')+'</option>';
+  }).join('');
+}
+
+async function updateStatus(bookingId, status) {
+  try {
+    const res = await fetch(API+'/updateBooking', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ bookingId, status })
+    });
+    if (!res.ok) throw new Error('Failed');
+    showToast('Status updated');
+  } catch(e) { showToast('Update failed', true); }
+}
+
+// ── RENEWALS VIEW ─────────────────────────────────────────────────────────────
+async function loadRenewals() {
+  const area = document.getElementById('contentArea');
+  area.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading renewals…</p></div>';
+  try {
+    const res  = await fetch(API+'/getBookingsDashboard?view=renewals', { credentials:'include' });
+    const data = await res.json();
+    renderRenewals(data.renewals||[]);
+  } catch(e) {
+    area.innerHTML = '<div class="empty"><div class="ei">⚠️</div><p>Failed: '+esc(e.message)+'</p></div>';
+  }
+}
+
+function renderRenewals(renewals) {
+  const area = document.getElementById('contentArea');
+  if (!renewals.length) {
+    area.innerHTML = '<div class="empty"><div class="ei">✅</div><p>No renewals coming up in the next 60 days</p></div>';
+    return;
+  }
+  const soon     = renewals.filter(function(r){ return r.urgency==='soon'; });
+  const upcoming = renewals.filter(function(r){ return r.urgency==='upcoming'; });
+
+  let html = '';
+  if (soon.length) {
+    html += '<div class="card"><div class="card-hdr" style="background:#c0392b"><h3>⚠ Renewing Soon — Within 30 Days ('+soon.length+')</h3></div>';
+    html += renewalTable(soon) + '</div>';
+  }
+  if (upcoming.length) {
+    html += '<div class="card"><div class="card-hdr"><h3>🔄 Upcoming Renewals — 30–60 Days ('+upcoming.length+')</h3></div>';
+    html += renewalTable(upcoming) + '</div>';
+  }
+  document.getElementById('contentArea').innerHTML = html;
+}
+
+function renewalTable(items) {
+  return '<table><thead><tr><th>Business</th><th>Zone</th><th>Product</th><th>Expiring Month</th><th>Days Left</th><th>Rate/Mo</th></tr></thead><tbody>' +
+    items.map(function(r) {
+      return '<tr class="renewal-'+r.urgency+'">'+
+        '<td class="td-biz">'+esc(r.business)+'</td>'+
+        '<td class="td-zone">'+esc(r.zone)+'</td>'+
+        '<td>'+esc(r.product)+'</td>'+
+        '<td>'+MONTHS[parseInt(r.month)-1]+' '+r.year+'</td>'+
+        '<td style="font-weight:700;color:'+(r.urgency==='soon'?'var(--rd)':'var(--amber)')+'">'+r.expiresIn+' days</td>'+
+        '<td class="td-rate">$'+parseFloat(r.rate).toFixed(2)+'</td>'+
+      '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+// ── CONTRACTS VIEW ────────────────────────────────────────────────────────────
+async function loadContracts() {
+  const area = document.getElementById('contentArea');
+  area.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading contracts…</p></div>';
+  try {
+    const res  = await fetch(API+'/getContracts', { credentials:'include' });
+    const data = await res.json();
+    renderContracts(data.contracts||[]);
+  } catch(e) {
+    area.innerHTML = '<div class="empty"><div class="ei">⚠️</div><p>Failed: '+esc(e.message)+'</p></div>';
+  }
+}
+
+function renderContracts(contracts) {
+  const area = document.getElementById('contentArea');
+  let html = '<div style="display:flex;justify-content:flex-end;margin-bottom:.8rem">'+
+    '<button class="btn-add" onclick="openModal()">+ Add Contract</button></div>';
+  html += '<div class="card"><div class="card-hdr"><h3>All Contracts ('+contracts.length+')</h3></div>';
+  if (!contracts.length) {
+    html += '<div class="empty"><div class="ei">📋</div><p>No contracts yet</p></div>';
+  } else {
+    html += '<table class="contracts-table"><thead><tr>'+
+      '<th>Business</th><th>Signed</th><th>Term</th><th>Zones / Products</th><th>Monthly</th><th>Status</th><th>Actions</th>'+
+      '</tr></thead><tbody>';
+    contracts.forEach(function(c) {
+      const zoneList = (c.zones||[]).map(function(z){ return z.zoneName+': '+z.product; }).join(' · ');
+      const monthly  = c.monthly || ('$'+((c.zones||[]).reduce(function(s,z){ return s+parseFloat(z.rate||0); },0).toFixed(2)));
+      html += '<tr>'+
+        '<td class="td-biz">'+esc(c.business)+'</td>'+
+        '<td style="font-size:12px;color:var(--md)">'+fmt(c.signedDate)+'</td>'+
+        '<td class="td-term">'+c.term+' mo</td>'+
+        '<td class="td-zones" title="'+esc(zoneList)+'">'+esc(zoneList||'—')+'</td>'+
+        '<td class="td-rate">'+esc(monthly)+'</td>'+
+        '<td><span class="status-badge sb-'+(c.status==='active'?'booked':c.status)+'">'+esc(c.status)+'</span></td>'+
+        '<td>'+
+          '<button class="btn-sm" style="background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff" onclick="viewContract(\''+c.contractId+'\')">View</button>'+
+        '</td>'+
+      '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+// ── CONTRACT MODAL ────────────────────────────────────────────────────────────
+function openModal(contractData) {
+  document.getElementById('modalTitle').textContent = contractData ? 'Edit Contract' : 'Add Contract';
+  if (!contractData) {
+    // Reset form
+    ['business','contact','email','phone','addr','city','zip','notes','rep','firstMonth','monthly'].forEach(function(f){
+      document.getElementById('m-'+f).value='';
+    });
+    document.getElementById('m-state').value='TX';
+    document.getElementById('m-term').value='12';
+    document.getElementById('m-source').value='manual';
+    document.getElementById('m-signedDate').value=new Date().toISOString().split('T')[0];
+    document.getElementById('zonesContainer').innerHTML='';
+    addZoneRow();
+  }
+  updateCalc();
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+function addZoneRow(zone) {
+  const z = zone || {};
+  const div = document.createElement('div');
+  div.className = 'zone-row';
+  div.innerHTML =
+    '<select onchange="updateCalc()">' +
+      '<option value="">— Select Zone —</option>'+
+      ZONES.map(function(zn){ return '<option value="'+zn+'"'+(z.zoneName===zn?' selected':'')+'>'+zn+'</option>'; }).join('')+
+      '<option value="custom">Custom…</option>'+
+    '</select>'+
+    '<select onchange="updateCalc()">' +
+      '<option value="">— Product —</option>'+
+      PRODUCTS.map(function(p){ return '<option value="'+p+'"'+(z.product===p?' selected':'')+'>'+p+'</option>'; }).join('')+
+    '</select>'+
+    '<input type="month" value="'+(z.startMonth||'')+'" placeholder="Start month" onchange="updateCalc()">'+
+    '<input type="number" value="'+(z.rate||'')+'" placeholder="Rate/mo" min="0" step="0.01" oninput="updateCalc()" style="width:100%">'+
+    '<button class="btn-rm-zone" onclick="this.closest(\'.zone-row\').remove();updateCalc()">✕</button>';
+  document.getElementById('zonesContainer').appendChild(div);
+}
+
+function updateCalc() {
+  const rows   = document.querySelectorAll('.zone-row');
+  const term   = parseInt(document.getElementById('m-term').value)||12;
+  let total    = 0;
+  let bookings = 0;
+  rows.forEach(function(row) {
+    const selects = row.querySelectorAll('select');
+    const inputs  = row.querySelectorAll('input');
+    const product  = selects[1] ? selects[1].value : '';
+    const startMo  = inputs[0] ? inputs[0].value : '';
+    const rate     = parseFloat(inputs[1] ? inputs[1].value : 0) || 0;
+    if (product && startMo && rate) {
+      total    += rate;
+      bookings += term;
+    }
+  });
+  document.getElementById('m-totalCalc').textContent  = '$'+total.toFixed(2);
+  document.getElementById('m-bookingCount').textContent = bookings;
+}
+
+async function saveContract() {
+  const business = document.getElementById('m-business').value.trim();
+  if (!business) { showToast('Business name is required', true); return; }
+
+  const term = document.getElementById('m-term').value;
+  if (!term) { showToast('Term is required', true); return; }
+
+  // Collect zone rows
+  const zones = [];
+  document.querySelectorAll('.zone-row').forEach(function(row) {
+    const selects = row.querySelectorAll('select');
+    const inputs  = row.querySelectorAll('input');
+    const zoneName  = selects[0] ? selects[0].value : '';
+    const product   = selects[1] ? selects[1].value : '';
+    const startMonth= inputs[0]  ? inputs[0].value  : '';
+    const rate      = inputs[1]  ? inputs[1].value  : '';
+    if (zoneName && product && startMonth && rate) {
+      zones.push({ zoneName, product, startMonth, rate });
+    }
+  });
+  if (!zones.length) { showToast('Add at least one zone with product, start month, and rate', true); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+
+  try {
+    const total = zones.reduce(function(s,z){ return s+parseFloat(z.rate||0); },0);
+    const res = await fetch(API+'/saveContract', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({
+        business,
+        contact:    document.getElementById('m-contact').value.trim(),
+        email:      document.getElementById('m-email').value.trim(),
+        phone:      document.getElementById('m-phone').value.trim(),
+        addr:       document.getElementById('m-addr').value.trim(),
+        city:       document.getElementById('m-city').value.trim(),
+        state:      document.getElementById('m-state').value.trim(),
+        zip:        document.getElementById('m-zip').value.trim(),
+        term,
+        zones,
+        signedDate: document.getElementById('m-signedDate').value,
+        firstMonth: document.getElementById('m-firstMonth').value||'',
+        monthly:    document.getElementById('m-monthly').value||('$'+total.toFixed(2)),
+        notes:      document.getElementById('m-notes').value.trim(),
+        rep:        document.getElementById('m-rep').value.trim(),
+        source:     document.getElementById('m-source').value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Save failed');
+    showToast('✓ Contract saved! '+data.bookingsCreated+' booking slots created.', false);
+    closeModal();
+    if (currentView==='month') loadMonthData();
+    else if (currentView==='contracts') loadContracts();
+  } catch(e) {
+    showToast('Error: '+e.message, true);
+  } finally {
+    btn.disabled=false; btn.textContent='Save Contract';
+  }
+}
+
+function viewContract(contractId) {
+  showToast('Contract detail view coming soon');
+}
+
+function fmt(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso+'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg, isErr) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(isErr?' err':isErr===false?' ok':'');
+  setTimeout(function(){ t.className='toast'; }, 3500);
+}
+async function logout(){
+  await fetch(API+'/authLogout',{method:'POST',credentials:'include'});
+  sessionStorage.clear(); window.location.href='/';
+}
+init();
+</script>
+</body>
+</html>
