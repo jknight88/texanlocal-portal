@@ -63,10 +63,10 @@
     {
       "route": "/respond",
       "rewrite": "/respond/index.html"
-    }
-    { 
+    },
+    {
       "route": "/bookings",
-      "rewrite": "/bookings/index.html" 
+      "rewrite": "/bookings/index.html"
     }
   ],
   "navigationFallback": {
