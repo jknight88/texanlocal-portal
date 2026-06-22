@@ -64,6 +64,10 @@
       "route": "/respond",
       "rewrite": "/respond/index.html"
     }
+    { 
+      "route": "/bookings",
+      "rewrite": "/bookings/index.html" 
+    }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
