@@ -156,8 +156,8 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
 
 
 /* Zone sub-tabs */
-.zone-subtabs{display:flex;gap:0;background:#fff;border-radius:6px 6px 0 0;overflow:hidden;border:1px solid #e0e3ea;border-bottom:none;margin-top:1.2rem;flex-wrap:wrap}
-.zone-stab{padding:.5rem .8rem;font-size:12px;font-weight:700;color:var(--md);cursor:pointer;border-right:1px solid #f0f2f5;background:none;border-top:none;border-bottom:none;font-family:inherit;transition:all .15s;white-space:nowrap}
+.zone-subtabs{display:flex;gap:0;background:#fff;border-radius:6px 6px 0 0;overflow:hidden;border:1px solid #e0e3ea;border-bottom:none;margin-top:1.2rem}
+.zone-stab{flex:1;padding:.5rem .4rem;font-size:12px;font-weight:700;color:var(--md);cursor:pointer;border-right:1px solid #f0f2f5;background:none;border-top:none;border-bottom:none;font-family:inherit;transition:all .15s;text-align:center;white-space:nowrap}
 .zone-stab:hover{background:#f5f8ff;color:var(--bl)}
 .zone-stab.active{background:var(--bl);color:#fff}
 .zone-stab:last-child{border-right:none}
@@ -812,9 +812,10 @@ function renderContracts(contracts) {
 function openModal(contractData) {
   document.getElementById('modalTitle').textContent = contractData ? 'Edit Agreement' : 'Add Agreement';
   if (!contractData) {
-    // Reset form
-    ['business','contact','email','phone','addr','city','zip','notes','rep','firstMonth','monthly'].forEach(function(f){
-      document.getElementById('m-'+f).value='';
+    // Reset form — only fields that exist
+    ['business','contact','email','phone','addr','city','zip','notes','rep'].forEach(function(f){
+      const el = document.getElementById('m-'+f);
+      if (el) el.value='';
     });
     document.getElementById('m-state').value='TX';
     document.getElementById('m-term').value='12';
