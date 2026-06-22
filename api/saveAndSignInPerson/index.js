@@ -236,6 +236,58 @@ module.exports = async function(context, req) {
     }
 
     context.res = { status:200, body:{ ok:true, sessionId, auditHash } };
+
+    // ── Auto-create booking from in-person signed enrollment (non-fatal) ──────
+    try {
+      const fd       = body.formData || {};
+      const termStr  = (fd.term||'').toString().replace(/\s*months?/i,'').trim();
+      const termNum  = parseInt(termStr) || 12;
+      const formZones = fd.zones || [];
+
+      const contractZones = formZones.filter(function(z) {
+        return z.product && z.startMonth && parseFloat(z.rate||0) > 0;
+      }).map(function(z) {
+        return { zoneName:z.zoneName||z.id||'', product:z.product, startMonth:z.startMonth, rate:parseFloat(z.rate||0) };
+      });
+
+      if (contractZones.length) {
+        const addons = [];
+        if (fd.addonDetail) {
+          if (/setup/i.test(fd.addonDetail))       addons.push({ name:'Setup Fee',         amount:100, type:'onetime'   });
+          if (/call.?track/i.test(fd.addonDetail)) addons.push({ name:'Call Tracking',     amount:0,   type:'recurring' });
+          if (/premium/i.test(fd.addonDetail))     addons.push({ name:'Premium Placement', amount:0,   type:'recurring' });
+        }
+        const saveRes = await fetch(`${BASE_URL}/api/saveContract`, {
+          method: 'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            business:    fd.bizName    || '',
+            contact:     fd.contact    || '',
+            email:       fd.clientEmail|| '',
+            phone:       fd.phone      || '',
+            addr:        fd.addr       || '',
+            city:        fd.city       || '',
+            state:       fd.state      || 'TX',
+            zip:         fd.zip        || '',
+            term:        termNum,
+            zones:       contractZones,
+            addons:      addons,
+            signedDate:  now.split('T')[0],
+            firstMonth:  fd.firstMonth || '',
+            monthly:     fd.monthly    || '',
+            notes:       fd.notes      || '',
+            rep:         fd.rep        || '',
+            source:      'enrollment',
+            enrollmentId: sessionId
+          })
+        });
+        const saveData = await saveRes.json();
+        if (saveData.ok) context.log('Auto-created booking:', saveData.contractId, 'slots:', saveData.bookingsCreated);
+        else context.log.warn('saveContract failed:', saveData.error);
+      }
+    } catch(bookingErr) {
+      context.log.warn('Auto-booking creation failed (in-person):', bookingErr.message);
+    }
+    // ── End auto-create booking ───────────────────────────────────────────────
   } catch (err) {
     context.log.error("saveAndSignInPerson error:", err);
     context.res = { status:500, body:{ error:err.message } };
