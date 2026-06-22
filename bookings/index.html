@@ -359,6 +359,9 @@ async function init() {
 
   // Add initial zone row
   addZoneRow();
+
+  // Auto-load next mailing month
+  loadMonthData();
 }
 
 function setView(v) {
@@ -551,8 +554,10 @@ function renderContracts(contracts) {
         '<td class="td-zones" title="'+esc(zoneList)+'">'+esc(zoneList||'—')+'</td>'+
         '<td class="td-rate">'+esc(monthly)+'</td>'+
         '<td><span class="status-badge sb-'+(c.status==='active'?'booked':c.status)+'">'+esc(c.status)+'</span></td>'+
-        '<td>'+
-          '<button class="btn-sm" style="background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff" onclick="viewContract(\''+c.contractId+'\')">View</button>'+
+        '<td style="white-space:nowrap">'+
+          '<button class="btn-sm" style="background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff" onclick="viewContract(\''+c.contractId+'\')">👁 View</button>'+
+          '<button class="btn-sm" style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80" onclick="openModalFromTable(\''+c.contractId+'\')" title="Edit">✏</button>'+
+          '<button class="btn-sm" style="background:#fff0f0;color:#c62828;border:1px solid #ffcdd2" onclick="deleteFromTable(\''+c.contractId+'\')" title="Delete">🗑</button>'+
         '</td>'+
       '</tr>';
     });
@@ -679,7 +684,35 @@ async function saveContract() {
   btn.disabled=true; btn.textContent='Saving…';
 
   try {
-    const total = zones.reduce(function(s,z){ return s+parseFloat(z.rate||0); },0);
+    // Collect add-ons
+    const addons = [];
+    if (document.getElementById('ao-setup').checked) {
+      addons.push({ name:'Setup Fee', amount:parseFloat(document.getElementById('ao-setup-amt').value)||0, type:'onetime' });
+    }
+    if (document.getElementById('ao-call').checked) {
+      addons.push({ name:'Call Tracking', amount:parseFloat(document.getElementById('ao-call-amt').value)||0, type:'recurring' });
+    }
+    if (document.getElementById('ao-premium').checked) {
+      addons.push({ name:'Premium Placement', amount:parseFloat(document.getElementById('ao-premium-amt').value)||0, type:'recurring' });
+    }
+    if (document.getElementById('ao-custom').checked) {
+      const freq = (document.querySelector('input[name="ao-custom-freq"]:checked')||{}).value||'recurring';
+      const amt  = parseFloat(document.getElementById('ao-custom-amt').value)||0;
+      if (amt) addons.push({ name:document.getElementById('ao-custom-name').value||'Other', amount:amt, type:freq });
+    }
+
+    // Use the auto-calculated totals
+    const firstMonth = document.getElementById('m-firstMonthCalc').textContent;
+    const monthly    = document.getElementById('m-monthlyCalc').textContent;
+
+    const existingId = document.getElementById('saveBtn').dataset.contractId||'';
+    if (existingId) {
+      await fetch(API+'/deleteContract', {
+        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+        body: JSON.stringify({ contractId: existingId, bookingsOnly: true })
+      });
+    }
+
     const res = await fetch(API+'/saveContract', {
       method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
       body: JSON.stringify({
@@ -693,12 +726,14 @@ async function saveContract() {
         zip:        document.getElementById('m-zip').value.trim(),
         term,
         zones,
-        signedDate: document.getElementById('m-signedDate').value,
-        firstMonth: document.getElementById('m-firstMonth').value||'',
-        monthly:    document.getElementById('m-monthly').value||('$'+total.toFixed(2)),
-        notes:      document.getElementById('m-notes').value.trim(),
-        rep:        document.getElementById('m-rep').value.trim(),
-        source:     document.getElementById('m-source').value
+        addons,
+        signedDate:  document.getElementById('m-signedDate').value,
+        firstMonth,
+        monthly,
+        notes:       document.getElementById('m-notes').value.trim(),
+        rep:         document.getElementById('m-rep').value.trim(),
+        source:      document.getElementById('m-source').value,
+        contractId:  existingId || undefined
       })
     });
     const data = await res.json();
