@@ -19,11 +19,18 @@ module.exports = async function(context, req) {
   // Parse key from query or body
   let body = req.body || {};
   if (typeof body === "string") { try { body = JSON.parse(body); } catch(e) { body = {}; } }
-  const key    = req.query.key    || body.key    || "";
+  const key    = req.query.key    || req.query.token || body.key    || body.token || "";
   const action = req.query.action || body.action || "";
   const id     = req.query.id     || body.id     || "";
 
-  if (key !== DASHBOARD_KEY) {
+  const jwt  = require('jsonwebtoken');
+  const JWT_SECRET = process.env.JWT_SECRET || 'e42f24e9f5cfe3558144a25a0b30c6458fc4bd5ab6a6271404a1e7b509404c72';
+  const token = req.query.key || req.query.token || body.key || body.token || '';
+  let isAuth = false;
+  try { const decoded = jwt.verify(token, JWT_SECRET); isAuth = !!decoded; } catch(e) {}
+  // Also accept DASHBOARD_KEY for backward compat
+  if (!isAuth && token === DASHBOARD_KEY) isAuth = true;
+  if (!isAuth) {
     context.res = { status:401, headers:{"Content-Type":"application/json"}, body: JSON.stringify({error:"Unauthorized"}) };
     return;
   }
