@@ -252,7 +252,7 @@ module.exports = async function(context, req) {
       })
     });
 
-    context.res = { status:200, body:{ ok:true, pdfUrl } };
+    context.res = { status:200, body:{ ok:true, pdfUrl, bookingCreated: !!record.bookingContractId, bookingContractId: record.bookingContractId||null } };
   } catch(err) {
     context.log.error("countersign POST error:", err);
     context.res = { status:500, body:{error:err.message} };
