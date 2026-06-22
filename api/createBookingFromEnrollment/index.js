@@ -32,22 +32,26 @@ module.exports = async function(context, req) {
       context.res={status:200,headers:CORS,body:JSON.stringify({ok:true,alreadyExists:true,contractId:record.bookingContractId})}; context.done(); return;
     }
 
-    // Check if a booking already exists with this enrollmentId even if record wasn't updated
+    // Check if a booking already exists — by enrollmentId OR by business name match
     try {
       const portalC = blobSvc.getContainerClient('portal-data');
       const cNames  = [];
       for await (const b of portalC.listBlobsFlat({ prefix:'contracts/' })) {
         if (b.name.endsWith('.json')) cNames.push(b.name);
       }
+      const bizNorm = (record.bizName||'').toLowerCase().replace(/[^a-z0-9]/g,'');
       for (const name of cNames) {
         try {
           const cb = JSON.parse((await portalC.getBlockBlobClient(name).downloadToBuffer()).toString());
-          if (cb.enrollmentId === sessionId) {
-            // Found existing — update enrollment record and return
+          const cbBizNorm = (cb.business||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+          const matchByEnrollmentId = cb.enrollmentId === sessionId;
+          const matchByBiz = bizNorm && cbBizNorm && (bizNorm === cbBizNorm || bizNorm.includes(cbBizNorm) || cbBizNorm.includes(bizNorm));
+          if (matchByEnrollmentId || matchByBiz) {
+            // Found existing — link it to this enrollment record and return
             record.bookingContractId = cb.contractId;
             const updBuf = Buffer.from(JSON.stringify(record));
             await blob.upload(updBuf, updBuf.length, { overwrite:true, blobHTTPHeaders:{blobContentType:'application/json'} });
-            context.res={status:200,headers:CORS,body:JSON.stringify({ok:true,alreadyExists:true,contractId:cb.contractId})}; context.done(); return;
+            context.res={status:200,headers:CORS,body:JSON.stringify({ok:true,alreadyExists:true,contractId:cb.contractId,linkedBy:matchByEnrollmentId?'enrollmentId':'businessName'})}; context.done(); return;
           }
         } catch(e) {}
       }
