@@ -129,6 +129,7 @@ select:focus{border-color:var(--rd)}
 <script>
 const API = '/api';
 let userRole = 'rep';
+let allClients = [];
 let currentYear, currentMonth;
 let currentPreviewPath = null;
 let currentPreviewName = null;
@@ -152,6 +153,15 @@ async function init() {
     o.value=y; o.textContent=y; yearSel.appendChild(o);
   }
   yearSel.value = thisYear;
+
+  // Load clients for filename matching
+  try {
+    const cr = await fetch(API+'/getClients', { credentials:'include' });
+    const cd = await cr.json();
+    allClients = (cd.clients||[]).map(function(c){
+      return c.business.toLowerCase().replace(/[^a-z0-9]/g,'');
+    });
+  } catch(e) {}
 
   const zone = document.getElementById('uploadZone');
   zone.addEventListener('dragover',  e=>{ e.preventDefault(); zone.classList.add('drag-over'); });
@@ -203,9 +213,12 @@ async function loadFiles() {
       '<th style="width:32px"></th><th>File Name</th><th>Size</th><th>Uploaded</th>'+
       '<th style="text-align:right">Actions</th></tr></thead><tbody>'+
       data.files.map(function(f) {
-        return '<tr id="row-'+safeId(f.fullPath)+'" onclick="previewFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')">'+
+        return '<tr id="row-'+safeId(f.fullPath)+'" onclick="previewFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')'+(checkMatch(f.name)?'':' style="background:#fff8f0"')+'">'+
           '<td class="td-icon">📄</td>'+
-          '<td class="td-name">'+esc(f.name)+'</td>'+
+          '<td class="td-name">'+
+          esc(f.name)+
+          (!checkMatch(f.name) ? ' <span title="No matching client found — check filename" style="color:#e65100;font-size:13px;cursor:help">⚠</span>' : '')+
+        '</td>'+
           '<td class="td-size">'+f.sizeLabel+'</td>'+
           '<td class="td-date">'+formatDate(f.uploadedAt)+'</td>'+
           '<td class="td-actions" onclick="event.stopPropagation()">'+
@@ -343,6 +356,16 @@ function showToast(msg, isErr) {
   setTimeout(()=>t.className='toast',3000);
 }
 
+
+function checkMatch(filename) {
+  if (!allClients.length) return true;
+  const noExt  = filename.replace(/\.pdf$/i,'');
+  const bizRaw = noExt.split('_')[0].toLowerCase().replace(/[^a-z0-9]/g,'');
+  if (!bizRaw) return true;
+  return allClients.some(function(c){
+    return c.includes(bizRaw) || bizRaw.includes(c.substring(0,5));
+  });
+}
 
 async function renameFile(fullPath, name) {
   const noExt   = name.replace(/\.pdf$/i,'');
