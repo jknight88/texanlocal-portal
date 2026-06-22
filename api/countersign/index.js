@@ -105,6 +105,77 @@ module.exports = async function(context, req) {
     record.pdfToken = pdfToken;
     const updated = JSON.stringify(record);
     await blob.upload(updated, Buffer.byteLength(updated), { blobHTTPHeaders:{blobContentType:"application/json"} });
+
+    // ── Auto-create booking from signed enrollment ────────────────────────────
+    try {
+      const termStr  = (record.term||'').toString().replace(/\s*months?/i,'').trim();
+      const termNum  = parseInt(termStr) || 12;
+      const formZones = (record.formData && record.formData.zones) ? record.formData.zones : (record.zones||[]);
+
+      // Normalize zones to saveContract format
+      const contractZones = formZones.filter(function(z) {
+        return z.product && z.startMonth && parseFloat(z.rate||0) > 0;
+      }).map(function(z) {
+        return {
+          zoneName:   z.zoneName || z.id || '',
+          product:    z.product,
+          startMonth: z.startMonth,
+          rate:       parseFloat(z.rate||0)
+        };
+      });
+
+      if (contractZones.length) {
+        // Build addons from formData
+        const addons = [];
+        if (record.formData && record.formData.addonDetail) {
+          const detail = record.formData.addonDetail;
+          if (/setup/i.test(detail))     addons.push({ name:'Setup Fee',         amount:100,  type:'onetime'   });
+          if (/call.?track/i.test(detail)) addons.push({ name:'Call Tracking',   amount:0,    type:'recurring' });
+          if (/premium/i.test(detail))   addons.push({ name:'Premium Placement', amount:0,    type:'recurring' });
+        }
+
+        const contractPayload = {
+          business:   record.bizName    || '',
+          contact:    record.formData   ? (record.formData.contact    || '') : '',
+          email:      record.clientEmail || record.formData ? (record.formData.clientEmail||'') : '',
+          phone:      record.formData   ? (record.formData.phone      || '') : '',
+          addr:       record.formData   ? (record.formData.addr       || '') : '',
+          city:       record.formData   ? (record.formData.city       || '') : '',
+          state:      record.formData   ? (record.formData.state      || 'TX') : 'TX',
+          zip:        record.formData   ? (record.formData.zip        || '') : '',
+          term:       termNum,
+          zones:      contractZones,
+          addons:     addons,
+          signedDate: now.split('T')[0],
+          firstMonth: record.formData   ? (record.formData.firstMonth || '') : '',
+          monthly:    record.formData   ? (record.formData.monthly    || '') : '',
+          notes:      record.formData   ? (record.formData.notes      || '') : '',
+          rep:        record.formData   ? (record.formData.rep        || '') : '',
+          source:     'enrollment',
+          enrollmentId: body.sessionId
+        };
+
+        const saveRes = await fetch(`${BASE_URL}/api/saveContract`, {
+          method:  'POST',
+          headers: { 'Content-Type':'application/json' },
+          body:    JSON.stringify(contractPayload)
+        });
+        const saveData = await saveRes.json();
+        if (saveData.ok) {
+          record.bookingContractId = saveData.contractId;
+          context.log('Auto-created booking:', saveData.contractId, 'slots:', saveData.bookingsCreated);
+          // Save record again with contractId reference
+          const updated2 = JSON.stringify(record);
+          await blob.upload(updated2, Buffer.byteLength(updated2), { blobHTTPHeaders:{blobContentType:"application/json"} });
+        } else {
+          context.log.warn('saveContract failed:', saveData.error);
+        }
+      }
+    } catch(bookingErr) {
+      // Non-fatal — log but don't fail the countersign
+      context.log.warn('Auto-booking creation failed:', bookingErr.message);
+    }
+    // ── End auto-create booking ───────────────────────────────────────────────
     const pdfUrl = `${BASE_URL}/api/getPdf?id=${body.sessionId}&pdfToken=${pdfToken}`;
     const token  = await getGraphToken();
 
