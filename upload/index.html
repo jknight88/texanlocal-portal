@@ -7,9 +7,8 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
 body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
-
 .hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
 .hdr-l{display:flex;align-items:center;gap:14px}
 .hdr-r{display:flex;gap:10px}
@@ -17,87 +16,66 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 .hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
 .btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit}
 .btn-hdr:hover{background:rgba(255,255,255,.2)}
-
 .main{max-width:800px;margin:0 auto;padding:2rem;flex:1;width:100%}
-
 .welcome-box{background:#fff;border-radius:8px;padding:1.2rem 1.6rem;margin-bottom:1.5rem;border-left:4px solid var(--bl)}
 .welcome-box h2{font-family:'Playfair Display',serif;font-size:18px;color:var(--bl);margin-bottom:4px}
 .welcome-box p{font-size:13px;color:var(--md);line-height:1.6}
-
-/* Mode toggle */
 .mode-toggle{display:flex;gap:0;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:1.5rem}
 .mode-btn{flex:1;padding:.8rem;font-size:13px;font-weight:700;color:var(--md);border:none;background:transparent;cursor:pointer;font-family:inherit;border-right:1px solid var(--br);transition:all .15s;text-align:center}
 .mode-btn:last-child{border-right:none}
 .mode-btn.active{background:var(--bl);color:#fff}
-
-/* Card */
 .upload-card{background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;margin-bottom:1.2rem}
 .card-hdr{background:var(--bl);padding:.8rem 1.4rem;border-bottom:3px solid var(--rd)}
 .card-hdr h3{color:#fff;font-size:14px;font-weight:700;letter-spacing:.4px}
 .card-body{padding:1.4rem}
-
-/* Month/Year row */
 .month-row{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;flex-wrap:wrap}
 .month-row label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
 .month-row select{border:none;border-bottom:2px solid var(--br);background:transparent;font-size:14px;font-family:inherit;padding:6px 2px;outline:none;transition:border-color .15s;cursor:pointer}
 .month-row select:focus{border-bottom-color:var(--rd)}
 .month-note{font-size:12px;color:var(--md);font-style:italic;margin-left:auto}
-
-/* Form fields for single upload */
 .field{margin-bottom:1.2rem}
 .field label{display:block;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
 .field select,.field input[type=text]{width:100%;border:none;border-bottom:2px solid var(--br);background:transparent;font-size:14px;font-family:inherit;padding:7px 2px;outline:none;transition:border-color .15s}
 .field select:focus,.field input:focus{border-bottom-color:var(--rd)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-
 .filename-preview{background:#f5f7fa;border:1px solid var(--br);border-radius:4px;padding:10px 14px;font-size:13px;color:var(--bl);font-weight:600;margin-top:8px;word-break:break-all}
 .filename-preview.empty{color:#aaa;font-weight:400;font-style:italic}
-
-/* Drop zone */
 .drop-zone{border:2px dashed var(--br);border-radius:8px;padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;position:relative}
 .drop-zone:hover,.drop-zone.drag-over{border-color:var(--rd);background:#fff8f8}
 .drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .drop-zone .dz-icon{font-size:36px;margin-bottom:10px}
 .drop-zone h4{font-size:15px;font-weight:700;color:var(--bl);margin-bottom:4px}
 .drop-zone p{font-size:12px;color:var(--md)}
-
-/* Queue */
 .queue{margin-top:1.2rem}
-.queue-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f9fafb;border:1px solid var(--br);border-radius:5px;margin-bottom:6px;font-size:13px}
-.qi-icon{font-size:18px;flex-shrink:0}
-.qi-name{flex:1;font-weight:600;color:var(--bl);word-break:break-all}
-.qi-size{font-size:11px;color:var(--md);white-space:nowrap}
-.qi-status{font-size:11px;font-weight:700;white-space:nowrap}
+.queue-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#f9fafb;border:1px solid var(--br);border-radius:5px;margin-bottom:6px;font-size:13px}
+.queue-item.warn{border-color:#ffb74d;background:#fff8f0}
+.qi-icon{font-size:18px;flex-shrink:0;padding-top:1px}
+.qi-info{flex:1;min-width:0}
+.qi-name{font-weight:600;color:var(--bl);word-break:break-all}
+.qi-size{font-size:11px;color:var(--md);margin-top:1px}
+.qi-warn{font-size:11px;font-weight:700;color:var(--amber);margin-top:4px;display:flex;align-items:center;gap:4px;background:#fff3e0;padding:3px 8px;border-radius:3px;border:1px solid #ffcc80}
+.qi-status{font-size:11px;font-weight:700;white-space:nowrap;padding-top:2px}
 .qi-status.pending{color:var(--md)}
 .qi-status.uploading{color:var(--bl)}
 .qi-status.done{color:var(--green)}
 .qi-status.error{color:var(--rd)}
 .qi-remove{background:none;border:none;cursor:pointer;color:var(--md);font-size:16px;padding:0 4px;flex-shrink:0}
 .qi-remove:hover{color:var(--rd)}
-
-/* Upload btn */
 .btn-upload{width:100%;background:var(--bl);color:#fff;border:none;padding:13px;border-radius:5px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:1rem;transition:background .15s}
 .btn-upload:hover{background:#001844}
 .btn-upload:disabled{opacity:.5;cursor:not-allowed}
-
-/* Progress */
 .progress-wrap{margin-top:1rem;display:none}
 .progress-bar{height:6px;background:var(--br);border-radius:3px;overflow:hidden;margin-bottom:6px}
 .progress-fill{height:100%;background:var(--green);transition:width .3s;width:0%}
 .progress-label{font-size:12px;color:var(--md);text-align:center}
-
-/* Bulk info box */
 .bulk-info{background:#f0f4ff;border:1px solid #c0ccff;border-radius:6px;padding:12px 16px;margin-bottom:1.2rem;font-size:13px;color:var(--bl);line-height:1.6}
 .bulk-info strong{display:block;margin-bottom:4px;font-size:14px}
-
-/* Toast */
 .toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
 .toast.show{opacity:1}
 .toast.err{background:var(--rd)}
 </style>
 </head>
 <body>
-
 <header class="hdr">
   <div class="hdr-l">
     <img class="hdr-logo" src="/assets/logo.png" alt="The Texan Local" onerror="this.style.display='none'">
@@ -108,21 +86,15 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
     <button class="btn-hdr" onclick="logout()">Sign Out</button>
   </div>
 </header>
-
 <div class="main">
-
   <div class="welcome-box">
     <h2 id="welcomeName">Hi Sherry!</h2>
     <p>Upload completed ad proof PDFs here. Use <strong>Bulk Upload</strong> for multiple pre-named files, or <strong>Single Upload</strong> to name each file individually.</p>
   </div>
-
-  <!-- Mode toggle -->
   <div class="mode-toggle">
     <button class="mode-btn active" id="modeBulk" onclick="setMode('bulk')">📦 Bulk Upload <small style="display:block;font-size:10px;font-weight:400;opacity:.8">Drop multiple pre-named files</small></button>
     <button class="mode-btn" id="modeSingle" onclick="setMode('single')">📄 Single Upload <small style="display:block;font-size:10px;font-weight:400;opacity:.8">Name each file individually</small></button>
   </div>
-
-  <!-- Shared month selector -->
   <div class="upload-card">
     <div class="card-hdr"><h3>Mailing Month</h3></div>
     <div class="card-body">
@@ -136,9 +108,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
           <option value="09">September</option><option value="10">October</option>
           <option value="11">November</option><option value="12">December</option>
         </select>
-        <select id="selYear">
-          <option>2026</option><option>2027</option>
-        </select>
+        <select id="selYear"><option>2026</option><option>2027</option></select>
         <span class="month-note" id="monthNote"></span>
       </div>
     </div>
@@ -151,7 +121,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
       <div class="card-body">
         <div class="bulk-info">
           <strong>📋 How it works:</strong>
-          Files are uploaded exactly as named — no renaming. Make sure filenames follow the convention before uploading. All files go into the selected mailing month folder.
+          Files are uploaded exactly as named. Files that don't match a client in the system will be flagged with a warning — they'll still upload but you should double-check the filename.
         </div>
         <div class="drop-zone" id="bulkDrop">
           <input type="file" id="bulkInput" accept=".pdf" multiple onchange="addBulkFiles(this.files)">
@@ -216,271 +186,284 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
       </div>
     </div>
   </div>
-
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-const API      = '/api';
-let mode       = 'bulk';
-let bulkFiles  = [];
+const API       = '/api';
+let mode        = 'bulk';
+let bulkFiles   = [];
 let singleFiles = [];
-let userName   = '';
+let allClients  = []; // normalized client names for matching
+let userName    = '';
 
 async function init() {
   const token = sessionStorage.getItem('txl_token');
-  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
-  if (!res.ok) { window.location.href = '/'; return; }
+  const res   = await fetch(API+'/authVerify'+(token?'?token='+token:''), { credentials:'include' });
+  if (!res.ok) { window.location.href='/'; return; }
   const user = await res.json();
   userName   = user.name || 'Sherry';
-  document.getElementById('welcomeName').textContent = 'Hi ' + userName.split(' ')[0] + '!';
+  document.getElementById('welcomeName').textContent = 'Hi '+userName.split(' ')[0]+'!';
 
-  // Default to next month
   const now       = new Date();
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  document.getElementById('selMonth').value = String(nextMonth.getMonth() + 1).padStart(2, '0');
-  document.getElementById('selYear').value  = nextMonth.getFullYear();
+  const next      = new Date(now.getFullYear(), now.getMonth()+1, 1);
+  document.getElementById('selMonth').value = String(next.getMonth()+1).padStart(2,'0');
+  document.getElementById('selYear').value  = next.getFullYear();
   updateMonthNote();
-
   document.getElementById('selMonth').addEventListener('change', updateMonthNote);
-  document.getElementById('selYear').addEventListener('change', updateMonthNote);
+  document.getElementById('selYear').addEventListener('change',  updateMonthNote);
 
-  // Drag-drop for bulk
-  const bulkDrop = document.getElementById('bulkDrop');
-  bulkDrop.addEventListener('dragover',  function(e) { e.preventDefault(); bulkDrop.classList.add('drag-over'); });
-  bulkDrop.addEventListener('dragleave', function()  { bulkDrop.classList.remove('drag-over'); });
-  bulkDrop.addEventListener('drop',      function(e) { e.preventDefault(); bulkDrop.classList.remove('drag-over'); addBulkFiles(e.dataTransfer.files); });
+  // Drag-drop
+  setupDrop('bulkDrop',   function(f){ addBulkFiles(f); });
+  setupDrop('singleDrop', function(f){ addSingleFiles(f); });
 
-  // Drag-drop for single
-  const singleDrop = document.getElementById('singleDrop');
-  singleDrop.addEventListener('dragover',  function(e) { e.preventDefault(); singleDrop.classList.add('drag-over'); });
-  singleDrop.addEventListener('dragleave', function()  { singleDrop.classList.remove('drag-over'); });
-  singleDrop.addEventListener('drop',      function(e) { e.preventDefault(); singleDrop.classList.remove('drag-over'); addSingleFiles(e.dataTransfer.files); });
+  // Load clients for matching
+  try {
+    const cr = await fetch(API+'/getClients', { credentials:'include' });
+    const cd = await cr.json();
+    allClients = (cd.clients||[]).map(function(c){
+      return c.business.toLowerCase().replace(/[^a-z0-9]/g,'');
+    });
+  } catch(e) {}
+}
+
+function setupDrop(id, handler) {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover',  function(e){ e.preventDefault(); el.classList.add('drag-over'); });
+  el.addEventListener('dragleave', function()  { el.classList.remove('drag-over'); });
+  el.addEventListener('drop',      function(e){ e.preventDefault(); el.classList.remove('drag-over'); handler(e.dataTransfer.files); });
 }
 
 function updateMonthNote() {
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const m = document.getElementById('selMonth').value;
   const y = document.getElementById('selYear').value;
-  document.getElementById('monthNote').textContent = 'Files will be stored in folder: ' + y + '/' + m + '/';
+  document.getElementById('monthNote').textContent = 'Folder: '+y+'/'+m+'/';
+}
+
+function checkMatch(filename) {
+  if (!allClients.length) return { ok:true, msg:'' };
+  const noExt  = filename.replace(/\.pdf$/i,'');
+  const bizRaw = noExt.split('_')[0].toLowerCase().replace(/[^a-z0-9]/g,'');
+  const hit    = allClients.some(function(c){ return c.includes(bizRaw) || bizRaw.includes(c.substring(0,5)); });
+  return hit ? { ok:true, msg:'' } : { ok:false, msg:'No matching client found for "'+noExt.split('_')[0]+'" — check filename' };
 }
 
 function setMode(m) {
   mode = m;
-  document.getElementById('modeBulk').classList.toggle('active', m === 'bulk');
-  document.getElementById('modeSingle').classList.toggle('active', m === 'single');
-  document.getElementById('bulkPanel').style.display   = m === 'bulk'   ? 'block' : 'none';
-  document.getElementById('singlePanel').style.display = m === 'single' ? 'block' : 'none';
+  document.getElementById('modeBulk').classList.toggle('active',   m==='bulk');
+  document.getElementById('modeSingle').classList.toggle('active', m==='single');
+  document.getElementById('bulkPanel').style.display   = m==='bulk'   ? 'block' : 'none';
+  document.getElementById('singlePanel').style.display = m==='single' ? 'block' : 'none';
 }
 
-// ── BULK MODE ─────────────────────────────────────────────────────────────────
+// ── BULK ──────────────────────────────────────────────────────────────────────
 function addBulkFiles(fileList) {
-  for (let i = 0; i < fileList.length; i++) {
-    const f = fileList[i];
-    if (!f.name.toLowerCase().endsWith('.pdf')) { showToast('Skipped (not PDF): ' + f.name, true); continue; }
-    if (!bulkFiles.find(function(x) { return x.name === f.name; })) {
-      bulkFiles.push({ file: f, name: f.name, status: 'pending' });
-    }
-  }
+  Array.from(fileList).forEach(function(f) {
+    if (!f.name.toLowerCase().endsWith('.pdf')) { showToast('Skipped (not PDF): '+f.name, true); return; }
+    if (bulkFiles.find(function(x){ return x.name===f.name; })) return;
+    bulkFiles.push({ file:f, name:f.name, status:'pending', match:checkMatch(f.name) });
+  });
   renderBulkQueue();
-  document.getElementById('bulkInput').value = '';
+  document.getElementById('bulkInput').value='';
 }
 
 function removeBulkFile(name) {
-  bulkFiles = bulkFiles.filter(function(f) { return f.name !== name; });
+  bulkFiles = bulkFiles.filter(function(f){ return f.name!==name; });
   renderBulkQueue();
 }
 
 function renderBulkQueue() {
+  document.getElementById('bulkUploadBtn').disabled = bulkFiles.length===0;
   const q = document.getElementById('bulkQueue');
-  document.getElementById('bulkUploadBtn').disabled = bulkFiles.length === 0;
-  if (!bulkFiles.length) { q.innerHTML = ''; return; }
+  if (!bulkFiles.length) { q.innerHTML=''; return; }
   q.innerHTML = bulkFiles.map(function(f) {
-    const size = f.file.size >= 1048576 ? (f.file.size/1048576).toFixed(1)+'MB' : Math.round(f.file.size/1024)+'KB';
-    return '<div class="queue-item">' +
+    const sz   = f.file.size>=1048576 ? (f.file.size/1048576).toFixed(1)+'MB' : Math.round(f.file.size/1024)+'KB';
+    const warn = !f.match.ok && f.status==='pending';
+    const stLbl= f.status==='done'?'✓ Done':f.status==='error'?'✗ Error':f.status==='uploading'?'⏳':'Ready';
+    return '<div class="queue-item'+(warn?' warn':'')+'">' +
       '<span class="qi-icon">📄</span>' +
-      '<span class="qi-name">' + esc(f.name) + '</span>' +
-      '<span class="qi-size">' + size + '</span>' +
-      '<span class="qi-status ' + f.status + '" id="bs-' + esc(f.name) + '">' +
-        (f.status === 'pending' ? 'Ready' : f.status === 'uploading' ? '⏳ Uploading…' : f.status === 'done' ? '✓ Done' : '✗ Error') +
-      '</span>' +
-      (f.status === 'pending' ? '<button class="qi-remove" onclick="removeBulkFile(\'' + esc(f.name) + '\')">✕</button>' : '') +
-      '</div>';
+      '<div class="qi-info">' +
+        '<div class="qi-name">'+esc(f.name)+'</div>' +
+        '<div class="qi-size">'+sz+'</div>' +
+        (warn ? '<div class="qi-warn">⚠ '+esc(f.match.msg)+'</div>' : '') +
+      '</div>' +
+      '<span class="qi-status '+f.status+'">'+stLbl+'</span>' +
+      (f.status==='pending'?'<button class="qi-remove" onclick="removeBulkFile(\''+esc(f.name)+'\')">✕</button>':'') +
+    '</div>';
   }).join('');
 }
 
 async function uploadBulk() {
   if (!bulkFiles.length) return;
-  const month = document.getElementById('selMonth').value;
-  const year  = document.getElementById('selYear').value;
-  const btn   = document.getElementById('bulkUploadBtn');
-  const prog  = document.getElementById('bulkProgress');
-  const fill  = document.getElementById('bulkFill');
-  const label = document.getElementById('bulkLabel');
+  const month=document.getElementById('selMonth').value;
+  const year =document.getElementById('selYear').value;
+  const btn  =document.getElementById('bulkUploadBtn');
+  const prog =document.getElementById('bulkProgress');
+  const fill =document.getElementById('bulkFill');
+  const label=document.getElementById('bulkLabel');
+  btn.disabled=true; prog.style.display='block';
+  const uploaded=[];
 
-  btn.disabled = true;
-  prog.style.display = 'block';
-  let done = 0;
-
-  for (let i = 0; i < bulkFiles.length; i++) {
-    const item = bulkFiles[i];
-    if (item.status === 'done') { done++; continue; }
-    item.status = 'uploading';
-    renderBulkQueue();
-    label.textContent = 'Uploading ' + (i+1) + ' of ' + bulkFiles.length + ': ' + item.name;
-    fill.style.width  = (i / bulkFiles.length * 100) + '%';
-
+  for (let i=0; i<bulkFiles.length; i++) {
+    const item=bulkFiles[i];
+    if (item.status==='done') { uploaded.push(item.name); continue; }
+    item.status='uploading'; renderBulkQueue();
+    label.textContent='Uploading '+(i+1)+' of '+bulkFiles.length+': '+item.name;
+    fill.style.width=(i/bulkFiles.length*100)+'%';
     try {
-      const b64 = await toBase64(item.file);
-      const res = await fetch(API + '/filesUploadFile', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ filename: item.name, fileBase64: b64, year: year, month: month })
+      const b64=await toBase64(item.file);
+      const res=await fetch(API+'/filesUploadFile',{
+        method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+        body:JSON.stringify({filename:item.name,fileBase64:b64,year,month})
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-      item.status = 'done';
-      done++;
-    } catch(e) {
-      item.status = 'error';
-      showToast('Failed: ' + item.name + ' — ' + e.message, true);
-    }
+      const data=await res.json();
+      if (!res.ok) throw new Error(data.error||'Upload failed');
+      item.status='done'; uploaded.push(item.name);
+    } catch(e) { item.status='error'; showToast('Failed: '+item.name,true); }
     renderBulkQueue();
   }
+  fill.style.width='100%';
+  label.textContent='✓ Done! '+uploaded.length+' of '+bulkFiles.length+' files uploaded.';
 
-  fill.style.width  = '100%';
-  label.textContent = '✓ Done! ' + done + ' of ' + bulkFiles.length + ' files uploaded to ' + year + '/' + month + '/';
-  showToast(done + ' files uploaded successfully!');
-  btn.disabled = false;
+  // Notify Josh
+  if (uploaded.length) {
+    try {
+      await fetch(API+'/notifyUpload',{
+        method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+        body:JSON.stringify({files:uploaded,month,year})
+      });
+    } catch(e) {}
+    showToast('✓ '+uploaded.length+' file'+(uploaded.length>1?'s':'')+' uploaded & Josh notified!');
+  }
+  btn.disabled=false;
 }
 
-// ── SINGLE MODE ───────────────────────────────────────────────────────────────
+// ── SINGLE ────────────────────────────────────────────────────────────────────
 function addSingleFiles(fileList) {
-  for (let i = 0; i < fileList.length; i++) {
-    const f = fileList[i];
-    if (!f.name.toLowerCase().endsWith('.pdf')) { showToast('Skipped (not PDF): ' + f.name, true); continue; }
-    singleFiles.push({ file: f, status: 'pending' });
-  }
+  Array.from(fileList).forEach(function(f) {
+    if (!f.name.toLowerCase().endsWith('.pdf')) { showToast('Skipped (not PDF): '+f.name,true); return; }
+    singleFiles.push({ file:f, status:'pending' });
+  });
   renderSingleQueue();
-  document.getElementById('singleInput').value = '';
+  document.getElementById('singleInput').value='';
 }
 
 function removeSingleFile(idx) {
-  singleFiles.splice(idx, 1);
+  singleFiles.splice(idx,1);
+  renderSingleQueue();
+}
+
+function getFilename() {
+  const biz   = document.getElementById('bizName').value.trim().replace(/\s+/g,'').replace(/[^a-zA-Z0-9]/g,'');
+  const type  = document.getElementById('adType').value;
+  const zones = document.getElementById('zones').value.trim().replace(/\s+/g,'');
+  const month = document.getElementById('selMonth').value;
+  const year  = document.getElementById('selYear').value.slice(2);
+  if (!biz||!type) return '';
+  return biz+'_'+month+year+'_'+type+(zones?'_'+zones:'')+'.pdf';
+}
+
+function updateFilename() {
+  const fn  =getFilename();
+  const prev=document.getElementById('filenamePreview');
+  if (fn){ prev.textContent=fn; prev.className='filename-preview'; }
+  else   { prev.textContent='Fill in required fields above'; prev.className='filename-preview empty'; }
   renderSingleQueue();
 }
 
 function renderSingleQueue() {
-  const q = document.getElementById('singleQueue');
-  document.getElementById('singleUploadBtn').disabled = singleFiles.length === 0;
-  if (!singleFiles.length) { q.innerHTML = ''; return; }
-  const fn = getFilename();
-  q.innerHTML = singleFiles.map(function(f, i) {
-    const size = f.file.size >= 1048576 ? (f.file.size/1048576).toFixed(1)+'MB' : Math.round(f.file.size/1024)+'KB';
-    const name = fn ? fn.replace('.pdf', (singleFiles.length > 1 ? '_' + (i+1) : '') + '.pdf') : f.file.name;
-    return '<div class="queue-item">' +
+  document.getElementById('singleUploadBtn').disabled=singleFiles.length===0;
+  const q=document.getElementById('singleQueue');
+  if (!singleFiles.length){ q.innerHTML=''; return; }
+  const fn=getFilename();
+  const biz=document.getElementById('bizName').value.trim();
+  const bizMatch=biz?checkMatch(biz+'_x.pdf'):{ok:true,msg:''};
+  q.innerHTML=singleFiles.map(function(f,i){
+    const sz=f.file.size>=1048576?(f.file.size/1048576).toFixed(1)+'MB':Math.round(f.file.size/1024)+'KB';
+    const name=fn?fn.replace('.pdf',(singleFiles.length>1?'_'+(i+1):'')+'.pdf'):f.file.name;
+    const stLbl=f.status==='done'?'✓ Done':f.status==='error'?'✗ Error':f.status==='uploading'?'⏳':'Ready';
+    const warn=!bizMatch.ok&&f.status==='pending';
+    return '<div class="queue-item'+(warn?' warn':'')+'">' +
       '<span class="qi-icon">📄</span>' +
-      '<div style="flex:1">' +
-        '<div class="qi-name">' + esc(name) + '</div>' +
-        '<div style="font-size:10px;color:var(--md)">Original: ' + esc(f.file.name) + '</div>' +
+      '<div class="qi-info">' +
+        '<div class="qi-name">'+esc(name)+'</div>' +
+        '<div class="qi-size">Original: '+esc(f.file.name)+' · '+sz+'</div>' +
+        (warn?'<div class="qi-warn">⚠ '+esc(bizMatch.msg)+'</div>':'') +
       '</div>' +
-      '<span class="qi-size">' + size + '</span>' +
-      '<span class="qi-status ' + f.status + '">' +
-        (f.status === 'pending' ? 'Ready' : f.status === 'uploading' ? '⏳' : f.status === 'done' ? '✓ Done' : '✗ Error') +
-      '</span>' +
-      (f.status === 'pending' ? '<button class="qi-remove" onclick="removeSingleFile(' + i + ')">✕</button>' : '') +
-      '</div>';
+      '<span class="qi-status '+f.status+'">'+stLbl+'</span>' +
+      (f.status==='pending'?'<button class="qi-remove" onclick="removeSingleFile('+i+')">✕</button>':'') +
+    '</div>';
   }).join('');
-}
-
-function getFilename() {
-  const biz   = document.getElementById('bizName').value.trim().replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
-  const type  = document.getElementById('adType').value;
-  const zones = document.getElementById('zones').value.trim().replace(/\s+/g, '');
-  const month = document.getElementById('selMonth').value;
-  const year  = document.getElementById('selYear').value.slice(2);
-  if (!biz || !type) return '';
-  return biz + '_' + month + year + '_' + type + (zones ? '_' + zones : '') + '.pdf';
-}
-
-function updateFilename() {
-  const fn   = getFilename();
-  const prev = document.getElementById('filenamePreview');
-  if (fn) { prev.textContent = fn; prev.className = 'filename-preview'; }
-  else     { prev.textContent = 'Fill in required fields above'; prev.className = 'filename-preview empty'; }
-  renderSingleQueue();
 }
 
 async function uploadSingle() {
   if (!singleFiles.length) return;
-  const fn = getFilename();
-  if (!fn) { showToast('Please fill in Business Name and Ad Type', true); return; }
+  const fn=getFilename();
+  if (!fn){ showToast('Please fill in Business Name and Ad Type',true); return; }
+  const month=document.getElementById('selMonth').value;
+  const year =document.getElementById('selYear').value;
+  const btn  =document.getElementById('singleUploadBtn');
+  const prog =document.getElementById('singleProgress');
+  const fill =document.getElementById('singleFill');
+  const label=document.getElementById('singleLabel');
+  btn.disabled=true; prog.style.display='block';
+  const uploaded=[];
 
-  const month = document.getElementById('selMonth').value;
-  const year  = document.getElementById('selYear').value;
-  const btn   = document.getElementById('singleUploadBtn');
-  const prog  = document.getElementById('singleProgress');
-  const fill  = document.getElementById('singleFill');
-  const label = document.getElementById('singleLabel');
-
-  btn.disabled = true;
-  prog.style.display = 'block';
-  let done = 0;
-
-  for (let i = 0; i < singleFiles.length; i++) {
-    const item     = singleFiles[i];
-    const filename = fn.replace('.pdf', (singleFiles.length > 1 ? '_' + (i+1) : '') + '.pdf');
-    item.status    = 'uploading';
-    renderSingleQueue();
-    label.textContent = 'Uploading ' + (i+1) + ' of ' + singleFiles.length + '…';
-    fill.style.width  = (i / singleFiles.length * 100) + '%';
-
+  for (let i=0; i<singleFiles.length; i++) {
+    const item    =singleFiles[i];
+    const filename=fn.replace('.pdf',(singleFiles.length>1?'_'+(i+1):'')+'.pdf');
+    item.status='uploading'; renderSingleQueue();
+    label.textContent='Uploading '+(i+1)+' of '+singleFiles.length+'…';
+    fill.style.width=(i/singleFiles.length*100)+'%';
     try {
-      const b64 = await toBase64(item.file);
-      const res = await fetch(API + '/filesUploadFile', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ filename: filename, fileBase64: b64, year: year, month: month })
+      const b64=await toBase64(item.file);
+      const res=await fetch(API+'/filesUploadFile',{
+        method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+        body:JSON.stringify({filename,fileBase64:b64,year,month})
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-      item.status = 'done';
-      done++;
-    } catch(e) {
-      item.status = 'error';
-      showToast('Failed: ' + filename + ' — ' + e.message, true);
-    }
+      const data=await res.json();
+      if (!res.ok) throw new Error(data.error||'Upload failed');
+      item.status='done'; uploaded.push(filename);
+    } catch(e){ item.status='error'; showToast('Failed: '+filename,true); }
     renderSingleQueue();
   }
+  fill.style.width='100%';
+  label.textContent='✓ Done! '+uploaded.length+' of '+singleFiles.length+' uploaded.';
 
-  fill.style.width  = '100%';
-  label.textContent = '✓ Done! ' + done + ' of ' + singleFiles.length + ' files uploaded.';
-  showToast(done + ' files uploaded!');
-  btn.disabled = false;
+  // Notify Josh
+  if (uploaded.length) {
+    try {
+      await fetch(API+'/notifyUpload',{
+        method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+        body:JSON.stringify({files:uploaded,month,year})
+      });
+    } catch(e) {}
+    showToast('✓ '+uploaded.length+' file'+(uploaded.length>1?'s':'')+' uploaded & Josh notified!');
+  }
+  btn.disabled=false;
 }
 
-function toBase64(file) {
-  return new Promise(function(resolve, reject) {
-    const r = new FileReader();
-    r.onload  = function() { resolve(r.result.split(',')[1]); };
-    r.onerror = reject;
-    r.readAsDataURL(file);
+function toBase64(file){
+  return new Promise(function(res,rej){
+    const r=new FileReader();
+    r.onload=function(){ res(r.result.split(',')[1]); };
+    r.onerror=rej; r.readAsDataURL(file);
   });
 }
 
-async function logout() {
-  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
-  sessionStorage.clear();
-  window.location.href = '/';
+async function logout(){
+  await fetch(API+'/authLogout',{method:'POST',credentials:'include'});
+  sessionStorage.clear(); window.location.href='/';
 }
 
-function showToast(msg, isErr) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = 'toast show' + (isErr ? ' err' : '');
-  setTimeout(function() { t.className = 'toast'; }, 3500);
+function showToast(msg,isErr){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(isErr?' err':'');
+  setTimeout(function(){ t.className='toast'; },3500);
 }
 
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 init();
 </script>
