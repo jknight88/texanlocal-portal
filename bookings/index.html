@@ -143,6 +143,32 @@ tbody td{padding:9px 12px;font-size:13px;vertical-align:middle}
 .log-action-skip{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase}
 .log-action-cancelled{background:#ffebee;color:#c62828;border:1px solid #ffcdd2;display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase}
 .log-makeup{font-size:11px;color:var(--green);font-weight:600;margin-top:2px}
+
+.art-status{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;white-space:nowrap}
+.as-art_not_sent{background:#f5f5f5;color:#757575}
+.as-art_sent{background:#e3f2fd;color:#1565c0}
+.as-art_opened{background:#fff8e1;color:#e65100}
+.as-changes_requested{background:#ffebee;color:#c62828}
+.as-approved{background:#e8f5e9;color:#1a5c1a}
+.btn-action-skip{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:3px 9px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-action-cancel{background:#ffebee;color:#c62828;border:1px solid #ffcdd2;padding:3px 9px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px}
+.log-action-restored{background:#e8f5e9;color:#1a5c1a;display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase}
+
+
+/* Zone sub-tabs */
+.zone-subtabs{display:flex;gap:0;background:#fff;border-radius:6px 6px 0 0;overflow:hidden;border:1px solid #e0e3ea;border-bottom:none;margin-top:1.2rem;flex-wrap:wrap}
+.zone-stab{padding:.5rem .8rem;font-size:12px;font-weight:700;color:var(--md);cursor:pointer;border-right:1px solid #f0f2f5;background:none;border-top:none;border-bottom:none;font-family:inherit;transition:all .15s;white-space:nowrap}
+.zone-stab:hover{background:#f5f8ff;color:var(--bl)}
+.zone-stab.active{background:var(--bl);color:#fff}
+.zone-stab:last-child{border-right:none}
+/* FC/BP row highlights */
+.row-fc{background:#fff8e1 !important;border-left:4px solid #f5a623}
+.row-bp{background:#e8f4fd !important;border-left:4px solid #1565c0}
+.row-fc:hover{background:#fff3cd !important}
+.row-bp:hover{background:#ddeefa !important}
+.fc-badge{background:#f5a623;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px;margin-left:5px;vertical-align:middle}
+.bp-badge{background:#1565c0;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px;margin-left:5px;vertical-align:middle}
+
 </style>
 </head>
 <body>
@@ -436,7 +462,7 @@ function renderMonthView(data, label) {
     html += '<div class="empty"><div class="ei">📭</div><p>No bookings for this month</p></div>';
   } else {
     html += '<table><thead><tr>'+
-      '<th>Business</th><th>Zone</th><th>Product</th><th>Month #</th><th>Rate/Mo</th><th>Status</th><th>Actions</th>'+
+      '<th>Business</th><th>Zone</th><th>Product</th><th>Month #</th><th>Rate/Mo</th><th>Art / Approval</th><th>Actions</th>'+
       '</tr></thead><tbody>';
     data.bookings.forEach(function(b) {
       const isCombo = b.isComboMonth;
@@ -446,11 +472,10 @@ function renderMonthView(data, label) {
         '<td class="td-product'+(isCombo?' td-combo':'')+'">'+esc(b.product)+'</td>'+
         '<td style="font-size:12px;color:var(--md)">'+b.termIndex+' of '+b.totalTermMonths+'</td>'+
         '<td class="td-rate">$'+parseFloat(b.rate).toLocaleString('en-US',{minimumFractionDigits:2})+'</td>'+
-        '<td><span class="status-badge sb-'+b.status+'">'+b.status.replace('_',' ')+'</span></td>'+
-        '<td>'+
-          '<select onchange="updateStatus(\''+b.bookingId+'\',this.value,this)" data-prev="'+b.status+'" style="font-size:11px;padding:2px 4px;border:1px solid var(--br);border-radius:3px">'+
-            statusOptions(b.status)+
-          '</select>'+
+        '<td><span class="art-status as-'+b.artStatus+'">'+artStatusLabel(b.artStatus)+'</span></td>'+
+        '<td style="white-space:nowrap">'+
+          '<button class="btn-action-skip" onclick="doSkip(\''+b.bookingId+'\')">⏭ Skip</button>'+
+          '<button class="btn-action-cancel" onclick="doCancel(\''+b.bookingId+'\')">✕ Cancel</button>'+
         '</td>'+
       '</tr>';
     });
@@ -556,7 +581,7 @@ function buildLogTable(entries) {
   return '<div class="card"><table>'+
     '<thead><tr>'+
       '<th>Date</th><th>Business</th><th>Zone</th><th>Product</th>'+
-      '<th>Month</th><th>Rate</th><th>Action</th><th>Reason</th>'+
+      '<th>Month</th><th>Rate</th><th>Action</th><th>Reason</th><th></th>'+
     '</tr></thead>'+
     '<tbody>'+
     entries.map(function(e) {
@@ -572,6 +597,7 @@ function buildLogTable(entries) {
         '<td class="td-rate">$'+parseFloat(e.rate||0).toFixed(2)+'</td>'+
         '<td><span class="log-action-'+e.action+'">'+esc(e.action)+'</span></td>'+
         '<td style="font-size:12px;color:var(--md)">'+esc(e.reason||'—')+'</td>'+
+        '<td>'+(e.action==='skipped'||e.action==='cancelled'?'<button class="btn-action-skip" onclick="restoreEntry(\''+e.logId+'\',\''+e.bookingId+'\')" style="font-size:10px">↩ Restore</button>':'')+'</td>'+
       '</tr>';
     }).join('')+
     '</tbody></table></div>';
@@ -582,6 +608,63 @@ function fmtDateTime(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+
     ' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+}
+
+
+function artStatusLabel(s) {
+  const labels = {
+    'art_not_sent':       '📭 Not Sent',
+    'art_sent':           '📨 Sent',
+    'art_opened':         '👁 Opened',
+    'changes_requested':  '✏ Changes',
+    'approved':           '✅ Approved'
+  };
+  return labels[s] || s;
+}
+
+async function doSkip(bookingId) {
+  if (!confirm('Skip this month\'s ad?\n\nA makeup month will be added to the end of the agreement at the same rate.')) return;
+  const reason = prompt('Reason for skipping (optional):') || '';
+  try {
+    const res  = await fetch(API+'/skipBooking', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ bookingId, action:'skip', reason })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Failed');
+    showToast('✓ Skipped — makeup month added: '+(data.makeupBooking?data.makeupBooking.monthYear:''), false);
+    setTimeout(function(){ loadMonthData(); }, 600);
+  } catch(e) { showToast('Skip failed: '+e.message, true); }
+}
+
+async function doCancel(bookingId) {
+  if (!confirm('Cancel this ad booking?\n\nThis permanently removes this month\'s revenue. Cannot be undone from here.')) return;
+  const reason = prompt('Reason for cancellation (optional):') || '';
+  try {
+    const res  = await fetch(API+'/skipBooking', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ bookingId, action:'cancel', reason })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Failed');
+    showToast('✓ Booking cancelled');
+    setTimeout(function(){ loadMonthData(); }, 600);
+  } catch(e) { showToast('Cancel failed: '+e.message, true); }
+}
+
+
+async function restoreEntry(logId, bookingId) {
+  if (!confirm('Restore this booking back to active?\n\nIf it was skipped, the makeup month will also be removed.')) return;
+  try {
+    const res  = await fetch(API+'/restoreBooking', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ bookingId, logId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Failed');
+    showToast('✓ Booking restored to active', false);
+    loadLog();
+  } catch(e) { showToast('Restore failed: '+e.message, true); }
 }
 
 async function loadRenewals() {
