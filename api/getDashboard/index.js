@@ -4,12 +4,10 @@
 // POST /api/getDashboard?key=KEY&action=restore&id=ID → restore from trash
 // POST /api/getDashboard?key=KEY&action=purge&id=ID   → permanent delete from trash
 const { BlobServiceClient } = require("@azure/storage-blob");
-const jwt             = require("jsonwebtoken");
 const STORAGE_CONN    = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const CONTAINER       = "enrollments";
 const TRASH_CONTAINER = "enrollments-trash";
 const DASHBOARD_KEY   = process.env.DASHBOARD_KEY || "changeme";
-const JWT_SECRET      = process.env.JWT_SECRET || "e42f24e9f5cfe3558144a25a0b30c6458fc4bd5ab6a6271404a1e7b509404c72";
 const SIXTY_DAYS_MS   = 60 * 24 * 60 * 60 * 1000;
 
 module.exports = async function(context, req) {
@@ -25,20 +23,7 @@ module.exports = async function(context, req) {
   const action = req.query.action || body.action || "";
   const id     = req.query.id     || body.id     || "";
 
-  // Accept either dashboard key OR portal JWT token (admin role)
-  let authorized = (key === DASHBOARD_KEY);
-  if (!authorized) {
-    // Check Authorization header for portal JWT
-    const authHeader = req.headers["authorization"] || "";
-    const bearerToken = req.query.token || authHeader.replace("Bearer ", "") || "";
-    if (bearerToken) {
-      try {
-        const decoded = jwt.verify(bearerToken, JWT_SECRET);
-        if (decoded.role === "admin") authorized = true;
-      } catch(e) {}
-    }
-  }
-  if (!authorized) {
+  if (key !== DASHBOARD_KEY) {
     context.res = { status:401, headers:{"Content-Type":"application/json"}, body: JSON.stringify({error:"Unauthorized"}) };
     return;
   }
@@ -200,7 +185,8 @@ module.exports = async function(context, req) {
           auditHash:record.auditHash, verified:record.verified||false,
           term:record.formData&&record.formData.term, rep:record.formData&&record.formData.rep,
           monthly:(record.signed&&record.signed.monthly)||(record.formData&&record.formData.monthly)||'',
-          formData:record.formData, signed:record.signed, auditTrail:record.auditTrail
+          formData:record.formData, signed:record.signed, auditTrail:record.auditTrail,
+          bookingContractId:record.bookingContractId||null
         });
       } catch(e) { context.log.warn("skip blob:", blob.name, e.message); }
     }
