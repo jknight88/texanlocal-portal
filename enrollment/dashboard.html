@@ -271,6 +271,17 @@ function renderTable() {
     if (!isSigned && !isAwait) actions += '<button class="btn-sm btn-resend" onclick="resend(\'' + sid + '\', this)">&#8635; Resend</button>';
     actions += '<button class="btn-sm btn-del" onclick="deleteRecord(\'' + sid + '\', \'' + biz + '\')">&#128465;</button>';
 
+    // Booking status indicator (only for signed agreements)
+    var bookingBadge = '';
+    if (isSigned) {
+      if (r.bookingContractId) {
+        bookingBadge = '<div style="margin-top:4px"><span style="background:#e8f5e9;color:#1a5c1a;border:1px solid #a5d6a7;border-radius:3px;font-size:10px;font-weight:700;padding:1px 6px">✓ Booked</span></div>';
+      } else {
+        bookingBadge = '<div style="margin-top:4px"><span style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:3px;font-size:10px;font-weight:700;padding:1px 6px">⚠ No Booking</span>'
+          + '&nbsp;<button class="btn-sm" style="background:#e65100;color:#fff;border:none;font-size:10px;padding:1px 7px" onclick="retryBooking(\'' + sid + '\', this)">↩ Retry</button></div>';
+      }
+    }
+
     html += '<tr>' +
       '<td style="font-weight:700;color:var(--bl)">' + rep + '</td>' +
       '<td><strong>' + biz + '</strong></td>' +
@@ -280,7 +291,7 @@ function renderTable() {
       '<td style="font-size:11px;white-space:nowrap">' + fmt(r.createdAt) + '</td>' +
       '<td style="font-size:11px;white-space:nowrap;color:' + (r.openedAt ? 'var(--amber)' : '#aaa') + '">' + (r.openedAt ? fmt(r.openedAt) : '—') + '</td>' +
       '<td style="font-size:11px;white-space:nowrap;color:var(--green)">' + (isSigned ? '✓ ' + fmt(r.signedAt) : '—') + '</td>' +
-      '<td><span class="badge ' + badgeClass + '">' + badgeLabel + '</span></td>' +
+      '<td><span class="badge ' + badgeClass + '">' + badgeLabel + '</span>' + bookingBadge + '</td>' +
       '<td style="white-space:nowrap">' + actions + '</td>' +
       '</tr>';
   });
@@ -289,7 +300,44 @@ function renderTable() {
   document.getElementById('tableWrap').innerHTML = html;
 }
 
-function viewDoc(sessionId) {
+async function retryBooking(sessionId, btn) {
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const res  = await fetch('/api/createBookingFromEnrollment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ sessionId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    if (data.alreadyExists) {
+      showToast('Booking already exists for this enrollment', false);
+    } else {
+      showToast('✓ Booking created! ' + (data.bookingsCreated||0) + ' monthly slots', false);
+    }
+    await loadData(); // Refresh table to show updated status
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '↩ Retry';
+    showToast('Retry failed: ' + e.message, true);
+  }
+}
+
+function showToast(msg, isErr) {
+  var t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.background = isErr ? '#BF0D3E' : '#1a5c1a';
+  t.style.opacity = '1';
+  setTimeout(function(){ t.style.opacity = '0'; }, 3500);
+}
   var r = allData.find(function(x){ return x.sessionId === sessionId; });
   if (!r || !r.signed) { alert('Signed document data not available.'); return; }
   var s = r.signed;
