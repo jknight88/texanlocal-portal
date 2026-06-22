@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Texan Local — Emails</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--bg:#dde0e6;--md:#4a4f5e;--br:#c8cdd8;--green:#1a5c1a;--amber:#e65100}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:var(--bl);border-bottom:4px solid var(--rd);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.hdr-logo{height:44px}
+.hdr-l h1{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.hdr-r{display:flex;gap:8px}
+.btn-hdr{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.btn-hdr:hover{background:rgba(255,255,255,.2)}
+.main{max-width:1400px;margin:0 auto;padding:1.5rem;flex:1;width:100%;display:flex;gap:1.2rem}
+
+/* Left sidebar */
+.sidebar{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:.6rem}
+.sidebar-btn{background:#fff;border:none;border-radius:6px;padding:.75rem 1rem;text-align:left;font-size:13px;font-weight:700;color:var(--md);cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(0,0,0,.07);transition:all .15s;display:flex;align-items:center;gap:8px}
+.sidebar-btn:hover{background:#f5f8ff;color:var(--bl)}
+.sidebar-btn.active{background:var(--bl);color:#fff}
+.sidebar-divider{height:1px;background:var(--br);margin:.3rem 0}
+
+/* Content */
+.content{flex:1;min-width:0}
+
+/* Compose card */
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;margin-bottom:1rem}
+.card-hdr{background:var(--bl);padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--rd)}
+.card-hdr h2{color:#fff;font-size:13px;font-weight:700}
+.card-body{padding:1.2rem}
+
+/* Compose fields */
+.field-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:.75rem;border-bottom:1px solid #f0f2f5;padding-bottom:.75rem}
+.field-label{font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;width:60px;flex-shrink:0;padding-top:8px}
+.field-input{flex:1}
+.field-input input{width:100%;border:none;outline:none;font-size:14px;font-family:inherit;padding:6px 0;color:#1a1a2e}
+.to-tags{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:32px}
+.to-tag{display:inline-flex;align-items:center;gap:4px;background:#e8ecf8;color:var(--bl);border-radius:3px;padding:2px 8px;font-size:12px;font-weight:600}
+.to-tag button{background:none;border:none;color:var(--md);cursor:pointer;font-size:13px;padding:0;line-height:1}
+.to-tag button:hover{color:var(--rd)}
+.to-input{border:none;outline:none;font-size:13px;font-family:inherit;min-width:160px;padding:4px 0}
+.to-dropdown{position:absolute;background:#fff;border:1px solid var(--br);border-radius:5px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:50;max-height:200px;overflow-y:auto;min-width:280px}
+.to-dropdown-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f5f5f5}
+.to-dropdown-item:hover{background:#f5f8ff}
+.to-dropdown-item .item-name{font-weight:700;color:var(--bl)}
+.to-dropdown-item .item-email{font-size:11px;color:var(--md)}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:2px;padding:.5rem;background:#f9fafc;border-bottom:1px solid #f0f2f5;flex-wrap:wrap}
+.tb-btn{background:none;border:1px solid transparent;border-radius:3px;padding:3px 7px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--md);transition:all .1s}
+.tb-btn:hover{background:#e8ecf8;border-color:#c0ccff;color:var(--bl)}
+.tb-btn.active{background:#e8ecf8;border-color:#c0ccff;color:var(--bl);font-weight:700}
+.tb-sep{width:1px;height:20px;background:var(--br);margin:0 4px}
+.tb-select{padding:3px 6px;border:1px solid var(--br);border-radius:3px;font-size:12px;font-family:inherit;background:#fff;outline:none;cursor:pointer}
+
+/* Editor */
+.editor-wrap{position:relative}
+#editor{min-height:320px;padding:1rem;outline:none;font-size:14px;line-height:1.7;color:#1a1a2e;font-family:'Source Sans 3',sans-serif}
+#editor:empty::before{content:'Write your email here…';color:#aaa;pointer-events:none}
+#editor img{max-width:100%;height:auto;display:block;margin:8px 0;border-radius:4px;cursor:pointer}
+#editor img.selected{outline:2px solid var(--bl);border-radius:4px}
+
+/* Attachments */
+.attach-row{padding:.75rem 1rem;border-top:1px solid #f0f2f5;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.attach-chip{display:inline-flex;align-items:center;gap:5px;background:#f0f4ff;border:1px solid #c0ccff;border-radius:4px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--bl)}
+.attach-chip button{background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;padding:0}
+.attach-chip button:hover{color:var(--rd)}
+.btn-attach{background:none;border:1px solid var(--br);border-radius:4px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--md);font-family:inherit}
+.btn-attach:hover{border-color:var(--bl);color:var(--bl)}
+
+/* Action bar */
+.action-bar{padding:.9rem 1.2rem;border-top:1px solid #f0f2f5;display:flex;align-items:center;gap:8px}
+.btn-send{background:var(--bl);color:#fff;border:none;padding:9px 24px;border-radius:5px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-send:hover{background:#001844}
+.btn-send:disabled{background:#aaa;cursor:not-allowed}
+.btn-save-tpl{background:#f0f4ff;color:var(--bl);border:1px solid #c0ccff;padding:9px 16px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-clear{background:none;border:1px solid var(--br);padding:9px 16px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--md)}
+
+/* Templates panel */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.8rem;padding:1rem}
+.tpl-card{background:#fff;border:1px solid var(--br);border-radius:6px;padding:.9rem 1rem;cursor:pointer;transition:all .15s}
+.tpl-card:hover{border-color:var(--bl);box-shadow:0 2px 8px rgba(0,32,91,.1)}
+.tpl-card h4{font-size:13px;font-weight:700;color:var(--bl);margin-bottom:3px}
+.tpl-card .tpl-cat{font-size:10px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.tpl-card .tpl-preview{font-size:11px;color:var(--md);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tpl-card .tpl-actions{display:flex;gap:6px;margin-top:8px}
+.tpl-use{background:var(--bl);color:#fff;border:none;padding:4px 10px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.tpl-del{background:#fff0f0;color:#c62828;border:1px solid #ffcdd2;padding:4px 8px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.empty-tpl{padding:2.5rem;text-align:center;color:var(--md)}
+.empty-tpl .ei{font-size:36px;margin-bottom:8px}
+
+/* Sent log */
+.log-table{width:100%;border-collapse:collapse}
+.log-table thead{background:var(--bl)}
+.log-table thead th{color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:left}
+.log-table tbody tr{border-bottom:1px solid #f0f2f5;transition:background .1s}
+.log-table tbody tr:hover{background:#f5f8ff}
+.log-table td{padding:9px 12px;font-size:13px;vertical-align:middle}
+.open-badge{background:#e8f5e9;color:#1a5c1a;border:1px solid #a5d6a7;display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700}
+.notopen-badge{background:#f5f5f5;color:#757575;border:1px solid #e0e0e0;display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700}
+
+/* Save template modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:8px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden}
+.modal-hdr{background:var(--bl);padding:.8rem 1.2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--rd)}
+.modal-hdr h3{color:#fff;font-size:14px;font-weight:700}
+.modal-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+.modal-body{padding:1.2rem;display:flex;flex-direction:column;gap:.8rem}
+.modal-field label{display:block;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.modal-field input,.modal-field select{width:100%;padding:8px 10px;border:1px solid var(--br);border-radius:4px;font-size:13px;font-family:inherit;outline:none}
+.modal-footer{padding:.9rem 1.2rem;border-top:1px solid #f0f2f5;display:flex;justify-content:flex-end;gap:8px}
+.btn-primary{background:var(--bl);color:#fff;border:none;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-secondary{background:#f5f5f5;color:var(--md);border:1px solid var(--br);padding:8px 16px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.err{background:var(--rd)}
+.toast.ok{background:var(--green)}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-l">
+    <img class="hdr-logo" src="/assets/logo.png" alt="" onerror="this.style.display='none'">
+    <h1>Emails</h1>
+  </div>
+  <div class="hdr-r">
+    <a href="/home" class="btn-hdr">← Portal Home</a>
+    <button class="btn-hdr" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <button class="sidebar-btn active" id="btn-compose" onclick="setView('compose')">✏️ Compose</button>
+    <button class="sidebar-btn" id="btn-templates" onclick="setView('templates')">📋 Templates</button>
+    <div class="sidebar-divider"></div>
+    <button class="sidebar-btn" id="btn-sent" onclick="setView('sent')">📤 Sent Log</button>
+  </div>
+
+  <!-- Content -->
+  <div class="content" id="content">
+    <!-- Compose view loaded by default -->
+  </div>
+</div>
+
+<!-- Save Template Modal -->
+<div class="modal-overlay" id="tplModal" onclick="if(event.target===this)closeTplModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>Save as Template</h3>
+      <button class="modal-close" onclick="closeTplModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field"><label>Template Name *</label><input type="text" id="tplName" placeholder="e.g. Cold Outreach — Zone 1"></div>
+      <div class="modal-field"><label>Category</label>
+        <select id="tplCat">
+          <option value="Cold Outreach">Cold Outreach</option>
+          <option value="Follow-Up">Follow-Up</option>
+          <option value="Renewal">Renewal</option>
+          <option value="Announcement">Announcement</option>
+          <option value="Thank You">Thank You</option>
+          <option value="General">General</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeTplModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveTemplate()">Save Template</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="attachInput" accept="image/*,.pdf,.jpg,.jpeg,.png" multiple style="display:none" onchange="handleAttach(this.files)">
+<input type="file" id="embedInput" accept="image/*,.jpg,.jpeg,.png" style="display:none" onchange="handleEmbed(this.files)">
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+const BASE_URL = 'https://portal.thetexanlocal.com';
+let currentView = 'compose';
+let toRecipients = [];
+let attachments  = [];
+let allContacts  = [];
+let templates    = [];
+let sentLog      = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const token = sessionStorage.getItem('txl_token');
+  const res   = await fetch(API+'/authVerify'+(token?'?token='+token:''), { credentials:'include' });
+  if (!res.ok) { window.location.href='/'; return; }
+  const user = await res.json();
+  if (user.role !== 'admin') { window.location.href='/home'; return; }
+
+  // Load contacts (clients + prospects) for To: autocomplete
+  try {
+    const [cr, pr] = await Promise.all([
+      fetch(API+'/getClients',   { credentials:'include' }).then(r=>r.json()),
+      fetch(API+'/getProspects', { credentials:'include' }).then(r=>r.json())
+    ]);
+    (cr.clients||[]).forEach(function(c){ allContacts.push({ name:c.business, email:c.email, type:'client', contact:c.contact }); });
+    (pr.prospects||[]).forEach(function(p){ allContacts.push({ name:p.business, email:p.email, type:'prospect', contact:p.contact }); });
+  } catch(e) {}
+
+  // Load templates from localStorage
+  try { templates = JSON.parse(localStorage.getItem('txl_email_templates')||'[]'); } catch(e) { templates=[]; }
+
+  // Load sent log
+  await loadSentLog();
+
+  setView('compose');
+}
+
+// ── Views ─────────────────────────────────────────────────────────────────────
+function setView(v) {
+  currentView = v;
+  ['compose','templates','sent'].forEach(function(k){
+    document.getElementById('btn-'+k).classList.toggle('active', k===v);
+  });
+  if (v==='compose')   renderCompose();
+  else if (v==='templates') renderTemplates();
+  else if (v==='sent') renderSent();
+}
+
+// ── Compose ───────────────────────────────────────────────────────────────────
+function renderCompose() {
+  const area = document.getElementById('content');
+  area.innerHTML = `
+  <div class="card">
+    <div class="card-hdr"><h2>✏️ New Email</h2></div>
+
+    <!-- To -->
+    <div class="card-body" style="padding-bottom:0">
+      <div class="field-row" style="position:relative">
+        <div class="field-label">To</div>
+        <div class="field-input">
+          <div class="to-tags" id="toTags" onclick="document.getElementById('toInput').focus()">
+            <input class="to-input" id="toInput" placeholder="Name or email…" autocomplete="off"
+              oninput="showSuggestions(this.value)"
+              onkeydown="handleToKey(event)">
+          </div>
+          <div class="to-dropdown" id="toDropdown" style="display:none"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Subject</div>
+        <div class="field-input"><input type="text" id="emailSubject" placeholder="Subject line…" style="width:100%;border:none;outline:none;font-size:14px;font-family:inherit;padding:6px 0"></div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <select class="tb-select" onchange="execCmd('fontSize',this.value)" id="fsSel">
+        <option value="3">Normal</option><option value="1">Small</option><option value="4">Large</option><option value="5">X-Large</option>
+      </select>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="execCmd('bold')" title="Bold"><b>B</b></button>
+      <button class="tb-btn" onclick="execCmd('italic')" title="Italic"><i>I</i></button>
+      <button class="tb-btn" onclick="execCmd('underline')" title="Underline"><u>U</u></button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="execCmd('justifyLeft')"  title="Align Left">⬅</button>
+      <button class="tb-btn" onclick="execCmd('justifyCenter')" title="Center">↔</button>
+      <button class="tb-btn" onclick="execCmd('justifyRight')" title="Align Right">➡</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List">• List</button>
+      <button class="tb-btn" onclick="execCmd('insertOrderedList')"   title="Numbered List">1. List</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="insertLink()"  title="Insert Link">🔗 Link</button>
+      <button class="tb-btn" onclick="document.getElementById('embedInput').click()" title="Embed Image">🖼 Image</button>
+      <div class="tb-sep"></div>
+      <select class="tb-select" onchange="execCmd('foreColor',this.value)" title="Text Color">
+        <option value="#1a1a2e">Default</option>
+        <option value="#00205B">Navy</option>
+        <option value="#BF0D3E">Red</option>
+        <option value="#1a5c1a">Green</option>
+        <option value="#e65100">Orange</option>
+        <option value="#888888">Grey</option>
+      </select>
+    </div>
+
+    <!-- Editor -->
+    <div class="editor-wrap">
+      <div id="editor" contenteditable="true" spellcheck="true"
+        onclick="handleEditorClick(event)"
+        onkeyup="updateToolbarState()"
+        onmouseup="updateToolbarState()"></div>
+    </div>
+
+    <!-- Attachments -->
+    <div class="attach-row">
+      <button class="btn-attach" onclick="document.getElementById('attachInput').click()">📎 Attach File</button>
+      <div id="attachChips"></div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="action-bar">
+      <button class="btn-send" id="sendBtn" onclick="sendEmail()">📤 Send Email</button>
+      <button class="btn-save-tpl" onclick="openTplModal()">💾 Save as Template</button>
+      <button class="btn-clear" onclick="clearCompose()">Clear</button>
+      <span id="sendStatus" style="font-size:12px;color:var(--md);margin-left:8px"></span>
+    </div>
+  </div>`;
+
+  // Restore recipients
+  renderToTags();
+  renderAttachChips();
+  document.getElementById('editor').focus();
+  document.addEventListener('click', closeSuggestionsOnOutside);
+}
+
+// ── To field ──────────────────────────────────────────────────────────────────
+function renderToTags() {
+  const wrap = document.getElementById('toTags');
+  if (!wrap) return;
+  const input = document.getElementById('toInput');
+  wrap.innerHTML = '';
+  toRecipients.forEach(function(r, i) {
+    const chip = document.createElement('span');
+    chip.className = 'to-tag';
+    chip.innerHTML = esc(r.name||r.email) + ' <button onclick="removeRecipient('+i+')">✕</button>';
+    wrap.appendChild(chip);
+  });
+  wrap.appendChild(input||createToInput());
+}
+
+function createToInput() {
+  const inp = document.createElement('input');
+  inp.className = 'to-input'; inp.id = 'toInput'; inp.placeholder = 'Name or email…';
+  inp.setAttribute('autocomplete','off');
+  inp.oninput = function(){ showSuggestions(this.value); };
+  inp.onkeydown = handleToKey;
+  return inp;
+}
+
+function showSuggestions(q) {
+  const dd = document.getElementById('toDropdown');
+  if (!dd) return;
+  if (!q || q.length < 2) { dd.style.display='none'; return; }
+  const matches = allContacts.filter(function(c) {
+    return (c.name||'').toLowerCase().includes(q.toLowerCase()) ||
+           (c.email||'').toLowerCase().includes(q.toLowerCase()) ||
+           (c.contact||'').toLowerCase().includes(q.toLowerCase());
+  }).slice(0, 8);
+  if (!matches.length) { dd.style.display='none'; return; }
+  dd.innerHTML = matches.map(function(c, i) {
+    return '<div class="to-dropdown-item" onclick="addRecipient('+i+')">'+
+      '<div class="item-name">'+esc(c.business||c.name||'')+'</div>'+
+      '<div class="item-email">'+esc(c.contact||'')+' · '+esc(c.email||'')+'</div>'+
+    '</div>';
+  }).join('');
+  dd._matches = matches;
+  dd.style.display = 'block';
+  // Position below the to field
+  const toField = document.getElementById('toTags');
+  if (toField) {
+    const rect = toField.getBoundingClientRect();
+    dd.style.top = (rect.bottom + window.scrollY) + 'px';
+    dd.style.left = rect.left + 'px';
+    dd.style.position = 'fixed';
+  }
+}
+
+function addRecipient(idx) {
+  const dd = document.getElementById('toDropdown');
+  const c  = dd && dd._matches ? dd._matches[idx] : null;
+  if (!c) return;
+  if (!toRecipients.find(function(r){ return r.email===c.email; })) {
+    toRecipients.push({ name:c.name||c.business||c.contact||c.email, email:c.email });
+  }
+  const inp = document.getElementById('toInput');
+  if (inp) inp.value = '';
+  dd.style.display = 'none';
+  renderToTags();
+  setTimeout(function(){ const i=document.getElementById('toInput'); if(i)i.focus(); },50);
+}
+
+function handleToKey(e) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/,$/, '');
+    if (val.includes('@')) {
+      if (!toRecipients.find(function(r){ return r.email===val; })) {
+        toRecipients.push({ name:val, email:val });
+      }
+      e.target.value = '';
+      renderToTags();
+    }
+  } else if (e.key === 'Backspace' && !e.target.value && toRecipients.length) {
+    toRecipients.pop();
+    renderToTags();
+  }
+}
+
+function removeRecipient(idx) {
+  toRecipients.splice(idx, 1);
+  renderToTags();
+}
+
+function closeSuggestionsOnOutside(e) {
+  const dd = document.getElementById('toDropdown');
+  if (dd && !dd.contains(e.target) && e.target.id !== 'toInput') dd.style.display='none';
+}
+
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+function execCmd(cmd, val) {
+  document.getElementById('editor').focus();
+  document.execCommand(cmd, false, val||null);
+}
+
+function updateToolbarState() {
+  ['bold','italic','underline'].forEach(function(cmd) {
+    const btn = document.querySelector('.tb-btn[onclick="execCmd(\''+cmd+'\')"]');
+    if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
+  });
+}
+
+function insertLink() {
+  const url = prompt('Enter URL:','https://');
+  if (url) {
+    const sel = window.getSelection();
+    const txt = sel && sel.toString() ? sel.toString() : url;
+    document.getElementById('editor').focus();
+    document.execCommand('insertHTML', false, '<a href="'+url+'" target="_blank">'+txt+'</a>');
+  }
+}
+
+// ── Embed image ───────────────────────────────────────────────────────────────
+function handleEmbed(files) {
+  Array.from(files).forEach(function(file) {
+    if (!file.type.startsWith('image/')) { showToast('Only images can be embedded inline', true); return; }
+    if (file.size > 5*1024*1024) { showToast('Image too large for inline embed (max 5MB)', true); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('editor').focus();
+      document.execCommand('insertHTML', false,
+        '<img src="'+e.target.result+'" alt="'+esc(file.name)+'" style="max-width:100%;height:auto;display:block;margin:8px 0;border-radius:4px">');
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('embedInput').value='';
+}
+
+function handleEditorClick(e) {
+  // Select image on click
+  document.querySelectorAll('#editor img').forEach(function(img){ img.classList.remove('selected'); });
+  if (e.target.tagName === 'IMG') e.target.classList.add('selected');
+}
+
+// ── Attachments ───────────────────────────────────────────────────────────────
+function handleAttach(files) {
+  Array.from(files).forEach(function(file) {
+    if (file.size > 15*1024*1024) { showToast('File too large — max 15MB per attachment', true); return; }
+    const exists = attachments.find(function(a){ return a.name===file.name&&a.size===file.size; });
+    if (!exists) attachments.push(file);
+  });
+  renderAttachChips();
+  document.getElementById('attachInput').value='';
+}
+
+function removeAttach(idx) {
+  attachments.splice(idx, 1);
+  renderAttachChips();
+}
+
+function renderAttachChips() {
+  const wrap = document.getElementById('attachChips');
+  if (!wrap) return;
+  wrap.innerHTML = attachments.map(function(f, i) {
+    const sz = f.size>1048576?(f.size/1048576).toFixed(1)+'MB':Math.round(f.size/1024)+'KB';
+    return '<span class="attach-chip">📎 '+esc(f.name)+' ('+sz+') <button onclick="removeAttach('+i+')" title="Remove">✕</button></span>';
+  }).join('');
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+async function sendEmail() {
+  if (!toRecipients.length) { showToast('Please add at least one recipient', true); return; }
+  const subject = (document.getElementById('emailSubject')||{}).value||'';
+  if (!subject.trim()) { showToast('Please enter a subject line', true); return; }
+  const body = document.getElementById('editor').innerHTML;
+  if (!body.trim() || body === '<br>') { showToast('Please write your email', true); return; }
+
+  const btn = document.getElementById('sendBtn');
+  const st  = document.getElementById('sendStatus');
+  btn.disabled=true; btn.textContent='Sending…';
+  if (st) st.textContent='';
+
+  try {
+    // Inject tracking pixel
+    const trackingId = 'email_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+    const pixel = '<img src="'+BASE_URL+'/api/trackEmailOpen?id='+trackingId+'" width="1" height="1" style="display:none" alt="">';
+    const fullBody = body + pixel;
+
+    // Read attachments as base64
+    const attachData = [];
+    for (const f of attachments) {
+      const b64 = await new Promise(function(res,rej){
+        const r=new FileReader(); r.onload=function(){ res(r.result.split(',')[1]); }; r.onerror=rej; r.readAsDataURL(f);
+      });
+      attachData.push({ name:f.name, type:f.type||'application/octet-stream', data:b64 });
+    }
+
+    const res = await fetch(API+'/sendEmail', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({
+        to:          toRecipients,
+        subject,
+        htmlBody:    fullBody,
+        attachments: attachData,
+        trackingId
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Send failed');
+
+    showToast('✓ Email sent to '+toRecipients.length+' recipient'+(toRecipients.length>1?'s':'')+'!', false);
+    // Clear after send
+    setTimeout(function(){
+      toRecipients=[]; attachments=[];
+      document.getElementById('editor').innerHTML='';
+      document.getElementById('emailSubject').value='';
+      renderToTags(); renderAttachChips();
+      btn.disabled=false; btn.textContent='📤 Send Email';
+      if(st) st.textContent='';
+    }, 1500);
+    // Reload sent log
+    await loadSentLog();
+  } catch(e) {
+    btn.disabled=false; btn.textContent='📤 Send Email';
+    showToast('Send failed: '+e.message, true);
+  }
+}
+
+function clearCompose() {
+  if (!confirm('Clear the email composer?')) return;
+  toRecipients=[]; attachments=[];
+  document.getElementById('editor').innerHTML='';
+  document.getElementById('emailSubject').value='';
+  renderToTags(); renderAttachChips();
+}
+
+// ── Templates ─────────────────────────────────────────────────────────────────
+function openTplModal() {
+  const subj = document.getElementById('emailSubject')||{};
+  document.getElementById('tplName').value = subj.value||'';
+  document.getElementById('tplModal').classList.add('show');
+}
+function closeTplModal() { document.getElementById('tplModal').classList.remove('show'); }
+
+function saveTemplate() {
+  const name = document.getElementById('tplName').value.trim();
+  if (!name) { showToast('Please enter a template name', true); return; }
+  const cat  = document.getElementById('tplCat').value;
+  const subj = (document.getElementById('emailSubject')||{}).value||'';
+  const body = document.getElementById('editor').innerHTML;
+  templates.push({ id:'tpl_'+Date.now(), name, cat, subject:subj, body, createdAt:new Date().toISOString() });
+  localStorage.setItem('txl_email_templates', JSON.stringify(templates));
+  closeTplModal();
+  showToast('✓ Template saved!', false);
+}
+
+function useTemplate(idx) {
+  const t = templates[idx];
+  if (!t) return;
+  setView('compose');
+  setTimeout(function(){
+    // Substitute variables with first recipient if available
+    const rec = toRecipients[0];
+    let subj = t.subject, body = t.body;
+    if (rec) {
+      subj = subj.replace(/\{\{business\}\}/gi, rec.name||'').replace(/\{\{contact\}\}/gi, rec.name||'');
+      body = body.replace(/\{\{business\}\}/gi, rec.name||'').replace(/\{\{contact\}\}/gi, rec.name||'');
+    }
+    document.getElementById('emailSubject').value = subj;
+    document.getElementById('editor').innerHTML   = body;
+  }, 100);
+}
+
+function deleteTemplate(idx) {
+  if (!confirm('Delete this template?')) return;
+  templates.splice(idx, 1);
+  localStorage.setItem('txl_email_templates', JSON.stringify(templates));
+  renderTemplates();
+  showToast('Template deleted');
+}
+
+function renderTemplates() {
+  const area = document.getElementById('content');
+  const cats = {};
+  templates.forEach(function(t,i){ (cats[t.cat]||(cats[t.cat]=[])).push({t,i}); });
+
+  let html = '<div class="card"><div class="card-hdr"><h2>📋 Email Templates</h2>'+
+    '<button class="btn-hdr" onclick="setView(\'compose\')">+ New Email</button></div>';
+
+  if (!templates.length) {
+    html += '<div class="empty-tpl"><div class="ei">📋</div><p>No templates yet.<br>Compose an email and click "Save as Template".</p></div>';
+  } else {
+    Object.keys(cats).forEach(function(cat) {
+      html += '<div style="padding:.8rem 1rem .4rem;font-size:11px;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #f0f2f5">'+esc(cat)+'</div>';
+      html += '<div class="tpl-grid">';
+      cats[cat].forEach(function(item) {
+        const t=item.t, i=item.i;
+        const preview = t.body.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,80)+'…';
+        html += '<div class="tpl-card">'+
+          '<div class="tpl-cat">'+esc(t.cat)+'</div>'+
+          '<h4>'+esc(t.name)+'</h4>'+
+          '<div class="tpl-preview">'+esc(preview)+'</div>'+
+          '<div class="tpl-actions">'+
+            '<button class="tpl-use" onclick="useTemplate('+i+')">Use Template</button>'+
+            '<button class="tpl-del" onclick="deleteTemplate('+i+')">Delete</button>'+
+          '</div>'+
+        '</div>';
+      });
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+// ── Sent log ──────────────────────────────────────────────────────────────────
+async function loadSentLog() {
+  try {
+    const res  = await fetch(API+'/getEmailLog', { credentials:'include' });
+    const data = await res.json();
+    sentLog = data.emails || [];
+  } catch(e) { sentLog = []; }
+}
+
+function renderSent() {
+  const area = document.getElementById('content');
+  let html = '<div class="card"><div class="card-hdr"><h2>📤 Sent Log ('+sentLog.length+')</h2></div>';
+  if (!sentLog.length) {
+    html += '<div class="empty-tpl"><div class="ei">📤</div><p>No emails sent yet</p></div>';
+  } else {
+    html += '<table class="log-table"><thead><tr>'+
+      '<th>Sent</th><th>To</th><th>Subject</th><th>Opened</th></tr></thead><tbody>';
+    sentLog.forEach(function(e) {
+      const openBadge = e.openedAt
+        ? '<span class="open-badge">✓ Opened '+fmtDate(e.openedAt)+'</span>'
+        : '<span class="notopen-badge">Not opened</span>';
+      const toList = (e.to||[]).map(function(r){ return esc(r.name||r.email); }).join(', ');
+      html += '<tr>'+
+        '<td style="white-space:nowrap;color:var(--md);font-size:12px">'+fmtDate(e.sentAt)+'</td>'+
+        '<td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(toList)+'">'+esc(toList)+'</td>'+
+        '<td style="font-weight:600">'+esc(e.subject||'—')+'</td>'+
+        '<td>'+openBadge+'</td>'+
+      '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg, isErr) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(isErr?' err':isErr===false?' ok':'');
+  setTimeout(function(){ t.className='toast'; }, 3500);
+}
+async function logout(){
+  await fetch(API+'/authLogout',{method:'POST',credentials:'include'});
+  sessionStorage.clear(); window.location.href='/';
+}
+init();
+</script>
+</body>
+</html>
