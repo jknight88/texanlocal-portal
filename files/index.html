@@ -211,7 +211,8 @@ async function loadFiles() {
           '<td class="td-actions" onclick="event.stopPropagation()">'+
             '<button class="btn-sm btn-view" onclick="previewFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')">👁 Preview</button>'+
             '<button class="btn-sm btn-download" onclick="downloadFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')">⬇</button>'+
-            (userRole==='admin'?'<button class="btn-sm btn-delete" onclick="deleteFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')">🗑</button>':'')+
+            (userRole==='admin'?'<button class="btn-sm" style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80" onclick="renameFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')" title="Rename">✏ Rename</button>'+
+'<button class="btn-sm btn-delete" onclick="deleteFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')">🗑</button>':'')+
           '</td></tr>';
       }).join('')+'</tbody></table>';
   } catch(e) {
@@ -340,6 +341,30 @@ function showToast(msg, isErr) {
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='toast show'+(isErr?' err':'');
   setTimeout(()=>t.className='toast',3000);
+}
+
+
+async function renameFile(fullPath, name) {
+  const noExt   = name.replace(/\.pdf$/i,'');
+  const newName = prompt('Rename file:\n\n' + name + '\n\nEnter new filename (without .pdf):', noExt);
+  if (!newName || newName.trim() === noExt) return;
+  const newFilename = newName.trim() + '.pdf';
+  if (!/^[a-zA-Z0-9_\-\.\s]+\.pdf$/i.test(newFilename)) {
+    alert('Invalid filename. Use letters, numbers, underscores, hyphens and dots only.');
+    return;
+  }
+  try {
+    showToast('Renaming…');
+    const res  = await fetch(API+'/renameFile', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+      body: JSON.stringify({ oldPath: fullPath, newName: newFilename })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Rename failed');
+    showToast('✓ Renamed to '+newFilename);
+    if (currentPreviewPath===fullPath) closePreview();
+    loadFiles();
+  } catch(e) { showToast('Rename failed: '+e.message, true); }
 }
 
 function formatDate(iso) {
