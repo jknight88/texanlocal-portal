@@ -1,4 +1,3 @@
-
 {
   "routes": [
     {
@@ -68,6 +67,10 @@
     {
       "route": "/bookings",
       "rewrite": "/bookings/index.html"
+    },
+    {
+      "route": "/emails",
+      "rewrite": "/emails/index.html"
     }
   ],
   "navigationFallback": {
