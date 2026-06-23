@@ -105,206 +105,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);min-height:100v
 </div>
 
 <script>
-const API = '/api';
-
-// ── All available modules ─────────────────────────────────────────────────────
-// roles: which roles can see this tile
-const ALL_MODULES = [
-  {
-    id: 'enrollment',
-    icon: '📋', iconClass: 'icon-enroll',
-    title: 'Enrollment',
-    desc: 'Send advertising agreements and track client e-sign status.',
-    href: '/enrollment/dashboard',
-    footer: 'View enrollment dashboard',
-    roles: ['admin', 'rep']
-  },
-  {
-    id: 'approvals',
-    icon: '📊', iconClass: 'icon-approval',
-    title: 'Ad Approvals',
-    desc: 'Send proofs, track approvals, upload files and manage all client ad statuses.',
-    href: '/approvals/dashboard',
-    footer: 'View approval dashboard',
-    roles: ['admin']
-  },
-  {
-    id: 'files',
-    icon: '📁', iconClass: 'icon-files',
-    title: 'File Manager',
-    desc: 'Browse, preview, and download ad proof PDFs by mailing month.',
-    href: '/files',
-    footer: 'Browse files',
-    roles: ['admin', 'designer']
-  },
-  {
-    id: 'clients',
-    icon: '👥', iconClass: 'icon-clients',
-    title: 'Clients',
-    desc: 'Manage active clients, past clients, and prospects. Import from CSV.',
-    href: '/clients',
-    footer: 'Manage clients',
-    roles: ['admin', 'rep']
-  },
-  {
-    id: 'prospects',
-    icon: '🎯', iconClass: 'icon-prospects',
-    title: 'Prospects',
-    desc: 'Track potential advertisers, log contacts and set follow-up reminders.',
-    href: '/prospects',
-    footer: 'View prospects',
-    roles: ['admin', 'rep']
-  },
-  {
-    id: 'bookings',
-    icon: '📋', iconClass: 'icon-dashboard',
-    title: 'Bookings',
-    desc: 'Manage contracts, monthly ad bookings, zone revenue summaries and renewal tracking.',
-    href: '/bookings',
-    footer: 'Open bookings',
-    roles: ['admin']
-  },
-  {
-    id: 'layout',
-    icon: '📰', iconClass: 'icon-dashboard',
-    title: 'Magazine Layout',
-    desc: 'Build and manage zone magazine layouts. Drag and drop artwork onto pages.',
-    href: '/layout',
-    footer: 'Open layout builder',
-    roles: ['admin', 'designer']
-  },
-  {
-    id: 'setup',
-    icon: '⚙️', iconClass: 'icon-settings',
-    title: 'Company Setup',
-    desc: 'Configure zones, publication info, designer contact and default settings.',
-    href: '/setup',
-    footer: 'Manage settings',
-    roles: ['admin']
-  },
-  {
-    id: 'upload',
-    icon: '⬆️', iconClass: 'icon-upload',
-    title: 'Upload Proofs',
-    desc: 'Upload completed ad proof PDFs. Bulk upload or name individually.',
-    href: '/upload',
-    footer: 'Add new files',
-    roles: ['designer'],
-    footer: 'Add new files'
-  }
-];
-
-async function init() {
-  // Auth
-  const token = sessionStorage.getItem('txl_token');
-  const res   = await fetch(API + '/authVerify' + (token ? '?token=' + token : ''), { credentials: 'include' });
-  if (!res.ok) { window.location.href = '/'; return; }
-  const user = await res.json();
-
-  // Header
-  document.getElementById('userPill').textContent = user.name || user.username;
-  document.getElementById('rolePill').textContent = user.role;
-
-  // Welcome
-  const now  = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const firstName = (user.name || user.username).split(' ')[0];
-  document.getElementById('welcomeMsg').textContent = greeting + ', ' + firstName + '!';
-  document.getElementById('welcomeDate').textContent = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-
-  // Render tiles for this role
-  renderModules(user.role);
-
-  // Load activity
-  loadActivity(user.role);
-}
-
-function renderModules(role) {
-  const grid    = document.getElementById('moduleGrid');
-  const visible = ALL_MODULES.filter(function(m) { return m.roles.indexOf(role) > -1; });
-
-  grid.innerHTML = visible.map(function(m) {
-    return '<button class="module-card" onclick="nav(\'' + m.href + '\')">' +
-      '<div class="module-top">' +
-        '<div class="module-icon ' + m.iconClass + '">' + m.icon + '</div>' +
-        '<div class="module-badge zero" id="badge-' + m.id + '">—</div>' +
-      '</div>' +
-      '<div class="module-info">' +
-        '<h3>' + m.title + '</h3>' +
-        '<p>' + m.desc + '</p>' +
-      '</div>' +
-      '<div class="module-footer">' +
-        '<span class="stat" id="stat-' + m.id + '">' + m.footer + '</span>' +
-        '<span>→</span>' +
-      '</div>' +
-    '</button>';
-  }).join('');
-}
-
-async function loadActivity(role) {
-  const list = document.getElementById('activityList');
-  const items = [];
-
-  try {
-    if (role === 'admin') {
-      // Load recent approvals
-      const now   = new Date();
-      const month = String(now.getMonth() + 1).padStart(2,'0');
-      const year  = now.getFullYear();
-      const res   = await fetch(API + '/getApprovalsDashboard?month=' + month + '&year=' + year, { credentials: 'include' });
-      const data  = await res.json();
-      (data.records || []).slice(0,10).forEach(function(r) {
-        const s = r.status;
-        items.push({
-          dot: s === 'approved' ? 'approved' : s === 'changes_requested' ? 'changes' : s === 'opened' ? 'opened' : 'sent',
-          text: r.business + ' — ' + (s === 'approved' ? 'Approved' : s === 'changes_requested' ? 'Requested changes' : s === 'opened' ? 'Opened proof' : 'Proof sent'),
-          time: r.respondedAt || r.openedAt || r.sentAt
-        });
-      });
-    }
-  } catch(e) {}
-
-  if (!items.length) {
-    list.innerHTML = '<div class="empty-feed">No recent activity</div>';
-    return;
-  }
-
-  items.sort(function(a,b) { return new Date(b.time) - new Date(a.time); });
-  list.innerHTML = items.slice(0,10).map(function(item) {
-    return '<div class="activity-item">' +
-      '<div class="a-dot ' + item.dot + '"></div>' +
-      '<span>' + esc(item.text) + '</span>' +
-      '<span class="a-time">' + fmtTime(item.time) + '</span>' +
-    '</div>';
-  }).join('');
-}
-
-function nav(href) { window.location.href = href; }
-
-async function logout() {
-  await fetch(API + '/authLogout', { method: 'POST', credentials: 'include' });
-  sessionStorage.clear();
-  window.location.href = '/';
-}
-
-function fmtTime(iso) {
-  if (!iso) return '';
-  const d   = new Date(iso);
-  const now = new Date();
-  const diff = Math.floor((now - d) / 60000);
-  if (diff < 1)   return 'just now';
-  if (diff < 60)  return diff + 'm ago';
-  if (diff < 1440) return Math.floor(diff/60) + 'h ago';
-  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-}
-
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-init();
-</script>
-</body>
-</html>  const tiles = [
+  const tiles = [
   // Row 1
   {
     id: 'enrollment',
@@ -407,7 +208,8 @@ init();
     footer: 'Browse files',
     roles: ['designer']
   }
-];!DOCTYPE html>
+];
+!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -521,56 +323,38 @@ const API = '/api';
 const ALL_MODULES = [
   {
     id: 'enrollment',
-    icon: '📋', iconClass: 'icon-enroll',
+    icon: '📝', iconClass: 'icon-enroll',
     title: 'Enrollment',
-    desc: 'Send advertising agreements and track client e-sign status.',
+    desc: 'Digital enrollment forms with e-signature. Send, sign in person, or countersign agreements.',
     href: '/enrollment/dashboard',
-    footer: 'View enrollment dashboard',
-    roles: ['admin', 'rep']
+    footer: 'New enrollment',
+    roles: ['admin']
   },
   {
     id: 'approvals',
-    icon: '📊', iconClass: 'icon-approval',
+    icon: '✅', iconClass: 'icon-approval',
     title: 'Ad Approvals',
-    desc: 'Send proofs, track approvals, upload files and manage all client ad statuses.',
+    desc: 'Send proof emails, track client responses, manage change requests and approval workflow.',
     href: '/approvals/dashboard',
-    footer: 'View approval dashboard',
+    footer: 'Send approvals',
+    roles: ['admin']
+  },
+  {
+    id: 'bookings',
+    icon: '📋', iconClass: 'icon-dashboard',
+    title: 'Bookings',
+    desc: 'Manage agreements, monthly ad bookings, zone revenue summaries and renewal tracking.',
+    href: '/bookings',
+    footer: 'Open bookings',
     roles: ['admin']
   },
   {
     id: 'files',
     icon: '📁', iconClass: 'icon-files',
     title: 'File Manager',
-    desc: 'Browse, preview, and download ad proof PDFs by mailing month.',
+    desc: 'Upload, preview and manage ad proof PDFs. Rename files and view upload timestamps.',
     href: '/files',
     footer: 'Browse files',
-    roles: ['admin', 'designer']
-  },
-  {
-    id: 'clients',
-    icon: '👥', iconClass: 'icon-clients',
-    title: 'Clients',
-    desc: 'Manage active clients, past clients, and prospects. Import from CSV.',
-    href: '/clients',
-    footer: 'Manage clients',
-    roles: ['admin', 'rep']
-  },
-  {
-    id: 'prospects',
-    icon: '🎯', iconClass: 'icon-prospects',
-    title: 'Prospects',
-    desc: 'Track potential advertisers, log contacts and set follow-up reminders.',
-    href: '/prospects',
-    footer: 'View prospects',
-    roles: ['admin', 'rep']
-  },
-  {
-    id: 'bookings',
-    icon: '📋', iconClass: 'icon-dashboard',
-    title: 'Bookings',
-    desc: 'Manage contracts, monthly ad bookings, zone revenue summaries and renewal tracking.',
-    href: '/bookings',
-    footer: 'Open bookings',
     roles: ['admin']
   },
   {
@@ -583,23 +367,58 @@ const ALL_MODULES = [
     roles: ['admin', 'designer']
   },
   {
+    id: 'emails',
+    icon: '✉️', iconClass: 'icon-dashboard',
+    title: 'Emails',
+    desc: 'Compose and send emails to clients and prospects. Save templates, embed images, track opens.',
+    href: '/emails',
+    footer: 'Compose email',
+    roles: ['admin']
+  },
+  {
+    id: 'clients',
+    icon: '🏢', iconClass: 'icon-clients',
+    title: 'Clients',
+    desc: 'Manage active and past advertising clients. Track status, zones, and contact information.',
+    href: '/clients',
+    footer: 'View clients',
+    roles: ['admin']
+  },
+  {
+    id: 'prospects',
+    icon: '🎯', iconClass: 'icon-prospects',
+    title: 'Prospects',
+    desc: 'Track leads, log contact activity, schedule follow-ups and convert prospects to clients.',
+    href: '/prospects',
+    footer: 'View prospects',
+    roles: ['admin']
+  },
+  {
     id: 'setup',
     icon: '⚙️', iconClass: 'icon-settings',
     title: 'Company Setup',
-    desc: 'Configure zones, publication info, designer contact and default settings.',
+    desc: 'Configure zones, publication info, designer contact and portal settings.',
     href: '/setup',
     footer: 'Manage settings',
     roles: ['admin']
   },
   {
     id: 'upload',
-    icon: '⬆️', iconClass: 'icon-upload',
+    icon: '📤', iconClass: 'icon-upload',
     title: 'Upload Proofs',
-    desc: 'Upload completed ad proof PDFs. Bulk upload or name individually.',
+    desc: 'Upload completed ad proof PDFs to the portal file manager.',
     href: '/upload',
     footer: 'Add new files',
-    roles: ['designer'],
-    footer: 'Add new files'
+    roles: ['designer']
+  },
+  {
+    id: 'files-designer',
+    icon: '📁', iconClass: 'icon-files',
+    title: 'File Manager',
+    desc: 'View and download ad proof files.',
+    href: '/files',
+    footer: 'Browse files',
+    roles: ['designer']
   }
 ];
 
