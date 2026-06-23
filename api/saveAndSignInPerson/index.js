@@ -153,7 +153,7 @@ module.exports = async function(context, req) {
     const repHtml = `
 <div style="font-family:Arial,sans-serif;max-width:520px;color:#1a1a2e;">
   <div style="background:#00205B;padding:16px 22px;border-bottom:4px solid #BF0D3E;">
-    <div style="font-size:18px;font-weight:700;color:#fff;font-family:'Georgia',serif;">The Texan Local</div>
+    <div style="font-size:18px;font-weight:700;color:#fff;font-family:'Georgia',serif;">Texan Local</div>
     <div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:2px;">In-Person Enrollment — Signed</div>
   </div>
   <div style="padding:24px;background:#f5f7fa;">
@@ -196,7 +196,7 @@ module.exports = async function(context, req) {
       const clientHtml = `
 <div style="font-family:Arial,sans-serif;max-width:580px;color:#1a1a2e;background:#ffffff;">
   <div style="background:#00205B;padding:18px 24px;border-bottom:4px solid #BF0D3E;">
-    <div style="font-size:20px;font-weight:700;color:#fff;font-family:'Georgia',serif;">The Texan Local</div>
+    <div style="font-size:20px;font-weight:700;color:#fff;font-family:'Georgia',serif;">Texan Local</div>
     <div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:2px;">Your Enrollment Agreement is Fully Executed</div>
   </div>
   <div style="padding:24px;background:#ffffff;">
