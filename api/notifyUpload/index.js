@@ -47,7 +47,7 @@ module.exports = async function(context, req) {
 
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
       <div style="background:#00205B;padding:18px 28px;border-bottom:4px solid #BF0D3E">
-        <span style="font-family:Georgia,serif;font-size:20px;color:#fff;font-weight:700">The Texan Local</span>
+        <span style="font-family:Georgia,serif;font-size:20px;color:#fff;font-weight:700">Texan Local</span>
       </div>
       <div style="padding:24px 28px">
         <p style="font-size:15px;margin-bottom:16px">Hi ${pubName},</p>
@@ -64,7 +64,7 @@ module.exports = async function(context, req) {
         </div>
       </div>
       <div style="border-top:3px solid #BF0D3E;padding:14px 28px;font-size:12px;color:#888">
-        The Texan Local Portal · Automated Upload Notification
+        Texan Local · Automated Upload Notification
       </div>
     </body></html>`;
 
@@ -77,7 +77,7 @@ module.exports = async function(context, req) {
           subject: 'Revised Proof'+(files.length>1?'s':'')+' Uploaded — '+monthLabel,
           body:    { contentType:'HTML', content:html },
           toRecipients: [{ emailAddress:{ address:pubEmail, name:pubName } }],
-          from:         { emailAddress:{ address:FROM_EMAIL, name:'The Texan Local Portal' } }
+          from:         { emailAddress:{ address:FROM_EMAIL, name:'Texan Local' } }
         },
         saveToSentItems: true
       })
