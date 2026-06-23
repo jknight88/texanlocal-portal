@@ -166,7 +166,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageUrls, sessionId, b
     '<body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,sans-serif">' +
     '<div style="max-width:650px;margin:0 auto;background:#fff">' +
     '<div style="background:#00205B;padding:16px 32px;border-bottom:4px solid #BF0D3E">' +
-    (process.env.LOGO_URL_WHITE ? '<img src="' + process.env.LOGO_URL_WHITE + '" alt="The Texan Local" style="width:560px;max-width:100%;height:auto;display:block">' : '<span style="font-family:Georgia,serif;font-size:22px;color:#fff;font-weight:700">The Texan Local</span>') +
+    (process.env.LOGO_URL_WHITE ? '<img src="' + process.env.LOGO_URL_WHITE + '" alt="Texan Local" style="width:560px;max-width:100%;height:auto;display:block">' : '<span style="font-family:Georgia,serif;font-size:22px;color:#fff;font-weight:700">The Texan Local</span>') +
     '</div>' +
     '<div style="padding:28px 32px">' + bodyHtml + proofs +
     '<div style="text-align:center;margin:28px 0 20px">' +
@@ -177,7 +177,7 @@ function buildEmail(client, mailingMonthLabel, deadline, imageUrls, sessionId, b
     '</div>' +
     '<div style="border-top:3px solid #BF0D3E;padding:20px 32px">' +
     '<div style="font-size:14px;color:#1a1a1a;margin-bottom:8px"><strong>Josh Knight</strong>, Publisher</div>' +
-    (process.env.LOGO_URL ? '<img src="' + process.env.LOGO_URL + '" alt="The Texan Local" style="width:280px;height:auto;display:block;margin:8px 0">' : '<div style="font-family:Georgia,serif;font-size:18px;color:#BF0D3E;font-weight:700;margin:8px 0">The Texan Local</div>') +
+    (process.env.LOGO_URL ? '<img src="' + process.env.LOGO_URL + '" alt="Texan Local" style="width:280px;height:auto;display:block;margin:8px 0">' : '<div style="font-family:Georgia,serif;font-size:18px;color:#BF0D3E;font-weight:700;margin:8px 0">The Texan Local</div>') +
     '<div style="font-size:13px;color:#333;margin-top:4px">Where Local Residents Find Local Businesses</div>' +
     '<div style="font-size:13px;color:#333">Mobile: 830-214-3487</div>' +
     '</div></div>' +
@@ -195,7 +195,7 @@ async function sendEmail(toEmail, toName, subject, html) {
         subject: subject,
         body: { contentType: 'HTML', content: html },
         toRecipients: [{ emailAddress: { address: toEmail, name: toName || toEmail } }],
-        from: { emailAddress: { address: FROM_EMAIL, name: 'Josh Knight - The Texan Local' } },
+        from: { emailAddress: { address: FROM_EMAIL, name: 'Josh Knight — Texan Local' } },
         replyTo: [{ emailAddress: { address: FROM_EMAIL } }]
       },
       saveToSentItems: true
