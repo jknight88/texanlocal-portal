@@ -183,7 +183,7 @@ module.exports = async function(context, req) {
     const clientHtml = `
 <div style="font-family:Arial,sans-serif;max-width:580px;color:#1a1a2e;background:#ffffff;">
   <div style="background:#00205B;padding:18px 24px;border-bottom:4px solid #BF0D3E;">
-    <div style="font-size:20px;font-weight:700;color:#fff;font-family:'Georgia',serif;">The Texan Local</div>
+    <div style="font-size:20px;font-weight:700;color:#fff;font-family:'Georgia',serif;">Texan Local</div>
     <div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:2px;">Your Enrollment Agreement is Fully Executed</div>
   </div>
   <div style="padding:24px;background:#ffffff;">
@@ -225,7 +225,7 @@ module.exports = async function(context, req) {
     const repHtml = `
 <div style="font-family:Arial,sans-serif;max-width:480px;">
   <div style="background:#00205B;padding:14px 20px;border-bottom:4px solid #BF0D3E;">
-    <div style="font-size:16px;font-weight:700;color:#fff;">The Texan Local</div>
+    <div style="font-size:16px;font-weight:700;color:#fff;">Texan Local</div>
   </div>
   <div style="padding:20px;background:#f5f7fa;">
     <div style="background:#1a5c1a;color:#fff;padding:10px 14px;border-radius:5px;font-size:13px;font-weight:700;margin-bottom:14px;">
