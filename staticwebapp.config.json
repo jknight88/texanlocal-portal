@@ -71,6 +71,14 @@
     {
       "route": "/emails",
       "rewrite": "/emails/index.html"
+    },
+    {
+      "route": "/samples/*",
+      "rewrite": "/samples/index.html"
+    },
+    {
+      "route": "/samples",
+      "rewrite": "/samples/index.html"
     }
   ],
   "navigationFallback": {
