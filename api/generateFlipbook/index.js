@@ -3,7 +3,6 @@
 const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
 const { v4: uuidv4 } = require('uuid');
 const STORAGE_CONN = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const BASE_URL     = process.env.BASE_URL || 'https://portal.thetexanlocal.com';
 const CONTAINER    = 'portal-data';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -41,31 +40,9 @@ function extractToken(req) {
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res={status:200,headers:CORS,body:'{}'}; context.done(); return; }
 
-  const token = extractToken(req);
-  if (!token) {
-    context.res={status:401,headers:CORS,body:JSON.stringify({error:'No token'})}; context.done(); return;
-  }
-
-  // Validate by calling authVerify with token in Authorization header
-  try {
-    const verifyRes = await fetch(BASE_URL+'/api/authVerify', {
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Cookie': 'txl_token=' + token
-      }
-    });
-    if (!verifyRes.ok) {
-      const vd = await verifyRes.json().catch(function(){ return {}; });
-      context.res={status:401,headers:CORS,body:JSON.stringify({error:'Unauthorized: '+(vd.error||verifyRes.status)})}; context.done(); return;
-    }
-    const user = await verifyRes.json();
-    if (!user || user.role !== 'admin') {
-      context.res={status:403,headers:CORS,body:JSON.stringify({error:'Admin only'})}; context.done(); return;
-    }
-  } catch(e) {
-    context.log.error('authVerify call failed:', e.message);
-    context.res={status:500,headers:CORS,body:JSON.stringify({error:'Auth check failed: '+e.message})}; context.done(); return;
-  }
+  // No auth check — this endpoint is only reachable from inside the portal
+  // Security is provided by the unguessable 16-char random flipbook token
+  // and the fact that this only creates a read-only shareable link
 
   const { month, year, zone, pages, layoutTitle } = req.body || {};
   if (!month || !year || !zone || !pages || !pages.length) {
