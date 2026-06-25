@@ -1210,34 +1210,60 @@ async function saveLayout() {
 
 // ── Email Designer ────────────────────────────────────────────────────────────
 async function generateFlipbook() {
-  if (!currentMonth || !currentYear || !currentZone) {
+  const curMo   = document.getElementById('selMonth') ? document.getElementById('selMonth').value : curMonth;
+  const curYr   = document.getElementById('selYear')  ? document.getElementById('selYear').value  : curYear;
+  const curZn   = activeZone || (zones.length ? zones[0].id : '');
+
+  if (!curMo || !curYr || !curZn) {
     showToast('Please select a month, year, and zone first', true); return;
   }
+
+  const zoneObj = zones.find(function(z){ return z.id === curZn; });
+  const zoneName = zoneObj ? zoneObj.name : curZn;
+
   const btn = document.getElementById('btnFlipbook');
   if (btn) { btn.disabled=true; btn.textContent='⏳ Generating…'; }
 
   try {
-    // Collect pages from current layout in order
+    // Collect placed pages from current layout
     const layoutPages = [];
-    document.querySelectorAll('.layout-page').forEach(function(pageEl) {
-      const slots = pageEl.querySelectorAll('.ad-slot[data-artid]');
-      slots.forEach(function(slot) {
-        const artId   = slot.dataset.artid;
-        const art     = window._artBank ? window._artBank.find(function(a){ return a.id===artId; }) : null;
+    const layout = layouts[curZn];
+    if (layout && layout.pages) {
+      layout.pages.forEach(function(page) {
+        if (!page) return;
+        const artId = page.artId || page.id || null;
+        if (!artId) return;
+        const art = allArtwork ? allArtwork.find(function(a){ return a.id===artId; }) : null;
         if (art) {
           layoutPages.push({
             business:  art.business || '',
             product:   art.product  || art.size || '',
             size:      art.size     || '',
             blobPath:  art.path     || null,
-            thumbPath: art.thumbPath? art.thumbPath.split('?')[0].split('/').pop() : null
+            thumbPath: art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null
           });
         }
       });
-    });
+    }
+
+    // If no placed pages found try DOM
+    if (!layoutPages.length) {
+      document.querySelectorAll('[data-artid]').forEach(function(el) {
+        const artId = el.dataset.artid;
+        if (!artId) return;
+        const art = allArtwork ? allArtwork.find(function(a){ return a.id===artId; }) : null;
+        if (art && !layoutPages.find(function(p){ return p.business===art.business; })) {
+          layoutPages.push({
+            business: art.business||'', product: art.product||art.size||'',
+            size: art.size||'', blobPath: art.path||null,
+            thumbPath: art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null
+          });
+        }
+      });
+    }
 
     if (!layoutPages.length) {
-      showToast('No ads placed in the layout yet', true);
+      showToast('No ads placed in the layout yet — drag ads onto pages first', true);
       if (btn) { btn.disabled=false; btn.textContent='📖 Generate Flipbook'; }
       return;
     }
@@ -1248,10 +1274,10 @@ async function generateFlipbook() {
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       credentials:'include',
       body: JSON.stringify({
-        month:       currentMonth,
-        year:        currentYear,
-        zone:        currentZone,
-        layoutTitle: currentZone + ' — ' + MONTHS[parseInt(currentMonth)-1] + ' ' + currentYear,
+        month:       curMo,
+        year:        curYr,
+        zone:        zoneName,
+        layoutTitle: zoneName + ' — ' + MONTHS[parseInt(curMo)-1] + ' ' + curYr,
         pages:       layoutPages
       })
     });
@@ -1260,20 +1286,19 @@ async function generateFlipbook() {
 
     const flipUrl = 'https://samples.thetexanlocal.com/view/' + data.token;
 
-    // Show success modal with link
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:2rem';
     overlay.innerHTML =
       '<div style="background:#fff;border-radius:10px;padding:2rem;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)">' +
       '<h3 style="font-size:18px;color:#00205B;margin-bottom:.5rem">📖 Flipbook Ready!</h3>' +
-      '<p style="font-size:14px;color:#555;margin-bottom:1rem">Your digital magazine is live for <strong>30 days</strong>. Share this link with anyone to let them view the '+currentZone+' edition.</p>' +
-      '<div style="background:#f5f8ff;border:1px solid #c0ccff;border-radius:5px;padding:.75rem 1rem;font-size:13px;font-family:monospace;word-break:break-all;color:#00205B;margin-bottom:1rem">'+flipUrl+'</div>' +
+      '<p style="font-size:14px;color:#555;margin-bottom:1rem">Your <strong>'+zoneName+'</strong> digital magazine is live for <strong>30 days</strong>. Share this private link — only people with it can view.</p>' +
+      '<div style="background:#f5f8ff;border:1px solid #c0ccff;border-radius:5px;padding:.75rem 1rem;font-size:12px;font-family:monospace;word-break:break-all;color:#00205B;margin-bottom:1rem;user-select:all">'+flipUrl+'</div>' +
       '<div style="display:flex;gap:8px">' +
-      '<button onclick="navigator.clipboard.writeText(\''+flipUrl+'\').then(function(){alert(\'Link copied!\');})" style="flex:1;background:#00205B;color:#fff;border:none;padding:10px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">📋 Copy Link</button>' +
+      '<button onclick="navigator.clipboard.writeText(\''+flipUrl+'\').then(function(){this.textContent=\'✓ Copied!\';}.bind(this))" style="flex:1;background:#00205B;color:#fff;border:none;padding:10px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">📋 Copy Link</button>' +
       '<button onclick="window.open(\''+flipUrl+'\',\'_blank\')" style="flex:1;background:#1a5c1a;color:#fff;border:none;padding:10px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">👁 Preview</button>' +
       '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="background:#f5f5f5;color:#555;border:1px solid #ddd;padding:10px 14px;border-radius:4px;font-size:13px;cursor:pointer">✕</button>' +
       '</div>' +
-      '<p style="font-size:11px;color:#aaa;margin-top:.75rem;text-align:center">Expires ' + new Date(data.expiresAt).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' · ' + data.pageCount + ' pages</p>' +
+      '<p style="font-size:11px;color:#aaa;margin-top:.75rem;text-align:center">Expires '+new Date(data.expiresAt).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+' · '+data.pageCount+' pages</p>' +
       '</div>';
     document.body.appendChild(overlay);
     showToast('✓ Flipbook generated! '+data.pageCount+' pages', false);
