@@ -1,6 +1,26 @@
 {
   "routes": [
     {
+      "route": "/samples",
+      "rewrite": "/samples/index.html",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/samples/*",
+      "rewrite": "/samples/index.html",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/api/getFlipbook",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
       "route": "/layout",
       "rewrite": "/layout/index.html"
     },
@@ -71,21 +91,14 @@
     {
       "route": "/emails",
       "rewrite": "/emails/index.html"
-    },
-    {
-      "route": "/samples/*",
-      "rewrite": "/samples/index.html"
-    },
-    {
-      "route": "/samples",
-      "rewrite": "/samples/index.html"
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
       "/api/*",
-      "*.{css,scss,js,png,gif,ico,jpg,svg,json,woff,woff2,ttf}"
+      "*.{css,scss,js,png,gif,ico,jpg,svg,json,woff,woff2,ttf}",
+      "/samples/*"
     ]
   },
   "globalHeaders": {
