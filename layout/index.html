@@ -1258,7 +1258,7 @@ async function generateFlipbook() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error||'Generation failed');
 
-    const flipUrl = 'https://samples.thetexanlocal.com/' + data.token;
+    const flipUrl = 'https://samples.thetexanlocal.com/v/' + data.token;
 
     // Show success modal with link
     const overlay = document.createElement('div');
