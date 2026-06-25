@@ -4,7 +4,7 @@ const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, S
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const STORAGE_CONN = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const JWT_SECRET   = process.env.JWT_SECRET || 'e42f24e9f5cfe3558144a25a0b30c6458fc4bd5ab6a6271404a1e7b509404c72';
+const JWT_SECRET   = process.env.JWT_SECRET || 'change-me-in-keyvault';
 const CONTAINER    = 'portal-data';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
