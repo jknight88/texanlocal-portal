@@ -1273,7 +1273,8 @@ async function generateFlipbook() {
         year:        curYr,
         zone:        zoneName,
         layoutTitle: zoneName + ' — ' + MONTHS[parseInt(curMo)-1] + ' ' + curYr,
-        pages:       layoutPages
+        pages:       layoutPages,
+        _authToken:  token
       })
     });
     const data = await res.json();
