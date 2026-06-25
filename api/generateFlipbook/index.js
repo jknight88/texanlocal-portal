@@ -46,9 +46,14 @@ module.exports = async function(context, req) {
     context.res={status:401,headers:CORS,body:JSON.stringify({error:'No token'})}; context.done(); return;
   }
 
-  // Validate by calling authVerify — uses the same JWT_SECRET already working
+  // Validate by calling authVerify with token in Authorization header
   try {
-    const verifyRes = await fetch(BASE_URL+'/api/authVerify?token='+encodeURIComponent(token));
+    const verifyRes = await fetch(BASE_URL+'/api/authVerify', {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Cookie': 'txl_token=' + token
+      }
+    });
     if (!verifyRes.ok) {
       const vd = await verifyRes.json().catch(function(){ return {}; });
       context.res={status:401,headers:CORS,body:JSON.stringify({error:'Unauthorized: '+(vd.error||verifyRes.status)})}; context.done(); return;
