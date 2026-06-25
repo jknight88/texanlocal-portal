@@ -31,14 +31,25 @@ function getSasUrl(acct, key, container, blobName, days) {
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res={status:200,headers:CORS,body:'{}'}; context.done(); return; }
 
-  // Verify portal auth — accept token from Authorization header, query param, or cookie
-  const authHeader = req.headers['authorization'] || '';
-  const cookieStr  = req.headers['cookie'] || '';
-  const cookieToken = (cookieStr.match(/txl_token=([^;]+)/) || [])[1] || '';
-  const token = authHeader.replace('Bearer ', '').trim()
-    || req.query.token || cookieToken || (req.body && req.body._authToken) || '';
-  try { jwt.verify(token, JWT_SECRET); } catch(e) {
-    context.res={status:401,headers:CORS,body:JSON.stringify({error:'Unauthorized'})}; context.done(); return;
+  // Verify portal auth — same pattern as shared/utils.js getTokenFromRequest
+  function getToken(req) {
+    const auth   = req.headers && req.headers['authorization'];
+    const cookie = req.headers && req.headers['cookie'];
+    if (auth && auth.startsWith('Bearer ')) return auth.slice(7);
+    if (cookie) {
+      const match = cookie.match(/txl_token=([^;]+)/);
+      if (match) return match[1];
+    }
+    if (req.body && req.body._authToken) return req.body._authToken;
+    if (req.query && req.query.token) return req.query.token;
+    return null;
+  }
+  const rawToken = getToken(req);
+  if (!rawToken) {
+    context.res={status:401,headers:CORS,body:JSON.stringify({error:'Unauthorized — no token'})}; context.done(); return;
+  }
+  try { jwt.verify(rawToken, JWT_SECRET); } catch(e) {
+    context.res={status:401,headers:CORS,body:JSON.stringify({error:'Unauthorized — invalid token'})}; context.done(); return;
   }
 
   const { month, year, zone, pages, layoutTitle } = req.body || {};
