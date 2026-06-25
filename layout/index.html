@@ -1264,7 +1264,7 @@ async function generateFlipbook() {
     }
 
     const token = sessionStorage.getItem('txl_token')||'';
-    const res   = await fetch(API+'/generateFlipbook', {
+    const res   = await fetch(API+'/generateFlipbook?token='+encodeURIComponent(token), {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       credentials:'include',
