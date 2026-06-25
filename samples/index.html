@@ -293,9 +293,9 @@ async function init() {
   document.getElementById('expLogo').src  = LOGO_URL;
   document.getElementById('hdrLogo').src  = LOGO_URL;
 
-  // Get token from URL path — /samples/TOKEN
+  // Token lives at /v/TOKEN on samples.thetexanlocal.com
   const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const token = pathParts[pathParts.length - 1];
+  const token = pathParts[pathParts.length - 1]; // works for /v/TOKEN and /samples/TOKEN
 
   if (!token || token === 'flipbook') {
     showExpired(); return;
