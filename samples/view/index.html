@@ -32,15 +32,18 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .stage{
   position:fixed;top:60px;bottom:60px;left:0;right:0;
   display:flex;align-items:center;justify-content:center;
-  z-index:1;perspective:2000px
+  z-index:1;perspective:2000px;
+  padding:0 60px
 }
 
 /* ── BOOK CONTAINER ── */
 .book-container{
   position:relative;
   display:flex;align-items:center;justify-content:center;
-  width:min(85vw,1100px);
-  height:min(75vh,620px)
+  /* Magazine is 11x8.5 per page, spread = 22x8.5 = 2.588:1 ratio */
+  width:min(88vw,1060px);
+  height:0;
+  padding-bottom:min(34vw,409px);
 }
 
 /* ── PAGE STACKS (visual depth on sides) ── */
@@ -63,8 +66,8 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 
 /* ── THE BOOK ── */
 .book{
-  position:relative;
-  width:100%;height:100%;
+  position:absolute;
+  inset:0;
   transform-style:preserve-3d;
   display:flex;
 }
@@ -101,7 +104,7 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
   position:relative;overflow:hidden
 }
 .page-inner img{
-  width:100%;height:100%;object-fit:cover;display:block
+  width:100%;height:100%;object-fit:contain;display:block;background:#fff
 }
 .page-num{
   position:absolute;bottom:8px;
@@ -191,6 +194,20 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Sound toggle */
+
+/* Nav arrows */
+.nav-arrow{
+  position:fixed;top:50%;transform:translateY(-50%);
+  background:rgba(0,32,91,.7);color:#fff;border:2px solid rgba(255,255,255,.3);
+  border-radius:50%;width:52px;height:52px;font-size:22px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;z-index:30;backdrop-filter:blur(4px)
+}
+.nav-arrow:hover{background:rgba(0,32,91,.95);border-color:#fff;transform:translateY(-50%) scale(1.08)}
+.nav-arrow:disabled{opacity:.2;cursor:not-allowed;transform:translateY(-50%)}
+.nav-arrow-left{left:8px}
+.nav-arrow-right{right:8px}
+
 .sound-btn{
   background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);
   padding:6px 10px;border-radius:4px;cursor:pointer;font-size:16px
@@ -242,6 +259,8 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 </header>
 
 <!-- Stage -->
+<button class="nav-arrow nav-arrow-left"  id="arrowPrev" onclick="flipPrev()" style="display:none">&#8249;</button>
+<button class="nav-arrow nav-arrow-right" id="arrowNext" onclick="flipNext()" style="display:none">&#8250;</button>
 <div class="stage" id="stage" style="display:none">
   <div class="book-container" id="bookContainer">
     <!-- Left stack -->
@@ -342,6 +361,8 @@ async function init() {
     document.getElementById('viewerHdr').style.display = 'flex';
     document.getElementById('stage').style.display = 'flex';
     document.getElementById('viewerControls').style.display = 'flex';
+    document.getElementById('arrowPrev').style.display = 'flex';
+    document.getElementById('arrowNext').style.display = 'flex';
 
     // Init audio
     initAudio();
@@ -424,6 +445,8 @@ function renderSpread(spreadIdx) {
   // Update nav buttons
   document.getElementById('btnPrev').disabled = spreadIdx === 0;
   document.getElementById('btnNext').disabled = spreadIdx === spreads.length - 1;
+  document.getElementById('arrowPrev').disabled = spreadIdx === 0;
+  document.getElementById('arrowNext').disabled = spreadIdx === spreads.length - 1;
 
   // Update dots
   document.querySelectorAll('.dot').forEach(function(d, i) { d.classList.toggle('active', i===spreadIdx); });
@@ -564,22 +587,38 @@ function initAudio() {
     const ctx = new AudioContext();
 
     flipAudio = function() {
-      const bufSize = ctx.sampleRate * 0.18;
-      const buf     = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-      const data    = buf.getChannelData(0);
+      // Paper flip: short burst of filtered noise with fast attack, medium decay
+      const duration = 0.12;
+      const bufSize  = Math.floor(ctx.sampleRate * duration);
+      const buf      = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data     = buf.getChannelData(0);
       for (let i=0; i<bufSize; i++) {
-        // White noise with envelope — mimics paper rustle
-        const env = Math.pow(1 - i/bufSize, 2.5);
-        data[i] = (Math.random()*2-1) * env * 0.35;
+        // Sharp attack (first 10%), quick decay — mimics page snap
+        const t   = i / bufSize;
+        const env = t < 0.08
+          ? t / 0.08                                 // fast attack
+          : Math.pow(1 - (t - 0.08) / 0.92, 1.8);  // natural decay
+        data[i] = (Math.random() * 2 - 1) * env * 0.28;
       }
-      const src  = ctx.createBufferSource();
+      const src = ctx.createBufferSource();
       src.buffer = buf;
-      // Add a slight high-frequency filter for paper quality
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.value = 800;
-      src.connect(filter);
-      filter.connect(ctx.destination);
+      // Bandpass filter to get papery mid frequencies, cut bass & harsh highs
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 3200;
+      bp.Q.value = 0.6;
+      // Gentle high-shelf cut
+      const hs = ctx.createBiquadFilter();
+      hs.type = 'highshelf';
+      hs.frequency.value = 6000;
+      hs.gain.value = -10;
+      // Master gain
+      const gain = ctx.createGain();
+      gain.gain.value = 1.2;
+      src.connect(bp);
+      bp.connect(hs);
+      hs.connect(gain);
+      gain.connect(ctx.destination);
       src.start();
     };
   } catch(e) {}
