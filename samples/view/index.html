@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Texan Local — Digital Edition</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bl:#00205B;--rd:#BF0D3E;--gold:#C9A84C}
+body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+
+/* ── BACKGROUND LOGO WATERMARK ── */
+.bg-logo{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:70vw;max-width:900px;opacity:.06;pointer-events:none;z-index:0;
+  filter:grayscale(1) brightness(2)
+}
+
+/* ── HEADER ── */
+.viewer-hdr{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  background:rgba(0,32,91,.95);backdrop-filter:blur(8px);
+  border-bottom:3px solid var(--rd);
+  padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between
+}
+.hdr-logo{height:36px;width:auto}
+.hdr-title{font-size:14px;color:rgba(255,255,255,.8);font-style:italic}
+.hdr-meta{font-size:12px;color:rgba(255,255,255,.5);text-align:right;line-height:1.5}
+.hdr-meta strong{color:var(--gold)}
+
+/* ── MAIN STAGE ── */
+.stage{
+  position:fixed;top:60px;bottom:60px;left:0;right:0;
+  display:flex;align-items:center;justify-content:center;
+  z-index:1;perspective:2000px
+}
+
+/* ── BOOK CONTAINER ── */
+.book-container{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  width:min(85vw,1100px);
+  height:min(75vh,620px)
+}
+
+/* ── PAGE STACKS (visual depth on sides) ── */
+.stack{
+  position:absolute;top:4px;bottom:4px;width:16px;
+  display:flex;flex-direction:column;gap:1px;overflow:hidden;
+  border-radius:1px
+}
+.stack-left{left:-20px}
+.stack-right{right:-20px}
+.stack-slice{
+  flex:1;background:linear-gradient(90deg,#e8e0d4,#f5f0ea);
+  border-left:1px solid #c8bfb0;
+  transition:flex .3s ease
+}
+.stack-right .stack-slice{
+  background:linear-gradient(90deg,#f5f0ea,#e8e0d4);
+  border-left:none;border-right:1px solid #c8bfb0
+}
+
+/* ── THE BOOK ── */
+.book{
+  position:relative;
+  width:100%;height:100%;
+  transform-style:preserve-3d;
+  display:flex;
+}
+
+/* Spine shadow in center */
+.book::after{
+  content:'';position:absolute;left:50%;top:0;bottom:0;
+  width:12px;transform:translateX(-50%);
+  background:linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,.08),rgba(0,0,0,.18));
+  z-index:10;pointer-events:none
+}
+
+/* ── SPREAD PAGES ── */
+.spread{width:100%;height:100%;display:flex;position:relative}
+
+.page{
+  width:50%;height:100%;position:relative;overflow:hidden;
+  background:#fff;
+}
+.page-left{
+  border-radius:4px 0 0 4px;
+  box-shadow:-4px 0 20px rgba(0,0,0,.3)
+}
+.page-right{
+  border-radius:0 4px 4px 0;
+  box-shadow:4px 0 20px rgba(0,0,0,.3)
+}
+
+/* ── PAGE CONTENTS ── */
+.page-inner{
+  width:100%;height:100%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;overflow:hidden
+}
+.page-inner img{
+  width:100%;height:100%;object-fit:cover;display:block
+}
+.page-num{
+  position:absolute;bottom:8px;
+  font-size:11px;color:rgba(0,0,0,.4);font-style:italic
+}
+.page-left .page-num{right:12px}
+.page-right .page-num{left:12px}
+
+/* No artwork placeholder */
+.no-art{
+  width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#f8f6f2,#ede8e0);gap:12px;padding:2rem;text-align:center
+}
+.no-art .biz-name{
+  font-family:'Georgia',serif;font-size:clamp(14px,2.5vw,22px);
+  font-weight:700;color:var(--bl);line-height:1.2
+}
+.no-art .product-lbl{font-size:13px;color:#888;font-style:italic}
+.no-art .tl-mark{font-size:40px;opacity:.15}
+
+/* ── FLIP ANIMATION ── */
+.page-flip{
+  position:absolute;top:0;height:100%;
+  transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.645,.045,.355,1);
+  z-index:20;transform-origin:left center
+}
+.page-flip.right-origin{transform-origin:right center}
+.page-flip .face{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  backface-visibility:hidden;overflow:hidden
+}
+.page-flip .face-back{transform:rotateY(180deg)}
+.page-flip.flipping-left{transform:rotateY(-180deg)}
+.page-flip.flipping-right{transform:rotateY(0deg)}
+
+/* Page curl shadow during flip */
+.page-flip::after{
+  content:'';position:absolute;top:0;bottom:0;width:30px;
+  background:linear-gradient(90deg,rgba(0,0,0,.2),transparent);
+  pointer-events:none;z-index:30;opacity:0;transition:opacity .3s
+}
+.page-flip.animating::after{opacity:1}
+
+/* ── CONTROLS ── */
+.controls{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
+  padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem
+}
+.ctrl-btn{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  color:#fff;padding:8px 20px;border-radius:4px;font-size:14px;cursor:pointer;
+  font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:6px
+}
+.ctrl-btn:hover{background:rgba(255,255,255,.2)}
+.ctrl-btn:disabled{opacity:.3;cursor:not-allowed}
+.ctrl-btn.primary{background:var(--rd);border-color:var(--rd)}
+.ctrl-btn.primary:hover{background:#a00b34}
+.page-indicator{color:rgba(255,255,255,.7);font-size:14px;font-style:italic;min-width:120px;text-align:center}
+
+/* Progress dots */
+.progress-dots{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:300px}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);cursor:pointer;transition:all .2s;flex-shrink:0}
+.dot.active{background:var(--gold);transform:scale(1.3)}
+.dot:hover{background:rgba(255,255,255,.6)}
+
+/* Expiry bar */
+.expiry-bar{
+  position:fixed;top:63px;left:0;right:0;z-index:49;
+  background:rgba(201,168,76,.12);border-bottom:1px solid rgba(201,168,76,.3);
+  padding:4px 2rem;font-size:11px;color:var(--gold);text-align:center
+}
+
+/* Loading / expired states */
+.state-screen{
+  position:fixed;inset:0;z-index:200;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#1a1a2e;gap:1.2rem;text-align:center;padding:2rem
+}
+.state-screen .ss-logo{height:60px;margin-bottom:.5rem}
+.state-screen h2{font-size:24px;color:#fff;font-family:Georgia,serif}
+.state-screen p{font-size:15px;color:rgba(255,255,255,.6);max-width:400px;line-height:1.6}
+.state-screen .ss-icon{font-size:52px}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Sound toggle */
+.sound-btn{
+  background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);
+  padding:6px 10px;border-radius:4px;cursor:pointer;font-size:16px
+}
+.sound-btn:hover{border-color:rgba(255,255,255,.5);color:#fff}
+
+@media(max-width:600px){
+  .hdr-title{display:none}
+  .controls{padding:.5rem 1rem}
+  .ctrl-btn{padding:6px 12px;font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<!-- Background watermark logo -->
+<img class="bg-logo" id="bgLogo" src="" alt="">
+
+<!-- Loading screen -->
+<div class="state-screen" id="loadingScreen">
+  <img class="ss-logo" id="loadLogo" src="" alt="Texan Local">
+  <div class="spinner"></div>
+  <h2>Loading Magazine…</h2>
+  <p>Preparing your edition of the Texan Local</p>
+</div>
+
+<!-- Expired screen -->
+<div class="state-screen" id="expiredScreen" style="display:none">
+  <img class="ss-logo" id="expLogo" src="" alt="Texan Local">
+  <div class="ss-icon">📅</div>
+  <h2>This Preview Has Expired</h2>
+  <p>This digital magazine link is no longer active. Contact us for the latest edition of the Texan Local.</p>
+  <a href="https://thetexanlocal.com" style="background:var(--rd);color:#fff;padding:10px 24px;border-radius:5px;text-decoration:none;font-size:14px;font-weight:700;margin-top:.5rem">Visit Texan Local →</a>
+</div>
+
+<!-- Expiry notice bar -->
+<div class="expiry-bar" id="expiryBar" style="display:none">
+  📅 This preview link expires on <strong id="expiryDate"></strong>
+</div>
+
+<!-- Header -->
+<header class="viewer-hdr" id="viewerHdr" style="display:none">
+  <img class="hdr-logo" id="hdrLogo" src="" alt="Texan Local">
+  <div class="hdr-title" id="hdrTitle">Digital Edition Preview</div>
+  <div class="hdr-meta">
+    <div id="hdrZone"></div>
+    <strong id="hdrMonth"></strong>
+  </div>
+</header>
+
+<!-- Stage -->
+<div class="stage" id="stage" style="display:none">
+  <div class="book-container" id="bookContainer">
+    <!-- Left stack -->
+    <div class="stack stack-left" id="stackLeft"></div>
+    <!-- Book -->
+    <div class="book" id="book">
+      <div class="spread" id="spread">
+        <div class="page page-left" id="pageLeft">
+          <div class="page-inner" id="pageLeftInner"></div>
+        </div>
+        <div class="page page-right" id="pageRight">
+          <div class="page-inner" id="pageRightInner"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Right stack -->
+    <div class="stack stack-right" id="stackRight"></div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls" id="viewerControls" style="display:none">
+  <button class="ctrl-btn" id="btnPrev" onclick="flipPrev()">← Previous</button>
+  <div style="display:flex;align-items:center;gap:1rem;flex:1;justify-content:center">
+    <div class="progress-dots" id="progressDots"></div>
+    <div class="page-indicator" id="pageIndicator">Page 1</div>
+  </div>
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()" title="Toggle flip sound">🔊</button>
+  <button class="ctrl-btn" id="btnNext" onclick="flipNext()">Next →</button>
+</div>
+
+<script>
+const API       = '/api';
+const BASE_URL  = 'https://portal.thetexanlocal.com';
+const LOGO_URL  = '/assets/logo.png'; // white logo from portal assets
+
+let pages       = [];
+let spreads     = []; // array of [leftPageIdx, rightPageIdx] — null means no page (cover/back)
+let currentSpread = 0;
+let soundEnabled  = true;
+let isFlipping    = false;
+let flipAudio     = null;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  // Set logos
+  document.getElementById('bgLogo').src  = LOGO_URL;
+  document.getElementById('loadLogo').src = LOGO_URL;
+  document.getElementById('expLogo').src  = LOGO_URL;
+  document.getElementById('hdrLogo').src  = LOGO_URL;
+
+  // Token extraction — handles /v/TOKEN, /samples/TOKEN, or bare /TOKEN
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  // Filter out path prefixes like 'v' and 'samples'
+  const token = pathParts.filter(function(p){ return p !== 'v' && p !== 'samples'; }).pop() || '';
+
+  if (!token) {
+    // No token — show a friendly landing
+    document.getElementById('loadingScreen').innerHTML =
+      '<img class="ss-logo" src="/assets/logo.png" alt="Texan Local" style="height:60px;margin-bottom:1rem">'+
+      '<div class="ss-icon">📖</div>'+
+      '<h2 style="color:#fff;font-family:Georgia,serif">Digital Magazine Preview</h2>'+
+      '<p style="color:rgba(255,255,255,.6);max-width:400px;line-height:1.6">This link requires a valid preview token. Please use the link provided to you by Texan Local.</p>'+
+      '<a href="https://thetexanlocal.com" style="background:#BF0D3E;color:#fff;padding:10px 24px;border-radius:5px;text-decoration:none;font-size:14px;font-weight:700;margin-top:.5rem;display:inline-block">Visit Texan Local →</a>';
+    return;
+  }
+
+  try {
+    const res  = await fetch(API + '/getFlipbook?token=' + encodeURIComponent(token));
+    const data = await res.json();
+
+    if (res.status === 410 || data.error === 'expired') { showExpired(); return; }
+    if (!res.ok || !data.ok) { showExpired(); return; }
+
+    pages = data.pages || [];
+    if (!pages.length) { showExpired(); return; }
+
+    // Build spreads: [cover alone] [p2+p3] [p4+p5] ... [back alone]
+    buildSpreads();
+
+    // Set header info
+    document.getElementById('hdrTitle').textContent = data.title || 'Digital Edition';
+    document.getElementById('hdrZone').textContent  = data.zone;
+    document.getElementById('hdrMonth').textContent = data.monthName;
+
+    // Expiry bar
+    if (data.expiresAt) {
+      const expDate = new Date(data.expiresAt);
+      document.getElementById('expiryDate').textContent = expDate.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+      document.getElementById('expiryBar').style.display = 'block';
+    }
+
+    // Build progress dots
+    buildDots();
+
+    // Show UI
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('viewerHdr').style.display = 'flex';
+    document.getElementById('stage').style.display = 'flex';
+    document.getElementById('viewerControls').style.display = 'flex';
+
+    // Init audio
+    initAudio();
+
+    // Render first spread
+    renderSpread(0);
+    updateStacks();
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') flipNext();
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')  flipPrev();
+    });
+
+    // Touch/swipe
+    let touchStartX = 0;
+    document.addEventListener('touchstart', function(e){ touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend',   function(e){
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) { dx < 0 ? flipNext() : flipPrev(); }
+    });
+
+  } catch(e) {
+    console.error('Flipbook load error:', e);
+    showExpired();
+  }
+}
+
+function showExpired() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('expiredScreen').style.display = 'flex';
+}
+
+// ── Build spreads ─────────────────────────────────────────────────────────────
+function buildSpreads() {
+  // First page = front cover (solo right page, left is blank/back cover bleed)
+  // Last page  = back cover (solo left page)
+  // Interior pages pair up: [1,2] [3,4] etc.
+  spreads = [];
+  if (pages.length === 0) return;
+  if (pages.length === 1) { spreads.push([null, 0]); return; }
+
+  // Cover spread: left=back-cover(last), right=front-cover(first)
+  spreads.push([pages.length-1, 0]);
+
+  // Interior spreads
+  for (let i=1; i<pages.length-1; i+=2) {
+    const right = pages[i]   ? i   : null;
+    const left  = pages[i+1] ? i+1 : null;
+    spreads.push([right, left]);
+  }
+  // If odd number of interior pages, last interior is solo
+  if ((pages.length-2) % 2 !== 0 && pages.length > 2) {
+    // already handled above
+  }
+}
+
+// ── Render spread ─────────────────────────────────────────────────────────────
+function renderSpread(spreadIdx) {
+  currentSpread = spreadIdx;
+  const [leftIdx, rightIdx] = spreads[spreadIdx];
+
+  renderPage(document.getElementById('pageLeftInner'),  leftIdx,  'left');
+  renderPage(document.getElementById('pageRightInner'), rightIdx, 'right');
+
+  // Page indicator
+  const totalPages = pages.length;
+  let label = '';
+  if (spreadIdx === 0) {
+    label = 'Cover';
+  } else {
+    const leftNum  = leftIdx  !== null ? leftIdx  + 1 : null;
+    const rightNum = rightIdx !== null ? rightIdx + 1 : null;
+    if (leftNum && rightNum) label = 'Pages ' + leftNum + '–' + rightNum;
+    else if (leftNum)  label = 'Page ' + leftNum;
+    else if (rightNum) label = 'Page ' + rightNum;
+  }
+  document.getElementById('pageIndicator').textContent = label + ' of ' + totalPages;
+
+  // Update nav buttons
+  document.getElementById('btnPrev').disabled = spreadIdx === 0;
+  document.getElementById('btnNext').disabled = spreadIdx === spreads.length - 1;
+
+  // Update dots
+  document.querySelectorAll('.dot').forEach(function(d, i) { d.classList.toggle('active', i===spreadIdx); });
+
+  updateStacks();
+}
+
+function renderPage(container, pageIdx, side) {
+  container.innerHTML = '';
+  if (pageIdx === null) {
+    // Show back/inside cover — subtle TL branded background
+    container.style.background = 'linear-gradient(135deg,#00205B,#001440)';
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;opacity:.15"><img src="'+LOGO_URL+'" style="width:60%;max-width:200px"></div>';
+    return;
+  }
+  container.style.background = '';
+  const p = pages[pageIdx];
+  if (!p) return;
+
+  if (p.imageUrl) {
+    const img = document.createElement('img');
+    img.src   = p.imageUrl;
+    img.alt   = p.business || 'Ad';
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+    img.onerror = function() { showNoArt(container, p); };
+    container.appendChild(img);
+  } else {
+    showNoArt(container, p);
+  }
+
+  // Page number
+  const num = document.createElement('div');
+  num.className = 'page-num';
+  num.textContent = pageIdx + 1;
+  container.appendChild(num);
+}
+
+function showNoArt(container, p) {
+  container.innerHTML =
+    '<div class="no-art">'+
+    '<div class="tl-mark">📰</div>'+
+    '<div class="biz-name">'+(p.business||'Advertisement')+'</div>'+
+    '<div class="product-lbl">'+(p.product||'')+'</div>'+
+    '</div>';
+}
+
+// ── Page stacks ───────────────────────────────────────────────────────────────
+function updateStacks() {
+  const total  = spreads.length;
+  const done   = currentSpread;
+  const remain = total - currentSpread - 1;
+
+  const makeSlices = function(n, max) {
+    const count = Math.max(1, Math.min(n, max));
+    let html = '';
+    for (let i=0; i<count; i++) html += '<div class="stack-slice"></div>';
+    return html;
+  };
+
+  document.getElementById('stackLeft').innerHTML  = makeSlices(done*3, 24);
+  document.getElementById('stackRight').innerHTML = makeSlices(remain*3, 24);
+}
+
+// ── Flip animation ────────────────────────────────────────────────────────────
+function flipNext() {
+  if (isFlipping || currentSpread >= spreads.length-1) return;
+  doFlip('next');
+}
+
+function flipPrev() {
+  if (isFlipping || currentSpread <= 0) return;
+  doFlip('prev');
+}
+
+function doFlip(direction) {
+  isFlipping = true;
+  playFlipSound();
+
+  const nextSpread  = direction === 'next' ? currentSpread+1 : currentSpread-1;
+  const [nl, nr]    = spreads[nextSpread];
+
+  // Create a flipping page element
+  const flipEl    = document.createElement('div');
+  flipEl.className = 'page-flip' + (direction==='prev' ? ' right-origin' : '');
+
+  const faceFront = document.createElement('div');
+  faceFront.className = 'face face-front';
+  const faceBack  = document.createElement('div');
+  faceBack.className  = 'face face-back';
+
+  // Front face = current turning page, back face = next content
+  if (direction === 'next') {
+    renderPage(faceFront, spreads[currentSpread][1], 'right'); // current right page
+    renderPage(faceBack,  nl, 'left');                          // next left page
+    flipEl.style.left   = '50%';
+    flipEl.style.width  = '50%';
+    flipEl.style.height = '100%';
+  } else {
+    renderPage(faceFront, spreads[currentSpread][0], 'left');  // current left page
+    renderPage(faceBack,  nr, 'right');                         // prev right page
+    flipEl.style.right  = '50%';
+    flipEl.style.left   = '0';
+    flipEl.style.width  = '50%';
+    flipEl.style.height = '100%';
+  }
+
+  flipEl.appendChild(faceFront);
+  flipEl.appendChild(faceBack);
+  document.getElementById('book').appendChild(flipEl);
+  flipEl.classList.add('animating');
+
+  // Trigger flip
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      if (direction === 'next') {
+        flipEl.style.transform = 'rotateY(-180deg)';
+      } else {
+        flipEl.style.transformOrigin = 'right center';
+        flipEl.style.transform = 'rotateY(180deg)';
+      }
+    });
+  });
+
+  // After animation completes
+  setTimeout(function() {
+    flipEl.remove();
+    renderSpread(nextSpread);
+    isFlipping = false;
+  }, 620);
+}
+
+// ── Sound ─────────────────────────────────────────────────────────────────────
+function initAudio() {
+  try {
+    // Generate a paper flip sound using Web Audio API
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+
+    flipAudio = function() {
+      const bufSize = ctx.sampleRate * 0.18;
+      const buf     = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data    = buf.getChannelData(0);
+      for (let i=0; i<bufSize; i++) {
+        // White noise with envelope — mimics paper rustle
+        const env = Math.pow(1 - i/bufSize, 2.5);
+        data[i] = (Math.random()*2-1) * env * 0.35;
+      }
+      const src  = ctx.createBufferSource();
+      src.buffer = buf;
+      // Add a slight high-frequency filter for paper quality
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 800;
+      src.connect(filter);
+      filter.connect(ctx.destination);
+      src.start();
+    };
+  } catch(e) {}
+}
+
+function playFlipSound() {
+  if (!soundEnabled || !flipAudio) return;
+  try { flipAudio(); } catch(e) {}
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+// ── Progress dots ─────────────────────────────────────────────────────────────
+function buildDots() {
+  const container = document.getElementById('progressDots');
+  container.innerHTML = '';
+  // Only show dots if not too many spreads
+  if (spreads.length <= 20) {
+    spreads.forEach(function(_, i) {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i===0?' active':'');
+      dot.onclick   = function() { if(!isFlipping) jumpToSpread(i); };
+      container.appendChild(dot);
+    });
+  }
+}
+
+function jumpToSpread(idx) {
+  if (idx === currentSpread || isFlipping) return;
+  playFlipSound();
+  renderSpread(idx);
+}
+
+init();
+</script>
+</body>
+</html>
