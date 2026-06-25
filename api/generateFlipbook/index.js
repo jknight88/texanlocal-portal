@@ -1,9 +1,9 @@
 // api/generateFlipbook/index.js
+// Validates by calling authVerify internally — avoids JWT_SECRET mismatch
 const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
 const { v4: uuidv4 } = require('uuid');
-const jwt = require('jsonwebtoken');
 const STORAGE_CONN = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const JWT_SECRET   = process.env.JWT_SECRET || 'change-me-in-keyvault';
+const BASE_URL     = process.env.BASE_URL || 'https://portal.thetexanlocal.com';
 const CONTAINER    = 'portal-data';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -21,23 +21,19 @@ function parseConn() {
 function getSasUrl(acct, key, container, blobName, days) {
   const cred    = new StorageSharedKeyCredential(acct, key);
   const expires = new Date(Date.now() + days*24*60*60*1000);
-  const token   = generateBlobSASQueryParameters(
+  const t       = generateBlobSASQueryParameters(
     { containerName:container, blobName, permissions:BlobSASPermissions.parse('r'), expiresOn:expires }, cred
   ).toString();
-  return 'https://'+acct+'.blob.core.windows.net/'+container+'/'+blobName+'?'+token;
+  return 'https://'+acct+'.blob.core.windows.net/'+container+'/'+blobName+'?'+t;
 }
 
 function extractToken(req) {
-  // 1. Authorization header
-  const auth = (req.headers && req.headers['authorization']) || '';
+  const auth   = (req.headers && req.headers['authorization']) || '';
   if (auth.startsWith('Bearer ')) return auth.slice(7).trim();
-  // 2. Cookie
   const cookie = (req.headers && req.headers['cookie']) || '';
   const cm = cookie.match(/txl_token=([^;]+)/);
   if (cm) return decodeURIComponent(cm[1]).trim();
-  // 3. Query string
   if (req.query && req.query.token) return decodeURIComponent(req.query.token).trim();
-  // 4. Body
   if (req.body && req.body._authToken) return req.body._authToken.trim();
   return '';
 }
@@ -45,28 +41,30 @@ function extractToken(req) {
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res={status:200,headers:CORS,body:'{}'}; context.done(); return; }
 
-  const rawToken = extractToken(req);
-  context.log('generateFlipbook auth - token length:', rawToken ? rawToken.length : 0, 'JWT_SECRET length:', JWT_SECRET.length);
-
-  if (!rawToken) {
-    context.res={status:401,headers:CORS,body:JSON.stringify({error:'No token provided'})}; context.done(); return;
+  const token = extractToken(req);
+  if (!token) {
+    context.res={status:401,headers:CORS,body:JSON.stringify({error:'No token'})}; context.done(); return;
   }
 
-  let decoded;
+  // Validate by calling authVerify — uses the same JWT_SECRET already working
   try {
-    decoded = jwt.verify(rawToken, JWT_SECRET);
+    const verifyRes = await fetch(BASE_URL+'/api/authVerify?token='+encodeURIComponent(token));
+    if (!verifyRes.ok) {
+      const vd = await verifyRes.json().catch(function(){ return {}; });
+      context.res={status:401,headers:CORS,body:JSON.stringify({error:'Unauthorized: '+(vd.error||verifyRes.status)})}; context.done(); return;
+    }
+    const user = await verifyRes.json();
+    if (!user || user.role !== 'admin') {
+      context.res={status:403,headers:CORS,body:JSON.stringify({error:'Admin only'})}; context.done(); return;
+    }
   } catch(e) {
-    context.log.error('JWT verify failed:', e.message, '| secret length:', JWT_SECRET.length, '| token prefix:', rawToken.slice(0,20));
-    context.res={status:401,headers:CORS,body:JSON.stringify({error:'Invalid token: '+e.message})}; context.done(); return;
-  }
-
-  if (!decoded || decoded.role !== 'admin') {
-    context.res={status:403,headers:CORS,body:JSON.stringify({error:'Forbidden — admin only'})}; context.done(); return;
+    context.log.error('authVerify call failed:', e.message);
+    context.res={status:500,headers:CORS,body:JSON.stringify({error:'Auth check failed: '+e.message})}; context.done(); return;
   }
 
   const { month, year, zone, pages, layoutTitle } = req.body || {};
   if (!month || !year || !zone || !pages || !pages.length) {
-    context.res={status:400,headers:CORS,body:JSON.stringify({error:'Missing month, year, zone, or pages'})}; context.done(); return;
+    context.res={status:400,headers:CORS,body:JSON.stringify({error:'Missing fields'})}; context.done(); return;
   }
 
   try {
@@ -95,7 +93,7 @@ module.exports = async function(context, req) {
     context.log('Flipbook generated:', shortToken, 'pages:', pagesWithUrls.length);
     context.res = { status:200, headers:CORS, body: JSON.stringify({ ok:true, token:shortToken, expiresAt, pageCount:pagesWithUrls.length }) };
   } catch(e) {
-    context.log.error('generateFlipbook error:', e.message);
+    context.log.error('generateFlipbook storage error:', e.message);
     context.res = { status:500, headers:CORS, body: JSON.stringify({ error:e.message }) };
   }
   context.done();
