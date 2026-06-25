@@ -317,13 +317,13 @@ function doFlip(dir) {
 /* FIX 2: new Audio(WAV_SRC) per play — cloneNode() drops base64 src */
 function initAudio() {
   try {
-    const WAV_SRC = 'data:audio/wav;base64,UklGRn5NAABXQVZFZm10IBAAAAABAAIAgLsAAABlBAAEABgAZGF0YVpNAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
-    flipAudio = function(){
-      const snd = new Audio(WAV_SRC);
+    flipAudio = function() {
+      const snd = new Audio('/assets/flip.wav');
       snd.volume = 0.7;
       snd.play().catch(function(){});
     };
-  } catch(e){ flipAudio=function(){}; }
+  } catch(e) { flipAudio = function(){}; }
+}
 }
 
 function playFlipSound(){ if(!soundEnabled||!flipAudio)return; try{ flipAudio(); }catch(e){} }
