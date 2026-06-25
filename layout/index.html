@@ -1210,6 +1210,7 @@ async function saveLayout() {
 
 // ── Email Designer ────────────────────────────────────────────────────────────
 async function generateFlipbook() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const curMo   = document.getElementById('selMonth') ? document.getElementById('selMonth').value : curMonth;
   const curYr   = document.getElementById('selYear')  ? document.getElementById('selYear').value  : curYear;
   const curZn   = activeZone || (zones.length ? zones[0].id : '');
