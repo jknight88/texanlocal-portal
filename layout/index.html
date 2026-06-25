@@ -1225,40 +1225,34 @@ async function generateFlipbook() {
   if (btn) { btn.disabled=true; btn.textContent='⏳ Generating…'; }
 
   try {
-    // Collect placed pages from current layout
+    // Collect placed pages from current layout spreads
     const layoutPages = [];
     const layout = layouts[curZn];
-    if (layout && layout.pages) {
-      layout.pages.forEach(function(page) {
-        if (!page) return;
-        const artId = page.artId || page.id || null;
-        if (!artId) return;
-        const art = allArtwork ? allArtwork.find(function(a){ return a.id===artId; }) : null;
-        if (art) {
-          layoutPages.push({
-            business:  art.business || '',
-            product:   art.product  || art.size || '',
-            size:      art.size     || '',
-            blobPath:  art.path     || null,
-            thumbPath: art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null
+    if (layout && layout.spreads) {
+      layout.spreads.forEach(function(spread) {
+        ['left','right'].forEach(function(side) {
+          const slot = spread[side];
+          if (!slot) return;
+          // slot can be the art object directly, or {type:'hp-pair', left:art, right:art}
+          const arts = [];
+          if (slot.type === 'hp-pair') {
+            if (slot.left)  arts.push(slot.left);
+            if (slot.right) arts.push(slot.right);
+          } else if (slot.id || slot.business) {
+            arts.push(slot);
+          }
+          arts.forEach(function(art) {
+            if (!art || !art.business) return;
+            layoutPages.push({
+              business:  art.business || '',
+              product:   art.product  || art.size || '',
+              size:      art.size     || '',
+              blobPath:  art.path     || null,
+              thumbPath: art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null,
+              noArtwork: art.noArtwork || false
+            });
           });
-        }
-      });
-    }
-
-    // If no placed pages found try DOM
-    if (!layoutPages.length) {
-      document.querySelectorAll('[data-artid]').forEach(function(el) {
-        const artId = el.dataset.artid;
-        if (!artId) return;
-        const art = allArtwork ? allArtwork.find(function(a){ return a.id===artId; }) : null;
-        if (art && !layoutPages.find(function(p){ return p.business===art.business; })) {
-          layoutPages.push({
-            business: art.business||'', product: art.product||art.size||'',
-            size: art.size||'', blobPath: art.path||null,
-            thumbPath: art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null
-          });
-        }
+        });
       });
     }
 
