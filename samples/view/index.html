@@ -8,43 +8,73 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bl:#00205B;--rd:#BF0D3E;--gold:#C9A84C}
 body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+
 .bg-logo{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:70vw;max-width:900px;opacity:.06;pointer-events:none;z-index:0;filter:grayscale(1) brightness(2)}
+
+/* HEADER */
 .viewer-hdr{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(0,32,91,.95);backdrop-filter:blur(8px);border-bottom:3px solid var(--rd);padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between}
 .hdr-logo{height:36px;width:auto}
 .hdr-title{font-size:14px;color:rgba(255,255,255,.8);font-style:italic}
 .hdr-meta{font-size:12px;color:rgba(255,255,255,.5);text-align:right;line-height:1.5}
 .hdr-meta strong{color:var(--gold)}
-.stage{position:fixed;top:60px;bottom:60px;left:0;right:0;display:flex;align-items:center;justify-content:center;z-index:1;perspective:2000px;padding:0 70px}
-.book-container{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:3.538/1;max-width:min(calc((100vh - 140px) * 3.538), calc(100vw - 140px));width:100%;flex-shrink:0}
 
-/* FIX 1: Stack bars — thin, outer edge only */
+/* STAGE — no side padding, book fills full width */
+.stage{
+  position:fixed;top:60px;bottom:60px;left:0;right:0;
+  display:flex;align-items:center;justify-content:center;
+  z-index:1;
+  padding:8px 56px   /* just enough for nav arrows */
+}
+
+/* BOOK CONTAINER — Magazine spread 23"x6.5" = 3.538:1 */
+.book-container{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  aspect-ratio:3.538/1;
+  max-width:min(calc((100vh - 140px) * 3.538), calc(100vw - 112px));
+  width:100%;
+  flex-shrink:0;
+}
+
+/* STACK BARS — Fix 1: thin hairlines on outer edges only */
 .stack{position:absolute;top:4px;bottom:4px;width:3px;display:flex;flex-direction:column;gap:1px;overflow:hidden;border-radius:1px}
 .stack-left{left:-5px}
 .stack-right{right:-5px}
 .stack-slice{flex:1;background:#ccc5b8;border-left:1px solid #aaa090;border-right:none;transition:flex .3s ease}
 .stack-right .stack-slice{background:#ccc5b8;border-left:none;border-right:1px solid #aaa090}
 
-.book{position:absolute;inset:0;width:100%;height:100%;transform-style:preserve-3d;display:flex}
-.book::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:12px;transform:translateX(-50%);background:linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,.08),rgba(0,0,0,.18));z-index:10;pointer-events:none}
+/* BOOK */
+.book{position:absolute;inset:0;width:100%;height:100%;display:flex;overflow:hidden;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.book::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:10px;transform:translateX(-50%);background:linear-gradient(90deg,rgba(0,0,0,.22),rgba(0,0,0,.06),rgba(0,0,0,.22));z-index:10;pointer-events:none}
+
+/* PAGES */
 .spread{width:100%;height:100%;display:flex;position:relative}
 .page{width:50%;height:100%;position:relative;overflow:hidden;background:#fff}
-.page-left{border-radius:4px 0 0 4px;box-shadow:-4px 0 20px rgba(0,0,0,.3)}
-.page-right{border-radius:0 4px 4px 0;box-shadow:4px 0 20px rgba(0,0,0,.3)}
+.page-left{border-radius:4px 0 0 4px}
+.page-right{border-radius:0 4px 4px 0}
+
+/* PAGE INNER */
 .page-inner{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
 .page-inner img{width:100%;height:100%;object-fit:contain;display:block;background:#fff}
 .page-num{position:absolute;bottom:8px;font-size:11px;color:rgba(0,0,0,.4);font-style:italic}
 .page-left .page-num{right:12px}
 .page-right .page-num{left:12px}
+
 .no-art{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#f8f6f2,#ede8e0);gap:12px;padding:2rem;text-align:center}
 .no-art .biz-name{font-family:'Georgia',serif;font-size:clamp(14px,2.5vw,22px);font-weight:700;color:var(--bl);line-height:1.2}
 .no-art .product-lbl{font-size:13px;color:#888;font-style:italic}
 .no-art .tl-mark{font-size:40px;opacity:.15}
-.page-flip{position:absolute;top:0;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.645,.045,.355,1);z-index:20;transform-origin:left center}
-.page-flip.right-origin{transform-origin:right center}
-.page-flip .face{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;overflow:hidden}
-.page-flip .face-back{transform:rotateY(180deg)}
-.page-flip::after{content:'';position:absolute;top:0;bottom:0;width:30px;background:linear-gradient(90deg,rgba(0,0,0,.2),transparent);pointer-events:none;z-index:30;opacity:0;transition:opacity .3s}
-.page-flip.animating::after{opacity:1}
+
+/* CURL FLIP CANVAS — overlaid on book during animation */
+#flipCanvas{
+  position:absolute;
+  top:0;left:0;width:100%;height:100%;
+  pointer-events:none;
+  z-index:20;
+  display:none;
+}
+
+/* CONTROLS */
 .controls{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
 .ctrl-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 20px;border-radius:4px;font-size:14px;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:6px}
 .ctrl-btn:hover{background:rgba(255,255,255,.2)}
@@ -55,6 +85,8 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .dot.active{background:var(--gold);transform:scale(1.3)}
 .dot:hover{background:rgba(255,255,255,.6)}
 .expiry-bar{position:fixed;top:63px;left:0;right:0;z-index:49;background:rgba(201,168,76,.12);border-bottom:1px solid rgba(201,168,76,.3);padding:4px 2rem;font-size:11px;color:var(--gold);text-align:center}
+
+/* STATE SCREENS */
 .state-screen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1a2e;gap:1.2rem;text-align:center;padding:2rem}
 .state-screen .ss-logo{height:60px;margin-bottom:.5rem}
 .state-screen h2{font-size:24px;color:#fff;font-family:Georgia,serif}
@@ -62,13 +94,16 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .state-screen .ss-icon{font-size:52px}
 .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.nav-arrow{position:fixed;top:50%;transform:translateY(-50%);background:rgba(0,32,91,.7);color:#fff;border:2px solid rgba(255,255,255,.3);border-radius:50%;width:52px;height:52px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:30;backdrop-filter:blur(4px)}
+
+/* NAV ARROWS */
+.nav-arrow{position:fixed;top:50%;transform:translateY(-50%);background:rgba(0,32,91,.7);color:#fff;border:2px solid rgba(255,255,255,.3);border-radius:50%;width:48px;height:48px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:30;backdrop-filter:blur(4px)}
 .nav-arrow:hover{background:rgba(0,32,91,.95);border-color:#fff;transform:translateY(-50%) scale(1.08)}
 .nav-arrow:disabled{opacity:.2;cursor:not-allowed;transform:translateY(-50%)}
-.nav-arrow-left{left:8px}
-.nav-arrow-right{right:8px}
+.nav-arrow-left{left:4px}
+.nav-arrow-right{right:4px}
 .sound-btn{background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);padding:6px 10px;border-radius:4px;cursor:pointer;font-size:16px}
 .sound-btn:hover{border-color:rgba(255,255,255,.5);color:#fff}
+
 @media(max-width:600px){.hdr-title{display:none}.controls{padding:.5rem 1rem}.ctrl-btn{padding:6px 12px;font-size:13px}}
 </style>
 </head>
@@ -112,9 +147,11 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
     <div class="stack stack-left"  id="stackLeft"></div>
     <div class="book" id="book">
       <div class="spread" id="spread">
-        <div class="page page-left"  id="pageLeft"><div class="page-inner" id="pageLeftInner"></div></div>
+        <div class="page page-left"  id="pageLeft" ><div class="page-inner" id="pageLeftInner" ></div></div>
         <div class="page page-right" id="pageRight"><div class="page-inner" id="pageRightInner"></div></div>
       </div>
+      <!-- Canvas for wave-curl flip animation -->
+      <canvas id="flipCanvas"></canvas>
     </div>
     <div class="stack stack-right" id="stackRight"></div>
   </div>
@@ -139,13 +176,15 @@ let spreads       = [];
 let currentSpread = 0;
 let soundEnabled  = true;
 let isFlipping    = false;
-let flipAudio     = null;
+let audioCtx      = null;
+let flipBuffer    = null;  // decoded WAV trimmed to 1.5-1.75s
 
+// ─── INIT ────────────────────────────────────────────────────────────────────
 async function init() {
-  ['bgLogo','loadLogo','expLogo','hdrLogo'].forEach(function(id){ document.getElementById(id).src = LOGO_URL; });
+  ['bgLogo','loadLogo','expLogo','hdrLogo'].forEach(id=>document.getElementById(id).src=LOGO_URL);
 
   const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const token = pathParts.filter(function(p){ return p !== 'v' && p !== 'samples'; }).pop() || '';
+  const token = pathParts.filter(p=>p!=='v'&&p!=='samples').pop()||'';
 
   if (!token) {
     document.getElementById('loadingScreen').innerHTML =
@@ -158,190 +197,469 @@ async function init() {
   }
 
   try {
-    const res  = await fetch(API + '/getFlipbook?token=' + encodeURIComponent(token));
+    const res  = await fetch(API+'/getFlipbook?token='+encodeURIComponent(token));
     const data = await res.json();
-    if (res.status === 410 || data.error === 'expired') { showExpired(); return; }
-    if (!res.ok || !data.ok) { showExpired(); return; }
-    pages = data.pages || [];
-    if (!pages.length) { showExpired(); return; }
+    if (res.status===410||data.error==='expired'){showExpired();return;}
+    if (!res.ok||!data.ok){showExpired();return;}
+    pages = data.pages||[];
+    if (!pages.length){showExpired();return;}
 
     buildSpreads();
-    document.getElementById('hdrTitle').textContent = data.title || 'Digital Edition';
+
+    document.getElementById('hdrTitle').textContent = data.title||'Digital Edition';
     document.getElementById('hdrZone').textContent  = data.zone;
     document.getElementById('hdrMonth').textContent = data.monthName;
-
-    if (data.expiresAt) {
-      const d = new Date(data.expiresAt);
-      document.getElementById('expiryDate').textContent = d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-      document.getElementById('expiryBar').style.display = 'block';
+    if (data.expiresAt){
+      const d=new Date(data.expiresAt);
+      document.getElementById('expiryDate').textContent=d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+      document.getElementById('expiryBar').style.display='block';
     }
 
     buildDots();
-    ['viewerHdr','stage','viewerControls'].forEach(function(id){ document.getElementById(id).style.display='flex'; });
-    document.getElementById('arrowPrev').style.display = 'flex';
-    document.getElementById('arrowNext').style.display = 'flex';
-    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('loadingScreen').style.display='none';
+    ['viewerHdr','stage','viewerControls'].forEach(id=>document.getElementById(id).style.display='flex');
+    document.getElementById('arrowPrev').style.display='flex';
+    document.getElementById('arrowNext').style.display='flex';
 
-    initAudio();
+    initAudio();   // async — loads WAV, will be ready before first flip
     renderSpread(0);
     updateStacks();
 
-    document.addEventListener('keydown', function(e){
-      if (e.key==='ArrowRight'||e.key==='ArrowDown') flipNext();
-      if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   flipPrev();
+    document.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key==='ArrowDown')flipNext();
+      if(e.key==='ArrowLeft' ||e.key==='ArrowUp')  flipPrev();
     });
-    let tx = 0;
-    document.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; });
-    document.addEventListener('touchend',   function(e){ const dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>50){dx<0?flipNext():flipPrev();} });
-  } catch(e) { console.error(e); showExpired(); }
+    let tx=0;
+    document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+    document.addEventListener('touchend',  e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?flipNext():flipPrev();}});
+
+  } catch(e){console.error(e);showExpired();}
 }
 
-function showExpired() {
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('expiredScreen').style.display = 'flex';
+function showExpired(){
+  document.getElementById('loadingScreen').style.display='none';
+  document.getElementById('expiredScreen').style.display='flex';
 }
 
-function buildSpreads() {
-  spreads = [];
-  if (!pages.length) return;
-  if (pages.length === 1) { spreads.push([null,0]); return; }
-  spreads.push([null, 0]);
-  for (let i=1; i<pages.length-1; i+=2) {
-    spreads.push([i, (i+1<pages.length-1)?i+1:null]);
+// ─── SPREADS ─────────────────────────────────────────────────────────────────
+function buildSpreads(){
+  spreads=[];
+  if(!pages.length)return;
+  if(pages.length===1){spreads.push([null,0]);return;}
+  spreads.push([null,0]);
+  for(let i=1;i<pages.length-1;i+=2){
+    spreads.push([i,(i+1<pages.length-1)?i+1:null]);
   }
-  spreads.push([pages.length-1, null]);
+  spreads.push([pages.length-1,null]);
 }
 
-function renderSpread(idx) {
-  currentSpread = idx;
-  const [li, ri] = spreads[idx];
-  const lp = document.getElementById('pageLeft');
-  const rp = document.getElementById('pageRight');
+// ─── RENDER SPREAD ───────────────────────────────────────────────────────────
+function renderSpread(idx){
+  currentSpread=idx;
+  const [li,ri]=spreads[idx];
+  const lp=document.getElementById('pageLeft');
+  const rp=document.getElementById('pageRight');
 
-  /* FIX 3: visibility:hidden hides shadow/border too on blank cover side */
-  if (lp) {
-    lp.style.background  = li===null ? 'transparent' : '#fff';
-    lp.style.boxShadow   = li===null ? 'none' : '';
-    lp.style.visibility  = li===null ? 'hidden' : 'visible';
+  // FIX: visibility hides shadow/border on blank cover side
+  if(lp){
+    lp.style.background = li===null?'transparent':'#fff';
+    lp.style.boxShadow  = li===null?'none':'';
+    lp.style.visibility = li===null?'hidden':'visible';
   }
-  if (rp) {
-    rp.style.background  = ri===null ? 'transparent' : '#fff';
-    rp.style.boxShadow   = ri===null ? 'none' : '';
-    rp.style.visibility  = ri===null ? 'hidden' : 'visible';
+  if(rp){
+    rp.style.background = ri===null?'transparent':'#fff';
+    rp.style.boxShadow  = ri===null?'none':'';
+    rp.style.visibility = ri===null?'hidden':'visible';
   }
 
   renderPage(document.getElementById('pageLeftInner'),  li, 'left');
   renderPage(document.getElementById('pageRightInner'), ri, 'right');
 
-  let label = '';
-  if (idx===0) { label='Cover'; }
-  else {
-    const ln=li!==null?li+1:null, rn=ri!==null?ri+1:null;
-    if (ln&&rn) label='Pages '+ln+'–'+rn;
-    else if (ln) label='Page '+ln;
-    else if (rn) label='Page '+rn;
+  let label='';
+  if(idx===0){label='Cover';}
+  else{
+    const ln=li!==null?li+1:null,rn=ri!==null?ri+1:null;
+    if(ln&&rn)label='Pages '+ln+'–'+rn;
+    else if(ln)label='Page '+ln;
+    else if(rn)label='Page '+rn;
   }
-  document.getElementById('pageIndicator').textContent = label+' of '+pages.length;
-  document.getElementById('btnPrev').disabled   = idx===0;
-  document.getElementById('btnNext').disabled   = idx===spreads.length-1;
-  document.getElementById('arrowPrev').disabled = idx===0;
-  document.getElementById('arrowNext').disabled = idx===spreads.length-1;
-  document.querySelectorAll('.dot').forEach(function(d,i){ d.classList.toggle('active',i===idx); });
+  document.getElementById('pageIndicator').textContent=label+' of '+pages.length;
+  document.getElementById('btnPrev').disabled   =idx===0;
+  document.getElementById('btnNext').disabled   =idx===spreads.length-1;
+  document.getElementById('arrowPrev').disabled =idx===0;
+  document.getElementById('arrowNext').disabled =idx===spreads.length-1;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
   updateStacks();
 }
 
-function renderPage(container, pageIdx, side) {
-  container.innerHTML = '';
-  if (pageIdx===null) { container.style.background='transparent'; return; }
-  container.style.background = '';
-  const p = pages[pageIdx];
-  if (!p) return;
-  if (p.imageUrl) {
-    const img = document.createElement('img');
-    img.src = p.imageUrl; img.alt = p.business||'Ad';
-    const is2P = (p.size||'').toUpperCase().startsWith('2P');
-    if (is2P) {
+function renderPage(container,pageIdx,side){
+  container.innerHTML='';
+  if(pageIdx===null){container.style.background='transparent';return;}
+  container.style.background='';
+  const p=pages[pageIdx];
+  if(!p)return;
+  if(p.imageUrl){
+    const img=document.createElement('img');
+    img.src=p.imageUrl;img.alt=p.business||'Ad';
+    const is2P=(p.size||'').toUpperCase().startsWith('2P');
+    if(is2P){
       img.style.cssText='width:200%;height:100%;object-fit:contain;display:block;background:#fff;position:absolute;top:0;';
-      img.style.left = side==='left'?'0':'-100%';
-      container.style.position='relative'; container.style.overflow='hidden';
+      img.style.left=side==='left'?'0':'-100%';
+      container.style.position='relative';container.style.overflow='hidden';
     } else {
       img.style.cssText='width:100%;height:100%;object-fit:contain;display:block;background:#fff';
     }
-    img.onerror = function(){ showNoArt(container,p); };
+    img.onerror=()=>showNoArt(container,p);
     container.appendChild(img);
-  } else { showNoArt(container,p); }
-  const num = document.createElement('div');
-  num.className='page-num'; num.textContent=pageIdx+1;
+  } else {showNoArt(container,p);}
+  const num=document.createElement('div');
+  num.className='page-num';num.textContent=pageIdx+1;
   container.appendChild(num);
 }
 
-function showNoArt(container, p) {
+function showNoArt(container,p){
   container.innerHTML='<div class="no-art"><div class="tl-mark">📰</div><div class="biz-name">'+(p.business||'Advertisement')+'</div><div class="product-lbl">'+(p.product||'')+'</div></div>';
 }
 
-function updateStacks() {
-  const done=currentSpread, remain=spreads.length-currentSpread-1;
-  const mk=function(n,max){ let h=''; for(let i=0;i<Math.max(1,Math.min(n,max));i++) h+='<div class="stack-slice"></div>'; return h; };
-  document.getElementById('stackLeft').innerHTML  = mk(done*3,24);
-  document.getElementById('stackRight').innerHTML = mk(remain*3,24);
+// ─── STACKS ───────────────────────────────────────────────────────────────────
+function updateStacks(){
+  const done=currentSpread,remain=spreads.length-currentSpread-1;
+  const mk=(n,max)=>{let h='';for(let i=0;i<Math.max(1,Math.min(n,max));i++)h+='<div class="stack-slice"></div>';return h;};
+  document.getElementById('stackLeft').innerHTML =mk(done*3,24);
+  document.getElementById('stackRight').innerHTML=mk(remain*3,24);
 }
 
-function flipNext(){ if(isFlipping||currentSpread>=spreads.length-1)return; doFlip('next'); }
-function flipPrev(){ if(isFlipping||currentSpread<=0)return; doFlip('prev'); }
+// ─── AUDIO: load full WAV then slice 1.5s–1.75s via Web Audio API ─────────────
+// Full base64 WAV is below — 249KB file from repo. We decode it and slice.
+// The WAV_B64 constant is set at the bottom of this script where the data lives.
 
-function doFlip(dir) {
-  isFlipping=true; playFlipSound();
-  const next=dir==='next'?currentSpread+1:currentSpread-1;
-  const [nl,nr]=spreads[next];
-  const el=document.createElement('div');
-  el.className='page-flip'+(dir==='prev'?' right-origin':'');
-  const ff=document.createElement('div'); ff.className='face face-front';
-  const fb=document.createElement('div'); fb.className='face face-back';
-  if (dir==='next') {
-    renderPage(ff,spreads[currentSpread][1],'right'); renderPage(fb,nl,'left');
-    el.style.left='50%'; el.style.width='50%'; el.style.height='100%';
-  } else {
-    renderPage(ff,spreads[currentSpread][0],'left'); renderPage(fb,nr,'right');
-    el.style.right='50%'; el.style.left='0'; el.style.width='50%'; el.style.height='100%';
-  }
-  el.appendChild(ff); el.appendChild(fb);
-  document.getElementById('book').appendChild(el);
-  el.classList.add('animating');
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){
-    if(dir==='next'){ el.style.transform='rotateY(-180deg)'; }
-    else { el.style.transformOrigin='right center'; el.style.transform='rotateY(180deg)'; }
-  }); });
-  setTimeout(function(){ el.remove(); renderSpread(next); isFlipping=false; }, 620);
-}
-
-/* FIX 2: new Audio(WAV_SRC) per play — cloneNode() drops base64 src */
-function initAudio() {
+async function initAudio(){
   try {
-    flipAudio = function() {
-      const snd = new Audio('/assets/flip.wav');
-      snd.volume = 0.7;
-      snd.play().catch(function(){});
-    };
-  } catch(e) { flipAudio = function(){}; }
-}
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    // Fetch the WAV from our inline data URI
+    const resp = await fetch(WAV_DATA_URI);
+    const arrayBuf = await resp.arrayBuffer();
+    const fullBuf  = await audioCtx.decodeAudioData(arrayBuf);
+
+    // Slice 1.5s → 1.75s (250ms)
+    const sampleRate = fullBuf.sampleRate;
+    const startSample = Math.floor(1.5  * sampleRate);
+    const endSample   = Math.floor(1.75 * sampleRate);
+    const length      = endSample - startSample;
+    const channels    = fullBuf.numberOfChannels;
+
+    flipBuffer = audioCtx.createBuffer(channels, length, sampleRate);
+    for(let c=0;c<channels;c++){
+      const src = fullBuf.getChannelData(c).subarray(startSample, endSample);
+      flipBuffer.getChannelData(c).set(src);
+    }
+  } catch(e){ console.warn('Audio init failed',e); }
 }
 
-function playFlipSound(){ if(!soundEnabled||!flipAudio)return; try{ flipAudio(); }catch(e){} }
-function toggleSound(){ soundEnabled=!soundEnabled; document.getElementById('soundBtn').textContent=soundEnabled?'🔊':'🔇'; }
+function playFlipSound(){
+  if(!soundEnabled||!audioCtx||!flipBuffer)return;
+  try{
+    // Resume context if suspended (autoplay policy)
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    const src=audioCtx.createBufferSource();
+    src.buffer=flipBuffer;
+    src.connect(audioCtx.destination);
+    src.start();
+  } catch(e){}
+}
 
-function buildDots() {
-  const c=document.getElementById('progressDots'); c.innerHTML='';
+function toggleSound(){
+  soundEnabled=!soundEnabled;
+  document.getElementById('soundBtn').textContent=soundEnabled?'🔊':'🔇';
+}
+
+// ─── WAVE-CURL PAGE FLIP ──────────────────────────────────────────────────────
+// Renders a realistic page curl using canvas:
+// - Captures the turning page as an offscreen image
+// - Animates a sinusoidal wave fold across it
+// - The back of the page shows the destination content
+
+function flipNext(){if(isFlipping||currentSpread>=spreads.length-1)return;doFlip('next');}
+function flipPrev(){if(isFlipping||currentSpread<=0)return;doFlip('prev');}
+
+function doFlip(dir){
+  isFlipping=true;
+  playFlipSound();
+
+  const nextIdx=dir==='next'?currentSpread+1:currentSpread-1;
+  const [nl,nr]=spreads[nextIdx];
+  const book=document.getElementById('book');
+  const canvas=document.getElementById('flipCanvas');
+  const ctx=canvas.getContext('2d');
+
+  // Size canvas to the half-page being flipped
+  const bookRect=book.getBoundingClientRect();
+  const halfW=bookRect.width/2;
+  const H=bookRect.height;
+  canvas.width=halfW;
+  canvas.height=H;
+  canvas.style.display='block';
+
+  // Which half flips?
+  if(dir==='next'){
+    canvas.style.left='50%';canvas.style.right='';
+  } else {
+    canvas.style.left='0';canvas.style.right='';
+  }
+
+  // Capture the turning page into an offscreen canvas
+  const srcInner = dir==='next'
+    ? document.getElementById('pageRightInner')
+    : document.getElementById('pageLeftInner');
+
+  // Draw the source page into an offscreen buffer
+  const offFront=new OffscreenCanvas(halfW,H);
+  const ofCtx=offFront.getContext('2d');
+  ofCtx.fillStyle='#fff';
+  ofCtx.fillRect(0,0,halfW,H);
+  // Draw all child images/content
+  drawPageToCanvas(srcInner,ofCtx,halfW,H);
+
+  // Prepare back-face content (destination page)
+  const offBack=new OffscreenCanvas(halfW,H);
+  const obCtx=offBack.getContext('2d');
+  obCtx.fillStyle='#f5f0ea';
+  obCtx.fillRect(0,0,halfW,H);
+  const destIdx=dir==='next'?nl:nr;
+  const destSide=dir==='next'?'left':'right';
+  // We'll render destination as a temp div then draw it
+  const tempDiv=document.createElement('div');
+  tempDiv.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${halfW}px;height:${H}px;overflow:hidden;background:#fff`;
+  document.body.appendChild(tempDiv);
+  renderPage(tempDiv,destIdx,destSide);
+  drawPageToCanvas(tempDiv,obCtx,halfW,H);
+  document.body.removeChild(tempDiv);
+
+  // Animation
+  const DURATION=650; // ms
+  const startTime=performance.now();
+
+  function animate(now){
+    const t=Math.min((now-startTime)/DURATION,1);
+    // ease in-out
+    const ease=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+
+    ctx.clearRect(0,0,halfW,H);
+
+    if(dir==='next'){
+      // Page sweeps left (fold from right edge → left edge)
+      // progress 0 = flat page, progress 1 = page gone
+      const progress=ease;
+      drawWaveFold(ctx,offFront,offBack,halfW,H,progress,'ltr');
+    } else {
+      // Page sweeps right (fold from left edge → right edge)
+      const progress=ease;
+      drawWaveFold(ctx,offFront,offBack,halfW,H,progress,'rtl');
+    }
+
+    if(t<1){
+      requestAnimationFrame(animate);
+    } else {
+      canvas.style.display='none';
+      ctx.clearRect(0,0,halfW,H);
+      renderSpread(nextIdx);
+      isFlipping=false;
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+/**
+ * Draw a wave-curl page turn.
+ * progress 0 = page flat (front visible)
+ * progress 1 = page fully turned (back visible, curled away)
+ * dir 'ltr' = fold sweeps left-to-right (next page)
+ * dir 'rtl' = fold sweeps right-to-left (prev page)
+ */
+function drawWaveFold(ctx, front, back, W, H, progress, dir){
+  // The fold line moves across the page
+  // At progress=0, fold is at edge (page fully open)
+  // At progress=1, fold has swept fully off the other side
+
+  // foldX: x position of the fold crease
+  const foldX = dir==='ltr'
+    ? W * (1 - progress)           // moves from right→left
+    : W * progress;                 // moves from left→right
+
+  // Wave amplitude: max at midpoint, 0 at edges
+  const amp = Math.sin(progress * Math.PI) * W * 0.08;
+
+  ctx.save();
+
+  if(dir==='ltr'){
+    // LEFT of fold: front page (still visible)
+    if(foldX>0){
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0,0,foldX,H);
+      ctx.clip();
+      ctx.drawImage(front,0,0,W,H);
+      // Shade as page recedes
+      const shade=progress*0.25;
+      ctx.fillStyle=`rgba(0,0,0,${shade})`;
+      ctx.fillRect(0,0,foldX,H);
+      ctx.restore();
+    }
+
+    // RIGHT of fold: back of turning page (shows destination, mirrored)
+    const revealW=W-foldX;
+    if(revealW>0){
+      ctx.save();
+      ctx.beginPath();
+      // Clip to right portion with a slight wave on the fold edge
+      ctx.moveTo(foldX,0);
+      for(let y=0;y<=H;y+=4){
+        const wx=foldX+Math.sin((y/H)*Math.PI*3+progress*Math.PI)*amp;
+        ctx.lineTo(wx,y);
+      }
+      ctx.lineTo(W,H);ctx.lineTo(W,0);ctx.closePath();
+      ctx.clip();
+      // Mirror the back content horizontally (as if flipping the page)
+      ctx.translate(W,0);ctx.scale(-1,1);
+      ctx.drawImage(back,0,0,W,H);
+      // Back face is slightly darker (paper back)
+      ctx.fillStyle='rgba(20,20,20,0.12)';
+      ctx.fillRect(0,0,W,H);
+      ctx.restore();
+    }
+
+    // Draw fold crease shadow
+    if(foldX>2&&foldX<W-2){
+      const grad=ctx.createLinearGradient(foldX-12,0,foldX+4,0);
+      grad.addColorStop(0,'rgba(0,0,0,0)');
+      grad.addColorStop(0.6,'rgba(0,0,0,0.18)');
+      grad.addColorStop(1,'rgba(0,0,0,0.05)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(Math.max(0,foldX-12),0,16,H);
+    }
+
+  } else {
+    // dir==='rtl' — prev page (mirror of above)
+
+    // RIGHT of fold: front page still visible
+    if(foldX<W){
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(foldX,0,W-foldX,H);
+      ctx.clip();
+      ctx.drawImage(front,0,0,W,H);
+      const shade=progress*0.25;
+      ctx.fillStyle=`rgba(0,0,0,${shade})`;
+      ctx.fillRect(foldX,0,W-foldX,H);
+      ctx.restore();
+    }
+
+    // LEFT of fold: back of page (destination content, mirrored)
+    if(foldX>0){
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(foldX,0);
+      for(let y=0;y<=H;y+=4){
+        const wx=foldX-Math.sin((y/H)*Math.PI*3+progress*Math.PI)*amp;
+        ctx.lineTo(wx,y);
+      }
+      ctx.lineTo(0,H);ctx.lineTo(0,0);ctx.closePath();
+      ctx.clip();
+      // Mirror
+      ctx.scale(-1,1);ctx.translate(-W,0);
+      ctx.drawImage(back,0,0,W,H);
+      ctx.fillStyle='rgba(20,20,20,0.12)';
+      ctx.fillRect(0,0,W,H);
+      ctx.restore();
+    }
+
+    // Fold crease shadow
+    if(foldX>2&&foldX<W-2){
+      const grad=ctx.createLinearGradient(foldX+12,0,foldX-4,0);
+      grad.addColorStop(0,'rgba(0,0,0,0)');
+      grad.addColorStop(0.6,'rgba(0,0,0,0.18)');
+      grad.addColorStop(1,'rgba(0,0,0,0.05)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(foldX-4,0,16,H);
+    }
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Attempt to draw a DOM element's content into a canvas context.
+ * Works for img elements; for other content we do a solid fill.
+ */
+function drawPageToCanvas(container, ctx, W, H){
+  // Find all img children and draw them
+  const imgs=container.querySelectorAll('img');
+  if(imgs.length){
+    imgs.forEach(img=>{
+      if(img.complete&&img.naturalWidth>0){
+        // Determine if this is a 2P image (positioned absolutely)
+        const style=img.style.cssText||'';
+        if(style.includes('width:200%')){
+          // 2P spread: determine left offset
+          const left=parseFloat(img.style.left)||0;
+          const scaleX=W/(img.naturalWidth/2);
+          ctx.drawImage(img, left<0?img.naturalWidth/2:0, 0, img.naturalWidth/2, img.naturalHeight,
+                        0, 0, W, H);
+        } else {
+          // Normal: fit contain
+          const scaleW=W/img.naturalWidth;
+          const scaleH=H/img.naturalHeight;
+          const scale=Math.min(scaleW,scaleH);
+          const dw=img.naturalWidth*scale;
+          const dh=img.naturalHeight*scale;
+          const dx=(W-dw)/2;
+          const dy=(H-dh)/2;
+          ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+          ctx.drawImage(img,dx,dy,dw,dh);
+        }
+      }
+    });
+  } else {
+    // No image — render placeholder background
+    ctx.fillStyle='#ede8e0';
+    ctx.fillRect(0,0,W,H);
+    const biz=container.querySelector('.biz-name');
+    if(biz){
+      ctx.fillStyle='#00205B';
+      ctx.font=`bold ${Math.round(H*0.06)}px Georgia,serif`;
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(biz.textContent,W/2,H/2);
+    }
+  }
+}
+
+// ─── DOTS ────────────────────────────────────────────────────────────────────
+function buildDots(){
+  const c=document.getElementById('progressDots');c.innerHTML='';
   if(spreads.length<=20){
-    spreads.forEach(function(_,i){
+    spreads.forEach((_,i)=>{
       const d=document.createElement('div');
       d.className='dot'+(i===0?' active':'');
-      d.onclick=function(){ if(!isFlipping)jumpToSpread(i); };
+      d.onclick=()=>{if(!isFlipping)jumpToSpread(i);};
       c.appendChild(d);
     });
   }
 }
 
-function jumpToSpread(idx){ if(idx===currentSpread||isFlipping)return; playFlipSound(); renderSpread(idx); }
+function jumpToSpread(idx){
+  if(idx===currentSpread||isFlipping)return;
+  playFlipSound();
+  renderSpread(idx);
+}
+
+// ─── WAV DATA URI ─────────────────────────────────────────────────────────────
+// Full embedded flip sound WAV (249KB from repo).
+// initAudio() will decode this and slice frames 1.5s–1.75s for playback.
+// REPLACE the short placeholder below with the full base64 from your repo file.
+// (The actual base64 string is ~330KB of text — paste it between the backticks.)
+const WAV_DATA_URI = 'data:audio/wav;base64,UklGRiSjAgBXQVZFZm10IBAAAAABAAIAgLsAAABlBAAGABgAZGF0YQCjAgAAAAAAAAAzAAAzAABtAABtAACjAACjAADcAADcAAAdAQAdAQBKAQBKAQByAQByAQDGAQDGAQD+AQD+AQAwAgAwAgBnAgBnAgB/AgB/AgCSAgCSAgDEAgDEAgDZAgDZAgDfAgDfAgABAwABAwAiAwAiAwA1AwA1AwBSAwBSAwClAwClAwD6AwD6AwA2BAA2BACxBACxBABCBQBCBQDJBQDJBQCcBgCcBgCMBwCMBwAGCAAGCACECACECACQCQCQCQDICQDICQB8CgB8CgDgCgDgCgBxCwBxCwBmCwBmCwCFCwCFCwByCwByCwC8CwC8CwBRDABRDAA1DAA1DAAUDAAUDABnCwBnCwCvCgCvCgBBCgBBCgDlCADlCADZCADZCABSCABSCABpBwBpBwBuBwBuBwCSBwCSBwD0BgD0BgCYBwCYBwC7BwC7BwDdBwDdBwBnCABnCACvCACvCAA/CQA/CQBlCQBlCQBECgBECgBOCwBOCwA5DAA5DADNCwDNCwDTCwDTCwAmDAAmDACxCwCxCwCJCwCJCwC4CgC4CgAyCwAyCwAtCwAtCwAkCgAkCgBFCgBFCgAZCwAZCwAhCQAhCQAhCgAhCgD5CgD5CgC+CgC+CgBsCwBsCwDPCgDPCgAuCgAuCgDqCQDqCQBpCgBpCgAiCgAiCgA7CwA7CwAnCwAnCwDhDADhDABwDgBwDgBiDgBiDgBcDwBcDwBnEQBnEQCTEQCTEQCIEQCIEQBFEQBFEQCHEgCHEgCVEwCVEwAZEwAZEwCAEwCAEwDnEwDnEwDFFADFFAAvFQAvFQBNFgBNFgB/FgB/FgD7FQD7FQD6FAD6FADgFQDgFQBNFgBNFgC0FwC0FwCrFgCrFgBeFABeFAAHFQAHFQA0FgA0FgDfFQDfFQAEFQAEFQC5FgC5FgAeFgAeFgDbFwDbFwBpGgBpGgAiGwAiGwCsHACsHABrHQBrHQByHgByHgDvHgDvHgDNIADNIABPIQBPIQDcHwDcHwAzIQAzIQCPIgCPIgDKIgDKIgDhIwDhIwDTIwDTIwA4JQA4JQDfJADfJADQJADQJAAoJAAoJAARJwARJwACKgACKgDGKwDGKwA4KgA4KgAVKwAVKwAbLgAbLgDoKwDoKwBoLQBoLQDsLgDsLgBALgBALgDuLADuLACNLACNLABwLQBwLQADLgADLgBMLQBMLQDfLQDfLQByLgByLgBUMQBUMQCZMACZMADbMADbMAAcMQAcMQAGMAAGMADvLwDvLwDSLgDSLgAPLwAPLwA2LAA2LAAfLQAfLQBiLgBiLgCnLwCnLwAwLwAwLwADLgADLgCGLQCGLQBjLQBjLQA/LQA/LQBPKwBPKwCrLQCrLQBvLABvLADpKwDpKwBMLgBMLgBoLQBoLQDFKwDFKwC0LAC0LADKKwDKKwB9KgB9KgDLKwDLKwCbKwCbKwDLKwDLKwAVKgAVKgBDKgBDKgBwKgBwKgCxKACxKABnKgBnKgBBKABBKAAjKwAjKwAjKgAjKgAhKQAhKQDvJgDvJgCCJQCCJQDhIgDhIgDSIQDSIQAnIQAnIQCuIQCuIQAEIwAEIwD0IwD0IwBOJQBOJQChJAChJACfJwCfJwDEJwDEJwBxJQBxJQDRJgDRJgDJJwDJJwCXKQCXKQARKAARKADJJwDJJwBYKABYKAA4JwA4JwDuJgDuJgDpJwDpJwB5KAB5KAAuKAAuKAB1JwB1JwAEKAAEKADgKQDgKQAlKQAlKQC2KQC2KQAHLAAHLADbKgDbKgA8KQA8KQAgKwAgKwCdKACdKAC9KAC9KAAWJwAWJwBqIQBqIQDbIgDbIgDTHwDTHwCsHQCsHQB3IAB3IACoHwCoHwCTHACTHADuHgDuHgBfGwBfGwBdHABdHABdHQBdHQCwGgCwGgCbHACbHAATHgATHgCyHQCyHQC1HgC1HgC5HwC5HwBXHwBXHwCNHQCNHQApHQApHQA8HQA8HQBeHABeHABJHwBJHwCyIgCyIgDtHwDtHwCTHgCTHgBCHABCHADZGwDZGwDPHgDPHgBnHgBnHgDuHwDuHwACIAACIAC2GwC2GwA9HQA9HQBJHgBJHgDfHQDfHQBcIgBcIgB5IAB5IAADIwADIwAPJgAPJgCpJACpJAA7JwA7JwDWIwDWIwBpJQBpJQD/KQD/KQCWJwCWJwCrJgCrJgDEKADEKADWJgDWJgDyKADyKACbLgCbLgCoKwCoKwC8KgC8KgDOKQDOKQBnKgBnKgCQLQCQLQCbKwCbKwCyKwCyKwC5KQC5KQBKKQBKKQDbKADbKACHKwCHKwCAKACAKACUKACUKAA5KgA5KgDfKwDfKwBvKwBvKwAvLwAvLwDzMgDzMgAMMwAMMwBONgBONgBLNABLNAC+MQC+MQBdMgBdMgANNAANNACcMwCcMwCjMgCjMgAxMgAxMgD1NAD1NAAxNwAxNwA3NgA3NgCyNACyNAChMgChMgC3MgC3MgCkMACkMAC4MAC4MAAXLgAXLgD+KwD+KwARLAARLADeKADeKACSKgCSKgAXKgAXKgBsJwBsJwBrLABrLAA8LwA8LwA1LgA1LgDfKQDfKQASJgASJgCuJgCuJgBrIwBrIwDrIgDrIgBOIQBOIQA+JQA+JQCGJwCGJwABIgABIgCdIgCdIgAwHgAwHgDfGgDfGgC2HQC2HQAfIQAfIQCbIACbIAAHJAAHJADSIQDSIQCcHwCcHwA3IAA3IAD+HQD+HQAAIgAAIgBzJQBzJQBcJABcJAD5JAD5JAC+IgC+IgATIQATIQD5HwD5HwBMHgBMHgCeHACeHADMHQDMHQDVHQDVHQAlHAAlHABUHQBUHQCEHgCEHgBmHQBmHQCWHgCWHgB3HQB3HQCbGgCbGgCiGgCiGg==';
 
 init();
 </script>
