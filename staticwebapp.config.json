@@ -1,6 +1,20 @@
 {
   "routes": [
     {
+      "route": "/v",
+      "rewrite": "/samples/index.html",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/v/*",
+      "rewrite": "/samples/index.html",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
       "route": "/samples",
       "rewrite": "/samples/index.html",
       "allowedRoles": [
@@ -98,7 +112,8 @@
     "exclude": [
       "/api/*",
       "*.{css,scss,js,png,gif,ico,jpg,svg,json,woff,woff2,ttf}",
-      "/samples/*"
+      "/samples/*",
+      "/v/*"
     ]
   },
   "globalHeaders": {
