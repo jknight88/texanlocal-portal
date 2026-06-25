@@ -31,9 +31,12 @@ function getSasUrl(acct, key, container, blobName, days) {
 module.exports = async function(context, req) {
   if (req.method === 'OPTIONS') { context.res={status:200,headers:CORS,body:'{}'}; context.done(); return; }
 
-  // Verify portal auth
-  const authHeader = req.headers['authorization']||'';
-  const token = authHeader.replace('Bearer ','') || req.query.token || '';
+  // Verify portal auth — accept token from Authorization header, query param, or cookie
+  const authHeader = req.headers['authorization'] || '';
+  const cookieStr  = req.headers['cookie'] || '';
+  const cookieToken = (cookieStr.match(/txl_token=([^;]+)/) || [])[1] || '';
+  const token = authHeader.replace('Bearer ', '').trim()
+    || req.query.token || cookieToken || (req.body && req.body._authToken) || '';
   try { jwt.verify(token, JWT_SECRET); } catch(e) {
     context.res={status:401,headers:CORS,body:JSON.stringify({error:'Unauthorized'})}; context.done(); return;
   }
