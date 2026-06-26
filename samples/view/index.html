@@ -51,8 +51,7 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 
 /* BOOK */
 .book{position:absolute;inset:0;width:100%;height:100%;display:flex;overflow:hidden;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
-.book::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:10px;transform:translateX(-50%);background:linear-gradient(90deg,rgba(0,0,0,.22),rgba(0,0,0,.06),rgba(0,0,0,.22));z-index:10;pointer-events:none}
-.book.no-spine::after{display:none}
+/* spine removed — no bar between pages */
 
 /* PAGES */
 .spread{width:100%;height:100%;display:flex;position:relative}
@@ -77,46 +76,45 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .no-art .product-lbl{font-size:13px;color:#888;font-style:italic}
 .no-art .tl-mark{font-size:40px;opacity:.15}
 
-/* 3D PAGE FLIP — CSS perspective transform, GPU-accelerated */
-.book{ perspective: 2500px; }
+/* 3D PAGE FLIP — multi-slice curved flip like FlipHTML5 */
+.book{ perspective: 2000px; transform-style: preserve-3d; }
 
-/* The flipping leaf — absolutely positioned over half the book */
+/* Container for the slices — covers the turning half */
 .flip-leaf{
   position:absolute;
   top:0; bottom:0;
   width:50%;
-  transform-origin: left center;   /* default; JS overrides for prev */
-  transform-style: preserve-3d;
   z-index:20;
   pointer-events:none;
-}
-.flip-leaf.flip-next{ left:50%; transform-origin: left center; }
-.flip-leaf.flip-prev{ left:0;   transform-origin: right center; }
-
-/* Front face = the page being turned away */
-.flip-face{
-  position:absolute;
-  inset:0;
-  backface-visibility:hidden;
-  -webkit-backface-visibility:hidden;
+  transform-style: preserve-3d;
   overflow:hidden;
-  background:#fff;
 }
-.flip-face-back{
+.flip-leaf.flip-next{ left:50%; }
+.flip-leaf.flip-prev{ left:0; }
+
+/* Each slice is a thin vertical strip of the page */
+.flip-slice{
+  position:absolute;
+  top:0; bottom:0;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  overflow:hidden;
+  backface-visibility:hidden;
+}
+.flip-slice-back{
   transform: rotateY(180deg);
 }
 
-/* Shadow overlay that fades in/out on the static pages */
+/* Shadow overlay on the static page behind the turning leaf */
 .flip-shadow{
   position:absolute;
   top:0; bottom:0; width:50%;
   pointer-events:none;
   z-index:15;
   opacity:0;
-  transition:none;
 }
-.flip-shadow-left { left:0;   background:linear-gradient(to left, rgba(0,0,0,0.18), transparent); }
-.flip-shadow-right{ right:0;  background:linear-gradient(to right, rgba(0,0,0,0.18), transparent); }
+.flip-shadow-left { left:0;   background:linear-gradient(to left, rgba(0,0,0,0.22), transparent); }
+.flip-shadow-right{ right:0;  background:linear-gradient(to right, rgba(0,0,0,0.22), transparent); }
 
 /* CONTROLS */
 .controls{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
@@ -416,11 +414,13 @@ function toggleSound(){
   if (soundEnabled) playFlipSound();
 }
 
-// ─── 3D CSS PAGE FLIP ───────────────────────────────────────────────────────
-// Uses CSS rotateY() — same technique as FlipHTML5.
-// A .flip-leaf div is injected over the turning half, rotated in 3D,
-// then removed. Front face = page turning away. Back face = page arriving.
-// No canvas, no image distortion, GPU-accelerated.
+// ─── CURVED PAGE FLIP ────────────────────────────────────────────────────────
+// Splits the turning page into N vertical slices. Each slice rotates on the Y
+// axis but with a slight lag behind the previous, creating a natural paper bend.
+// The leading edge rotates fastest, the spine edge lags — exactly like real paper.
+
+const SLICES   = 10;   // number of vertical strips (more = smoother curve)
+const DURATION = 600;  // ms
 
 function flipNext(){if(isFlipping||currentSpread>=spreads.length-1)return;doFlip('next');}
 function flipPrev(){if(isFlipping||currentSpread<=0)return;doFlip('prev');}
@@ -429,90 +429,147 @@ function doFlip(dir){
   isFlipping = true;
   playFlipSound();
 
-  const nextIdx  = dir==='next' ? currentSpread+1 : currentSpread-1;
-  const book     = document.getElementById('book');
-  const shadowL  = document.getElementById('shadowLeft');
-  const shadowR  = document.getElementById('shadowRight');
+  const nextIdx = dir==='next' ? currentSpread+1 : currentSpread-1;
+  const book    = document.getElementById('book');
+  const shadowL = document.getElementById('shadowLeft');
+  const shadowR = document.getElementById('shadowRight');
 
-  // ── Build the flip leaf ──────────────────────────────────────────────────
-  const leaf = document.createElement('div');
-  leaf.className = 'flip-leaf ' + (dir==='next' ? 'flip-next' : 'flip-prev');
-
-  // Front face: the page that is turning away
-  const front = document.createElement('div');
-  front.className = 'flip-face flip-face-front';
-
-  // Back face: the page that is arriving (mirror image)
-  const back = document.createElement('div');
-  back.className = 'flip-face flip-face-back';
-
-  // Determine which page indices are on each face
   const [curL, curR] = spreads[currentSpread];
   const [nxtL, nxtR] = spreads[nextIdx];
 
+  // Render destination spread into the static pages first (shows through gaps)
+  renderSpread(nextIdx);
+
+  // Keep the non-turning static page showing current content
+  const lp = document.getElementById('pageLeftInner');
+  const rp = document.getElementById('pageRightInner');
+  // ── Determine which pages go on front/back of the turning leaf ─────────────
+  // 'next': the RIGHT page of current spread turns over → reveals LEFT of next
+  // 'prev': the LEFT page of current spread turns over → reveals RIGHT of prev
+  // For cover [null,0]: going 'next' turns page 0 (right side), arriving at nxtL
+  // For back  [N,null]: going 'prev' turns page N (left side), arriving at nxtR
+  let frontPageIdx, frontSide, backPageIdx, backSide, leafSide;
+
   if(dir === 'next'){
-    // Turning: right page of current spread
-    renderPage(front, curR, 'right');
-    // Arriving: left page of next spread (mirrored in 3D)
-    renderPage(back,  nxtL, 'left');
+    // The turning page is whichever is on the RIGHT of current spread
+    // If curR is null (shouldn't happen going next from cover since cover is [null,0])
+    // Cover [null,0]: curR=0, so we turn page 0 rightward
+    frontPageIdx = curR !== null ? curR : curL;
+    frontSide    = 'right';
+    backPageIdx  = nxtL !== null ? nxtL : nxtR;
+    backSide     = 'left';
+    leafSide     = 'next'; // leaf sits on right half
   } else {
-    // Turning: left page of current spread
-    renderPage(front, curL, 'left');
-    // Arriving: right page of next spread (mirrored in 3D)
-    renderPage(back,  nxtR, 'right');
+    // Going prev: turn the LEFT page of current spread
+    frontPageIdx = curL !== null ? curL : curR;
+    frontSide    = 'left';
+    backPageIdx  = nxtR !== null ? nxtR : nxtL;
+    backSide     = 'right';
+    leafSide     = 'prev'; // leaf sits on left half
   }
 
-  leaf.appendChild(front);
-  leaf.appendChild(back);
+  // Static non-turning page: show current content
+  if(dir === 'next'){
+    renderPage(lp, curL, 'left');
+  } else {
+    renderPage(rp, curR, 'right');
+  }
+
+  // ── Build the leaf container ──────────────────────────────────────────────
+  const leaf = document.createElement('div');
+  leaf.className = 'flip-leaf flip-' + leafSide;
+
+  // Capture page dimensions from the book
+  const bookRect  = book.getBoundingClientRect();
+  const pageW     = bookRect.width / 2;
+  const pageH     = bookRect.height;
+  const sliceW    = pageW / SLICES;
+
+  // ── Create slices ─────────────────────────────────────────────────────────
+  for(let i = 0; i < SLICES; i++){
+    const slice = document.createElement('div');
+    slice.className = 'flip-slice';
+
+    const leftPct  = (i / SLICES) * 100;
+    const widthPct = (1 / SLICES) * 100;
+    slice.style.cssText = 'left:'+leftPct+'%;width:'+widthPct+'%;top:0;bottom:0;overflow:hidden;position:absolute;transform-style:preserve-3d;backface-visibility:hidden;';
+    slice.style.transformOrigin = 'left center';
+
+    // Front face — portion of the page being turned
+    const front = document.createElement('div');
+    front.style.cssText = 'position:absolute;top:0;width:'+pageW+'px;height:100%;overflow:hidden;backface-visibility:hidden;background:#fff;';
+    front.style.left = -(i * sliceW) + 'px';
+    front.style.clip = 'rect(0,'+((i+1)*sliceW)+'px,'+pageH+'px,'+(i*sliceW)+'px)';
+    const frontContent = document.createElement('div');
+    frontContent.style.cssText = 'width:100%;height:100%;position:relative;';
+    renderPage(frontContent, frontPageIdx, frontSide);
+    front.appendChild(frontContent);
+
+    // Back face — portion of the arriving page (mirrored in 3D)
+    const back = document.createElement('div');
+    back.style.cssText = 'position:absolute;top:0;width:'+pageW+'px;height:100%;overflow:hidden;backface-visibility:hidden;background:#fff;transform:rotateY(180deg);';
+    back.style.left = -((SLICES - 1 - i) * sliceW) + 'px';
+    back.style.clip = 'rect(0,'+((SLICES-i)*sliceW)+'px,'+pageH+'px,'+((SLICES-1-i)*sliceW)+'px)';
+    const backContent = document.createElement('div');
+    backContent.style.cssText = 'width:100%;height:100%;position:relative;';
+    renderPage(backContent, backPageIdx, backSide);
+    back.appendChild(backContent);
+
+    slice.appendChild(front);
+    slice.appendChild(back);
+    leaf.appendChild(slice);
+  }
+
   book.appendChild(leaf);
 
-  // ── Animate ──────────────────────────────────────────────────────────────
-  const DURATION = 550; // ms — matches FlipHTML5 feel
-  const startTime = performance.now();
-
-  // Shadow side — appears on the static page behind the turning leaf
-  const activeShadow = dir==='next' ? shadowL : shadowR;
+  // ── Animate ───────────────────────────────────────────────────────────────
+  const startTime      = performance.now();
+  const activeShadow   = dir==='next' ? shadowL : shadowR;
+  const slices         = leaf.querySelectorAll('.flip-slice');
 
   function animate(now){
     const t    = Math.min((now - startTime) / DURATION, 1);
-    // Ease in-out cubic
+    // Ease in-out
     const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
 
-    // rotateY: next=0→-180, prev=0→+180
-    const angle = dir==='next' ? -(ease * 180) : (ease * 180);
-    leaf.style.transform = 'rotateY(' + angle + 'deg)';
+    for(let i = 0; i < SLICES; i++){
+      // Free edge leads, spine lags. 
+      // For 'next': slice 0 = spine (left), slice N-1 = free edge (right)
+      // Free edge index = SLICES-1, lag factor: spine gets 0 lead, free gets full
+      const lagFactor = dir==='next'
+        ? i / (SLICES - 1)           // 0 at spine(left), 1 at free edge(right)
+        : (SLICES - 1 - i) / (SLICES - 1); // 0 at spine(right), 1 at free edge(left)
 
-    // Shadow peaks at 90° (halfway), fades at start and end
-    const shadowOpacity = Math.sin(ease * Math.PI) * 0.35;
+      // Each slice's progress leads or lags based on position
+      // Curve shape: free edge is always ahead in the flip
+      const sliceEase = Math.min(1, Math.max(0,
+        (ease * (1 + 0.4) - 0.4 * lagFactor) / 1
+      ));
+      const clampedEase = Math.min(1, Math.max(0, sliceEase));
+
+      const angle = dir==='next'
+        ? -(clampedEase * 180)
+        :  (clampedEase * 180);
+
+      slices[i].style.transform = 'rotateY(' + angle + 'deg)';
+
+      // Darken each slice slightly at 90° for paper thickness illusion
+      const darkness = Math.sin(clampedEase * Math.PI) * 0.15;
+      slices[i].style.filter = 'brightness(' + (1 - darkness) + ')';
+    }
+
+    // Shadow on the static page peaks at mid-flip
+    const shadowOpacity = Math.sin(ease * Math.PI) * 0.3;
     activeShadow.style.opacity = shadowOpacity;
 
     if(t < 1){
       requestAnimationFrame(animate);
     } else {
-      // Done — remove leaf, show real spread, reset shadows
       book.removeChild(leaf);
       activeShadow.style.opacity = 0;
       renderSpread(nextIdx);
       isFlipping = false;
     }
-  }
-
-  // Pre-render the destination spread behind the leaf so it's visible
-  // as the back face is revealed in the second half of the animation
-  renderSpread(nextIdx);
-  // But immediately re-render the current spread on top (leaf covers turning half)
-  // Actually: render current on left/right static pages, leaf handles the turn
-  // Re-render current so the non-turning page is visible during animation
-  const lp = document.getElementById('pageLeftInner');
-  const rp = document.getElementById('pageRightInner');
-  if(dir === 'next'){
-    // Keep left page of current spread showing; right is covered by leaf front
-    renderPage(lp, curL, 'left');
-    renderPage(rp, nxtR, 'right'); // destination right already showing
-  } else {
-    // Keep right page of current spread showing; left is covered by leaf front
-    renderPage(rp, curR, 'right');
-    renderPage(lp, nxtL, 'left'); // destination left already showing
   }
 
   requestAnimationFrame(animate);
