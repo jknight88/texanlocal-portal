@@ -437,130 +437,55 @@ function doFlip(dir){
   const [curL, curR] = spreads[currentSpread];
   const [nxtL, nxtR] = spreads[nextIdx];
 
-  // Render destination spread into the static pages first (shows through gaps)
-  renderSpread(nextIdx);
+  // Determine which page turns and what's revealed on the back
+  let frontPageIdx, frontSide, backPageIdx, backSide;
+  if(dir === 'next'){
+    frontPageIdx = curR !== null ? curR : curL;  frontSide = 'right';
+    backPageIdx  = nxtL !== null ? nxtL : nxtR;  backSide  = 'left';
+  } else {
+    frontPageIdx = curL !== null ? curL : curR;  frontSide = 'left';
+    backPageIdx  = nxtR !== null ? nxtR : nxtL;  backSide  = 'right';
+  }
 
-  // Keep the non-turning static page showing current content
+  // Render destination; keep the non-turning static page showing current content
+  renderSpread(nextIdx);
   const lp = document.getElementById('pageLeftInner');
   const rp = document.getElementById('pageRightInner');
-  // ── Determine which pages go on front/back of the turning leaf ─────────────
-  // 'next': the RIGHT page of current spread turns over → reveals LEFT of next
-  // 'prev': the LEFT page of current spread turns over → reveals RIGHT of prev
-  // For cover [null,0]: going 'next' turns page 0 (right side), arriving at nxtL
-  // For back  [N,null]: going 'prev' turns page N (left side), arriving at nxtR
-  let frontPageIdx, frontSide, backPageIdx, backSide, leafSide;
+  if(dir === 'next'){ renderPage(lp, curL, 'left'); }
+  else              { renderPage(rp, curR, 'right'); }
 
-  if(dir === 'next'){
-    // The turning page is whichever is on the RIGHT of current spread
-    // If curR is null (shouldn't happen going next from cover since cover is [null,0])
-    // Cover [null,0]: curR=0, so we turn page 0 rightward
-    frontPageIdx = curR !== null ? curR : curL;
-    frontSide    = 'right';
-    backPageIdx  = nxtL !== null ? nxtL : nxtR;
-    backSide     = 'left';
-    leafSide     = 'next'; // leaf sits on right half
-  } else {
-    // Going prev: turn the LEFT page of current spread
-    frontPageIdx = curL !== null ? curL : curR;
-    frontSide    = 'left';
-    backPageIdx  = nxtR !== null ? nxtR : nxtL;
-    backSide     = 'right';
-    leafSide     = 'prev'; // leaf sits on left half
-  }
-
-  // Static non-turning page: show current content
-  if(dir === 'next'){
-    renderPage(lp, curL, 'left');
-  } else {
-    renderPage(rp, curR, 'right');
-  }
-
-  // ── Build the leaf container ──────────────────────────────────────────────
+  // Build the leaf: front face (turning away) + back face (arriving)
   const leaf = document.createElement('div');
-  leaf.className = 'flip-leaf flip-' + leafSide;
+  leaf.className = 'flip-leaf flip-' + (dir==='next' ? 'next' : 'prev');
+  leaf.style.transformStyle = 'preserve-3d';
 
-  // Capture page dimensions from the book
-  const bookRect  = book.getBoundingClientRect();
-  const pageW     = bookRect.width / 2;
-  const pageH     = bookRect.height;
-  const sliceW    = pageW / SLICES;
+  const front = document.createElement('div');
+  front.className = 'flip-face flip-face-front';
+  renderPage(front, frontPageIdx, frontSide);
 
-  // ── Create slices ─────────────────────────────────────────────────────────
-  for(let i = 0; i < SLICES; i++){
-    const slice = document.createElement('div');
-    slice.className = 'flip-slice';
+  const back = document.createElement('div');
+  back.className = 'flip-face flip-face-back';
+  renderPage(back, backPageIdx, backSide);
 
-    const leftPct  = (i / SLICES) * 100;
-    const widthPct = (1 / SLICES) * 100;
-    slice.style.cssText = 'left:'+leftPct+'%;width:'+widthPct+'%;top:0;bottom:0;overflow:hidden;position:absolute;transform-style:preserve-3d;backface-visibility:hidden;';
-    slice.style.transformOrigin = 'left center';
-
-    // Front face — portion of the page being turned
-    const front = document.createElement('div');
-    front.style.cssText = 'position:absolute;top:0;width:'+pageW+'px;height:100%;overflow:hidden;backface-visibility:hidden;background:#fff;';
-    front.style.left = -(i * sliceW) + 'px';
-    front.style.clip = 'rect(0,'+((i+1)*sliceW)+'px,'+pageH+'px,'+(i*sliceW)+'px)';
-    const frontContent = document.createElement('div');
-    frontContent.style.cssText = 'width:100%;height:100%;position:relative;';
-    renderPage(frontContent, frontPageIdx, frontSide);
-    front.appendChild(frontContent);
-
-    // Back face — portion of the arriving page (mirrored in 3D)
-    const back = document.createElement('div');
-    back.style.cssText = 'position:absolute;top:0;width:'+pageW+'px;height:100%;overflow:hidden;backface-visibility:hidden;background:#fff;transform:rotateY(180deg);';
-    back.style.left = -((SLICES - 1 - i) * sliceW) + 'px';
-    back.style.clip = 'rect(0,'+((SLICES-i)*sliceW)+'px,'+pageH+'px,'+((SLICES-1-i)*sliceW)+'px)';
-    const backContent = document.createElement('div');
-    backContent.style.cssText = 'width:100%;height:100%;position:relative;';
-    renderPage(backContent, backPageIdx, backSide);
-    back.appendChild(backContent);
-
-    slice.appendChild(front);
-    slice.appendChild(back);
-    leaf.appendChild(slice);
-  }
-
+  leaf.appendChild(front);
+  leaf.appendChild(back);
   book.appendChild(leaf);
 
-  // ── Animate ───────────────────────────────────────────────────────────────
-  const startTime      = performance.now();
-  const activeShadow   = dir==='next' ? shadowL : shadowR;
-  const slices         = leaf.querySelectorAll('.flip-slice');
+  // Animate: rotateY + skewY to simulate paper bending through air
+  // skewY peaks at the 90° midpoint then returns to 0 — looks like a curved page
+  const startTime    = performance.now();
+  const activeShadow = dir==='next' ? shadowL : shadowR;
+  const MAX_SKEW     = 20; // degrees of bend at peak
 
   function animate(now){
     const t    = Math.min((now - startTime) / DURATION, 1);
-    // Ease in-out
     const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
 
-    for(let i = 0; i < SLICES; i++){
-      // Free edge leads, spine lags. 
-      // For 'next': slice 0 = spine (left), slice N-1 = free edge (right)
-      // Free edge index = SLICES-1, lag factor: spine gets 0 lead, free gets full
-      const lagFactor = dir==='next'
-        ? i / (SLICES - 1)           // 0 at spine(left), 1 at free edge(right)
-        : (SLICES - 1 - i) / (SLICES - 1); // 0 at spine(right), 1 at free edge(left)
+    const angle = dir==='next' ? -(ease * 180) : (ease * 180);
+    const skew  = Math.sin(ease * Math.PI) * MAX_SKEW;
 
-      // Each slice's progress leads or lags based on position
-      // Curve shape: free edge is always ahead in the flip
-      const sliceEase = Math.min(1, Math.max(0,
-        (ease * (1 + 0.4) - 0.4 * lagFactor) / 1
-      ));
-      const clampedEase = Math.min(1, Math.max(0, sliceEase));
-
-      const angle = dir==='next'
-        ? -(clampedEase * 180)
-        :  (clampedEase * 180);
-
-      slices[i].style.transform = 'rotateY(' + angle + 'deg)';
-
-      // Darken each slice slightly at 90° for paper thickness illusion
-      const darkness = Math.sin(clampedEase * Math.PI) * 0.15;
-      slices[i].style.filter = 'brightness(' + (1 - darkness) + ')';
-    }
-
-    // Shadow on the static page peaks at mid-flip
-    const shadowOpacity = Math.sin(ease * Math.PI) * 0.3;
-    activeShadow.style.opacity = shadowOpacity;
+    leaf.style.transform = 'rotateY(' + angle + 'deg) skewY(' + skew + 'deg)';
+    activeShadow.style.opacity = Math.sin(ease * Math.PI) * 0.28;
 
     if(t < 1){
       requestAnimationFrame(animate);
@@ -571,31 +496,6 @@ function doFlip(dir){
       isFlipping = false;
     }
   }
-
   requestAnimationFrame(animate);
 }
 
-// ─── DOTS ────────────────────────────────────────────────────────────────────
-function buildDots(){
-  const c=document.getElementById('progressDots');c.innerHTML='';
-  if(spreads.length<=20){
-    spreads.forEach((_,i)=>{
-      const d=document.createElement('div');
-      d.className='dot'+(i===0?' active':'');
-      d.onclick=()=>{if(!isFlipping)jumpToSpread(i);};
-      c.appendChild(d);
-    });
-  }
-}
-
-function jumpToSpread(idx){
-  if(idx===currentSpread||isFlipping)return;
-  playFlipSound();
-  renderSpread(idx);
-}
-
-
-init();
-</script>
-</body>
-</html>
