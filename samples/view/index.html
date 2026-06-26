@@ -26,20 +26,20 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
   padding:8px 56px;
 }
 
-/* BOOK CONTAINER — dynamic: spread 3.538:1 or single-page 1.769:1 */
+/* BOOK CONTAINER — dynamic: spread 3.3846:1 or single-page 1.6923:1 (11"x6.5" per page) */
 .book-container{
   position:relative;
   display:flex;align-items:center;justify-content:center;
   /* default spread ratio; JS overrides for cover/back */
-  aspect-ratio:3.538/1;
-  max-width:min(calc((100vh - 140px) * 3.538), calc(100vw - 112px));
+  aspect-ratio:3.3846/1;
+  max-width:min(calc((100vh - 140px) * 3.3846), calc(100vw - 112px));
   width:100%;
   flex-shrink:0;
   transition:aspect-ratio 0.1s, max-width 0.1s;
 }
 .book-container.single-page{
-  aspect-ratio:1.769/1;
-  max-width:min(calc((100vh - 140px) * 1.769), calc((100vw - 112px) / 2));
+  aspect-ratio:1.6923/1;
+  max-width:min(calc((100vh - 140px) * 1.6923), calc((100vw - 112px) / 2));
 }
 
 /* STACK BARS — Fix 1: thin hairlines on outer edges only */
@@ -67,7 +67,7 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 
 /* PAGE INNER */
 .page-inner{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.page-inner img{width:100%;height:100%;object-fit:contain;display:block;background:#fff}
+.page-inner img{width:100%;height:100%;object-fit:fill;display:block;background:#fff}
 .page-num{position:absolute;bottom:8px;font-size:11px;color:rgba(0,0,0,.4);font-style:italic}
 .page-left .page-num{right:12px}
 .page-right .page-num{left:12px}
@@ -334,7 +334,7 @@ function renderPage(container,pageIdx,side){
       img.style.left=side==='left'?'0':'-100%';
       container.style.position='relative';container.style.overflow='hidden';
     } else {
-      img.style.cssText='width:100%;height:100%;object-fit:contain;display:block;background:#fff';
+      img.style.cssText='width:100%;height:100%;object-fit:fill;display:block;background:#fff';
     }
     img.onerror=()=>showNoArt(container,p);
     container.appendChild(img);
