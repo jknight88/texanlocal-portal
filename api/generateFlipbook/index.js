@@ -58,8 +58,9 @@ module.exports = async function(context, req) {
 
     const pagesWithUrls = pages.map(function(p) {
       let imageUrl = null;
-      if (p.thumbPath) { try { imageUrl = getSasUrl(acct, key, 'ad-proof-images', p.thumbPath, 30); } catch(e) {} }
-      if (!imageUrl && p.blobPath) { try { imageUrl = getSasUrl(acct, key, 'ad-proofs', p.blobPath, 30); } catch(e) {} }
+      // ── Use full-res proof first, fall back to thumb only if no blobPath ──
+      if (p.blobPath)  { try { imageUrl = getSasUrl(acct, key, 'ad-proofs',       p.blobPath,  30); } catch(e) {} }
+      if (!imageUrl && p.thumbPath) { try { imageUrl = getSasUrl(acct, key, 'ad-proof-images', p.thumbPath, 30); } catch(e) {} }
       return { business:p.business, product:p.product, size:p.size, imageUrl, noArtwork:!imageUrl };
     });
 
