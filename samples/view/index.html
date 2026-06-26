@@ -77,14 +77,46 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .no-art .product-lbl{font-size:13px;color:#888;font-style:italic}
 .no-art .tl-mark{font-size:40px;opacity:.15}
 
-/* CURL FLIP CANVAS — overlaid on book during animation */
-#flipCanvas{
+/* 3D PAGE FLIP — CSS perspective transform, GPU-accelerated */
+.book{ perspective: 2500px; }
+
+/* The flipping leaf — absolutely positioned over half the book */
+.flip-leaf{
   position:absolute;
-  top:0;left:0;width:100%;height:100%;
-  pointer-events:none;
+  top:0; bottom:0;
+  width:50%;
+  transform-origin: left center;   /* default; JS overrides for prev */
+  transform-style: preserve-3d;
   z-index:20;
-  display:none;
+  pointer-events:none;
 }
+.flip-leaf.flip-next{ left:50%; transform-origin: left center; }
+.flip-leaf.flip-prev{ left:0;   transform-origin: right center; }
+
+/* Front face = the page being turned away */
+.flip-face{
+  position:absolute;
+  inset:0;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  overflow:hidden;
+  background:#fff;
+}
+.flip-face-back{
+  transform: rotateY(180deg);
+}
+
+/* Shadow overlay that fades in/out on the static pages */
+.flip-shadow{
+  position:absolute;
+  top:0; bottom:0; width:50%;
+  pointer-events:none;
+  z-index:15;
+  opacity:0;
+  transition:none;
+}
+.flip-shadow-left { left:0;   background:linear-gradient(to left, rgba(0,0,0,0.18), transparent); }
+.flip-shadow-right{ right:0;  background:linear-gradient(to right, rgba(0,0,0,0.18), transparent); }
 
 /* CONTROLS */
 .controls{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
@@ -162,8 +194,9 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
         <div class="page page-left"  id="pageLeft" ><div class="page-inner" id="pageLeftInner" ></div></div>
         <div class="page page-right" id="pageRight"><div class="page-inner" id="pageRightInner"></div></div>
       </div>
-      <!-- Canvas for wave-curl flip animation -->
-      <canvas id="flipCanvas"></canvas>
+      <!-- Shadow overlays for 3D flip -->
+      <div class="flip-shadow flip-shadow-left"  id="shadowLeft"></div>
+      <div class="flip-shadow flip-shadow-right" id="shadowRight"></div>
     </div>
     <div class="stack stack-right" id="stackRight"></div>
   </div>
@@ -383,266 +416,106 @@ function toggleSound(){
   if (soundEnabled) playFlipSound();
 }
 
-// ─── WAVE-CURL PAGE FLIP ──────────────────────────────────────────────────────
-// Renders a realistic page curl using canvas:
-// - Captures the turning page as an offscreen image
-// - Animates a sinusoidal wave fold across it
-// - The back of the page shows the destination content
+// ─── 3D CSS PAGE FLIP ───────────────────────────────────────────────────────
+// Uses CSS rotateY() — same technique as FlipHTML5.
+// A .flip-leaf div is injected over the turning half, rotated in 3D,
+// then removed. Front face = page turning away. Back face = page arriving.
+// No canvas, no image distortion, GPU-accelerated.
 
 function flipNext(){if(isFlipping||currentSpread>=spreads.length-1)return;doFlip('next');}
 function flipPrev(){if(isFlipping||currentSpread<=0)return;doFlip('prev');}
 
 function doFlip(dir){
-  isFlipping=true;
+  isFlipping = true;
   playFlipSound();
 
-  const nextIdx=dir==='next'?currentSpread+1:currentSpread-1;
-  const [nl,nr]=spreads[nextIdx];
-  const book=document.getElementById('book');
-  const canvas=document.getElementById('flipCanvas');
-  const ctx=canvas.getContext('2d');
+  const nextIdx  = dir==='next' ? currentSpread+1 : currentSpread-1;
+  const book     = document.getElementById('book');
+  const shadowL  = document.getElementById('shadowLeft');
+  const shadowR  = document.getElementById('shadowRight');
 
-  // Size canvas to the half-page being flipped
-  const bookRect=book.getBoundingClientRect();
-  const halfW=bookRect.width/2;
-  const H=bookRect.height;
-  canvas.width=halfW;
-  canvas.height=H;
-  canvas.style.display='block';
+  // ── Build the flip leaf ──────────────────────────────────────────────────
+  const leaf = document.createElement('div');
+  leaf.className = 'flip-leaf ' + (dir==='next' ? 'flip-next' : 'flip-prev');
 
-  // Which half flips?
-  if(dir==='next'){
-    canvas.style.left='50%';canvas.style.right='';
+  // Front face: the page that is turning away
+  const front = document.createElement('div');
+  front.className = 'flip-face flip-face-front';
+
+  // Back face: the page that is arriving (mirror image)
+  const back = document.createElement('div');
+  back.className = 'flip-face flip-face-back';
+
+  // Determine which page indices are on each face
+  const [curL, curR] = spreads[currentSpread];
+  const [nxtL, nxtR] = spreads[nextIdx];
+
+  if(dir === 'next'){
+    // Turning: right page of current spread
+    renderPage(front, curR, 'right');
+    // Arriving: left page of next spread (mirrored in 3D)
+    renderPage(back,  nxtL, 'left');
   } else {
-    canvas.style.left='0';canvas.style.right='';
+    // Turning: left page of current spread
+    renderPage(front, curL, 'left');
+    // Arriving: right page of next spread (mirrored in 3D)
+    renderPage(back,  nxtR, 'right');
   }
 
-  // Capture the turning page into an offscreen canvas
-  const srcInner = dir==='next'
-    ? document.getElementById('pageRightInner')
-    : document.getElementById('pageLeftInner');
+  leaf.appendChild(front);
+  leaf.appendChild(back);
+  book.appendChild(leaf);
 
-  // Draw the source page into an offscreen buffer
-  const offFront=new OffscreenCanvas(halfW,H);
-  const ofCtx=offFront.getContext('2d');
-  ofCtx.fillStyle='#fff';
-  ofCtx.fillRect(0,0,halfW,H);
-  // Draw all child images/content
-  drawPageToCanvas(srcInner,ofCtx,halfW,H);
+  // ── Animate ──────────────────────────────────────────────────────────────
+  const DURATION = 550; // ms — matches FlipHTML5 feel
+  const startTime = performance.now();
 
-  // Prepare back-face content (destination page)
-  const offBack=new OffscreenCanvas(halfW,H);
-  const obCtx=offBack.getContext('2d');
-  obCtx.fillStyle='#f5f0ea';
-  obCtx.fillRect(0,0,halfW,H);
-  const destIdx=dir==='next'?nl:nr;
-  const destSide=dir==='next'?'left':'right';
-  // We'll render destination as a temp div then draw it
-  const tempDiv=document.createElement('div');
-  tempDiv.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${halfW}px;height:${H}px;overflow:hidden;background:#fff`;
-  document.body.appendChild(tempDiv);
-  renderPage(tempDiv,destIdx,destSide);
-  drawPageToCanvas(tempDiv,obCtx,halfW,H);
-  document.body.removeChild(tempDiv);
-
-  // Animation
-  const DURATION=650; // ms
-  const startTime=performance.now();
+  // Shadow side — appears on the static page behind the turning leaf
+  const activeShadow = dir==='next' ? shadowL : shadowR;
 
   function animate(now){
-    const t=Math.min((now-startTime)/DURATION,1);
-    // ease in-out
-    const ease=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    const t    = Math.min((now - startTime) / DURATION, 1);
+    // Ease in-out cubic
+    const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
 
-    ctx.clearRect(0,0,halfW,H);
+    // rotateY: next=0→-180, prev=0→+180
+    const angle = dir==='next' ? -(ease * 180) : (ease * 180);
+    leaf.style.transform = 'rotateY(' + angle + 'deg)';
 
-    if(dir==='next'){
-      // Page sweeps left (fold from right edge → left edge)
-      // progress 0 = flat page, progress 1 = page gone
-      const progress=ease;
-      drawWaveFold(ctx,offFront,offBack,halfW,H,progress,'ltr');
-    } else {
-      // Page sweeps right (fold from left edge → right edge)
-      const progress=ease;
-      drawWaveFold(ctx,offFront,offBack,halfW,H,progress,'rtl');
-    }
+    // Shadow peaks at 90° (halfway), fades at start and end
+    const shadowOpacity = Math.sin(ease * Math.PI) * 0.35;
+    activeShadow.style.opacity = shadowOpacity;
 
-    if(t<1){
+    if(t < 1){
       requestAnimationFrame(animate);
     } else {
-      canvas.style.display='none';
-      ctx.clearRect(0,0,halfW,H);
+      // Done — remove leaf, show real spread, reset shadows
+      book.removeChild(leaf);
+      activeShadow.style.opacity = 0;
       renderSpread(nextIdx);
-      isFlipping=false;
+      isFlipping = false;
     }
+  }
+
+  // Pre-render the destination spread behind the leaf so it's visible
+  // as the back face is revealed in the second half of the animation
+  renderSpread(nextIdx);
+  // But immediately re-render the current spread on top (leaf covers turning half)
+  // Actually: render current on left/right static pages, leaf handles the turn
+  // Re-render current so the non-turning page is visible during animation
+  const lp = document.getElementById('pageLeftInner');
+  const rp = document.getElementById('pageRightInner');
+  if(dir === 'next'){
+    // Keep left page of current spread showing; right is covered by leaf front
+    renderPage(lp, curL, 'left');
+    renderPage(rp, nxtR, 'right'); // destination right already showing
+  } else {
+    // Keep right page of current spread showing; left is covered by leaf front
+    renderPage(rp, curR, 'right');
+    renderPage(lp, nxtL, 'left'); // destination left already showing
   }
 
   requestAnimationFrame(animate);
-}
-
-/**
- * Draw a wave-curl page turn.
- * progress 0 = page flat (front visible)
- * progress 1 = page fully turned (back visible, curled away)
- * dir 'ltr' = fold sweeps left-to-right (next page)
- * dir 'rtl' = fold sweeps right-to-left (prev page)
- */
-function drawWaveFold(ctx, front, back, W, H, progress, dir){
-  // The fold line moves across the page
-  // At progress=0, fold is at edge (page fully open)
-  // At progress=1, fold has swept fully off the other side
-
-  // foldX: x position of the fold crease
-  const foldX = dir==='ltr'
-    ? W * (1 - progress)           // moves from right→left
-    : W * progress;                 // moves from left→right
-
-  // Wave amplitude: max at midpoint, 0 at edges
-  const amp = Math.sin(progress * Math.PI) * W * 0.08;
-
-  ctx.save();
-
-  if(dir==='ltr'){
-    // LEFT of fold: front page (still visible)
-    if(foldX>0){
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0,0,foldX,H);
-      ctx.clip();
-      ctx.drawImage(front,0,0,W,H);
-      // Shade as page recedes
-      const shade=progress*0.25;
-      ctx.fillStyle=`rgba(0,0,0,${shade})`;
-      ctx.fillRect(0,0,foldX,H);
-      ctx.restore();
-    }
-
-    // RIGHT of fold: back of turning page (shows destination, mirrored)
-    const revealW=W-foldX;
-    if(revealW>0){
-      ctx.save();
-      ctx.beginPath();
-      // Clip to right portion with a slight wave on the fold edge
-      ctx.moveTo(foldX,0);
-      for(let y=0;y<=H;y+=4){
-        const wx=foldX+Math.sin((y/H)*Math.PI*3+progress*Math.PI)*amp;
-        ctx.lineTo(wx,y);
-      }
-      ctx.lineTo(W,H);ctx.lineTo(W,0);ctx.closePath();
-      ctx.clip();
-      // Mirror the back content horizontally (as if flipping the page)
-      ctx.translate(W,0);ctx.scale(-1,1);
-      ctx.drawImage(back,0,0,W,H);
-      // Back face is slightly darker (paper back)
-      ctx.fillStyle='rgba(20,20,20,0.12)';
-      ctx.fillRect(0,0,W,H);
-      ctx.restore();
-    }
-
-    // Draw fold crease shadow
-    if(foldX>2&&foldX<W-2){
-      const grad=ctx.createLinearGradient(foldX-12,0,foldX+4,0);
-      grad.addColorStop(0,'rgba(0,0,0,0)');
-      grad.addColorStop(0.6,'rgba(0,0,0,0.18)');
-      grad.addColorStop(1,'rgba(0,0,0,0.05)');
-      ctx.fillStyle=grad;
-      ctx.fillRect(Math.max(0,foldX-12),0,16,H);
-    }
-
-  } else {
-    // dir==='rtl' — prev page (mirror of above)
-
-    // RIGHT of fold: front page still visible
-    if(foldX<W){
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(foldX,0,W-foldX,H);
-      ctx.clip();
-      ctx.drawImage(front,0,0,W,H);
-      const shade=progress*0.25;
-      ctx.fillStyle=`rgba(0,0,0,${shade})`;
-      ctx.fillRect(foldX,0,W-foldX,H);
-      ctx.restore();
-    }
-
-    // LEFT of fold: back of page (destination content, mirrored)
-    if(foldX>0){
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(foldX,0);
-      for(let y=0;y<=H;y+=4){
-        const wx=foldX-Math.sin((y/H)*Math.PI*3+progress*Math.PI)*amp;
-        ctx.lineTo(wx,y);
-      }
-      ctx.lineTo(0,H);ctx.lineTo(0,0);ctx.closePath();
-      ctx.clip();
-      // Mirror
-      ctx.scale(-1,1);ctx.translate(-W,0);
-      ctx.drawImage(back,0,0,W,H);
-      ctx.fillStyle='rgba(20,20,20,0.12)';
-      ctx.fillRect(0,0,W,H);
-      ctx.restore();
-    }
-
-    // Fold crease shadow
-    if(foldX>2&&foldX<W-2){
-      const grad=ctx.createLinearGradient(foldX+12,0,foldX-4,0);
-      grad.addColorStop(0,'rgba(0,0,0,0)');
-      grad.addColorStop(0.6,'rgba(0,0,0,0.18)');
-      grad.addColorStop(1,'rgba(0,0,0,0.05)');
-      ctx.fillStyle=grad;
-      ctx.fillRect(foldX-4,0,16,H);
-    }
-  }
-
-  ctx.restore();
-}
-
-/**
- * Attempt to draw a DOM element's content into a canvas context.
- * Works for img elements; for other content we do a solid fill.
- */
-function drawPageToCanvas(container, ctx, W, H){
-  // Find all img children and draw them
-  const imgs=container.querySelectorAll('img');
-  if(imgs.length){
-    imgs.forEach(img=>{
-      if(img.complete&&img.naturalWidth>0){
-        // Determine if this is a 2P image (positioned absolutely)
-        const style=img.style.cssText||'';
-        if(style.includes('width:200%')){
-          // 2P spread: determine left offset
-          const left=parseFloat(img.style.left)||0;
-          const scaleX=W/(img.naturalWidth/2);
-          ctx.drawImage(img, left<0?img.naturalWidth/2:0, 0, img.naturalWidth/2, img.naturalHeight,
-                        0, 0, W, H);
-        } else {
-          // Normal: fit contain
-          const scaleW=W/img.naturalWidth;
-          const scaleH=H/img.naturalHeight;
-          const scale=Math.min(scaleW,scaleH);
-          const dw=img.naturalWidth*scale;
-          const dh=img.naturalHeight*scale;
-          const dx=(W-dw)/2;
-          const dy=(H-dh)/2;
-          ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
-          ctx.drawImage(img,dx,dy,dw,dh);
-        }
-      }
-    });
-  } else {
-    // No image — render placeholder background
-    ctx.fillStyle='#ede8e0';
-    ctx.fillRect(0,0,W,H);
-    const biz=container.querySelector('.biz-name');
-    if(biz){
-      ctx.fillStyle='#00205B';
-      ctx.font=`bold ${Math.round(H*0.06)}px Georgia,serif`;
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      ctx.fillText(biz.textContent,W/2,H/2);
-    }
-  }
 }
 
 // ─── DOTS ────────────────────────────────────────────────────────────────────
