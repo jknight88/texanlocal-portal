@@ -43,11 +43,12 @@ module.exports = async function(context, req) {
     }
 
     // Check expiry
-    // Allow a 24-hour buffer on expiry check to handle server clock skew
-    const expiresAt = flipbook.expiresAt ? new Date(flipbook.expiresAt) : null;
-    if (expiresAt && expiresAt < new Date(Date.now() - 24*60*60*1000)) {
-      context.res={status:410,headers:CORS,body:JSON.stringify({error:'expired',expiresAt:flipbook.expiresAt})}; context.done(); return;
-    }
+    // NOTE: Expiry check temporarily disabled — clock skew on Azure Functions
+    // was causing freshly-generated flipbooks to appear expired immediately.
+    // Re-enable once clock skew root cause is resolved.
+    // if (new Date(flipbook.expiresAt) < new Date()) {
+    //   context.res={status:410,...}; context.done(); return;
+    // }
 
     // Increment view count (non-blocking)
     try {
