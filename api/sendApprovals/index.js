@@ -139,8 +139,11 @@ async function findPdfs(container, businessName, year, month) {
 }
 
 function buildEmail(client, mailingMonthLabel, deadline, imageUrls, sessionId, bodyTemplate) {
-  const approveUrl = BASE_URL + '/api/trackResponse?id=' + sessionId + '&action=approved';
-  const changesUrl = BASE_URL + '/api/trackResponse?id=' + sessionId + '&action=changes';
+  // Link directly to /respond so email clients don't get blocked by API redirects.
+  // The respond page calls /api/trackResponse in the background via fetch().
+  const biz64      = encodeURIComponent(client.business || '');
+  const approveUrl = BASE_URL + '/respond?id=' + sessionId + '&action=approved&biz=' + biz64;
+  const changesUrl = BASE_URL + '/respond?id=' + sessionId + '&action=changes&biz=' + biz64;
   const pixelUrl   = BASE_URL + '/api/trackApprovalOpen?id=' + sessionId;
 
   const bodyText = (bodyTemplate || '')
