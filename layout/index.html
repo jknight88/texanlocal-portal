@@ -627,10 +627,11 @@ function renderArtPanel() {
     const sc     = a.size==='FP'||a.size==='FC'||a.size==='BP'?'fp':a.size==='HP'?'hp':'two-p';
     const cc     = a.size==='FP'||a.size==='FC'||a.size==='BP'?'fp-card':a.size==='HP'?'hp-card':'two-p-card';
     const szLbl  = a.size==='2P'?'2P Spread':a.size==='FC'?'FC Cover':a.size==='BP'?'BP Back':a.size;
-    // Use data-thumb attribute — loadThumb() fetches a fresh SAS URL on demand
-    // so we never hit 403s from pre-baked expired SAS tokens
-    const thumbHtml = a.thumbUrl
-      ? '<img data-thumb="'+esc(a.thumbBlobName)+'" alt="'+esc(a.business)+'" loading="lazy" style="opacity:0;transition:opacity .2s" onload="this.style.opacity=1" onerror="fetchThumbSrc(this)">' +
+    // Use data-blob attribute + loadThumb() to fetch a fresh SAS via getAttachment,
+    // same approach as the file manager. Avoids 403s from pre-baked expired SAS tokens.
+    const thumbBlobName = a.thumbUrl ? a.thumbUrl.split('?')[0].split('/').pop() : null;
+    const thumbHtml = thumbBlobName
+      ? '<img data-blob="'+esc(thumbBlobName)+'" alt="'+esc(a.business)+'" style="opacity:0;transition:opacity .2s" onload="this.style.opacity=1">' +
         '<div class="thumb-na" style="display:none"><div class="na-label">N/A</div><div class="na-sub">No preview</div></div>'
       : a.noArtwork
         ? '<div class="thumb-na" style="background:#fff3e0;border-bottom:2px solid #ffcc80"><div class="na-label" style="font-size:22px">⚠</div><div class="na-sub" style="color:#e65100;font-weight:700;font-size:9px;line-height:1.3">No Uploaded Artwork<br>for this file</div></div>'
@@ -654,35 +655,30 @@ function renderArtPanel() {
   }).join('');
 }
 
-// Fetch a fresh SAS URL for a thumbnail via getThumbUrl API
-// Called both on img load (to set src) and on onerror (to retry with fresh URL)
-async function fetchThumbSrc(img) {
-  const blobName = img.dataset.thumb;
-  if (!blobName) return;
-  try {
-    const res  = await fetch(API + '/getThumbUrl?blob=' + encodeURIComponent(blobName), { credentials: 'include' });
-    const data = await res.json();
-    if (data.url) {
-      img.onerror = function() {
-        // Genuinely missing — show N/A sibling
+// Fetch fresh SAS URLs for all thumbnail images via getAttachment
+function loadAllThumbs() {
+  document.querySelectorAll('img[data-blob]').forEach(function(img) {
+    if (img.src && img.src !== window.location.href && !img.src.startsWith('data:')) return; // already loaded
+    var blobName = img.dataset.blob;
+    if (!blobName) return;
+    fetch(API + '/getAttachment?blobName=' + encodeURIComponent(blobName) + '&container=ad-proof-images', { credentials: 'include' })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.url) {
+          img.onerror = function() {
+            img.style.display = 'none';
+            if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
+          };
+          img.src = d.url;
+        } else {
+          img.style.display = 'none';
+          if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
+        }
+      })
+      .catch(function(){
         img.style.display = 'none';
         if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
-      };
-      img.src = data.url;
-    } else {
-      img.style.display = 'none';
-      if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
-    }
-  } catch(e) {
-    img.style.display = 'none';
-    if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
-  }
-}
-
-// After rendering the art panel, kick off fresh SAS loads for all thumb images
-function loadAllThumbs() {
-  document.querySelectorAll('img[data-thumb]').forEach(function(img) {
-    if (!img.src || img.src === window.location.href) fetchThumbSrc(img);
+      });
   });
 }
 
@@ -1285,8 +1281,7 @@ async function generateFlipbook() {
               product:   art.product  || art.size || '',
               size:      art.size     || '',
               blobPath:  art.path     || null,
-              // Use thumbBlobName (clean blob name) — avoids parsing stale SAS URLs
-              thumbPath: art.thumbBlobName || (art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null),
+              thumbPath: art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null,
               noArtwork: art.noArtwork || false
             });
           });
