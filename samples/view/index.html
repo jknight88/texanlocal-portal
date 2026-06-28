@@ -243,10 +243,12 @@ async function init() {
     const res  = await fetch(API+'/getFlipbook?token='+encodeURIComponent(token), { signal: controller.signal });
     clearTimeout(timeoutId);
     const data = await res.json();
-    if (res.status===410||data.error==='expired'){showExpired();return;}
-    if (!res.ok||!data.ok){showExpired();return;}
+    // Debug: log exactly what came back so we can diagnose
+    console.log('getFlipbook response:', res.status, JSON.stringify(data));
+    if (res.status===410||data.error==='expired'){showError('Expired: '+JSON.stringify(data));return;}
+    if (!res.ok||!data.ok){showError('Not OK ('+res.status+'): '+JSON.stringify(data));return;}
     pages = data.pages||[];
-    if (!pages.length){showExpired();return;}
+    if (!pages.length){showError('No pages in response: '+JSON.stringify(data));return;}
 
     buildSpreads();
 
@@ -276,12 +278,22 @@ async function init() {
     document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
     document.addEventListener('touchend',  e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?flipNext():flipPrev();}});
 
-  } catch(e){console.error(e);showExpired();}
+  } catch(e){console.error(e);showError('CATCH: '+e.message+' | '+e.stack);}
 }
 
 function showExpired(){
   document.getElementById('loadingScreen').style.display='none';
   document.getElementById('expiredScreen').style.display='flex';
+}
+
+function showError(msg){
+  document.getElementById('loadingScreen').style.display='none';
+  document.getElementById('expiredScreen').style.display='flex';
+  // Show debug message below the expired content
+  var dbg = document.createElement('pre');
+  dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.85);color:#0f0;font-size:11px;padding:10px;max-height:200px;overflow:auto;z-index:999;white-space:pre-wrap;word-break:break-all;text-align:left';
+  dbg.textContent = msg;
+  document.body.appendChild(dbg);
 }
 
 // ─── SPREADS ─────────────────────────────────────────────────────────────────
