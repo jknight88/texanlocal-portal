@@ -212,7 +212,7 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 
 <script>
 const API      = '/api';
-const LOGO_URL = '/assets/logo.png';
+const LOGO_URL = 'https://portal.thetexanlocal.com/assets/logo.png'; // absolute — works from samples.thetexanlocal.com
 
 let pages         = [];
 let spreads       = [];
@@ -238,7 +238,10 @@ async function init() {
   }
 
   try {
-    const res  = await fetch(API+'/getFlipbook?token='+encodeURIComponent(token));
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(function(){ controller.abort(); }, 12000);
+    const res  = await fetch(API+'/getFlipbook?token='+encodeURIComponent(token), { signal: controller.signal });
+    clearTimeout(timeoutId);
     const data = await res.json();
     if (res.status===410||data.error==='expired'){showExpired();return;}
     if (!res.ok||!data.ok){showExpired();return;}
