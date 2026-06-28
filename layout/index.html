@@ -711,14 +711,36 @@ async function genThumb(artId, pdfPath, btn) {
 }
 
 async function genAllThumbs() {
-  const missing = allArtwork.filter(function(a){ return !a.hasThumb; });
+  const missing = allArtwork.filter(function(a){ return !a.hasThumb && a.path && !a.noArtwork; });
   if (!missing.length) { showToast('All thumbnails already generated!', false); return; }
-  showToast('Generating '+missing.length+' thumbnails — this may take a few minutes…');
+  showToast('Generating '+missing.length+' thumbnail'+(missing.length>1?'s':'')+'…');
+  let done = 0, failed = 0;
   for (let i=0; i<missing.length; i++) {
-    await genThumb(missing[i].id, missing[i].path, null);
-    await new Promise(function(r){ setTimeout(r, 1000); });
+    try {
+      const res  = await fetch(API+'/generateThumb', {
+        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+        body: JSON.stringify({ pdfPath: missing[i].path })
+      });
+      const data = await res.json();
+      if (data.url) {
+        missing[i].thumbUrl = data.url;
+        missing[i].hasThumb = true;
+        done++;
+        showToast('Generated '+(i+1)+'/'+missing.length+': '+missing[i].business, false);
+      } else {
+        failed++;
+        console.warn('Thumb failed for '+missing[i].business+': '+(data.error||'unknown'));
+      }
+    } catch(e) {
+      failed++;
+      console.warn('Thumb error for '+missing[i].business+': '+e.message);
+    }
+    if (i < missing.length-1) await new Promise(function(r){ setTimeout(r, 800); });
   }
-  showToast('All thumbnails generated!', false);
+  renderArtPanel();
+  loadAllThumbs();
+  if (activeZone) renderSpreads();
+  showToast('Done — '+done+' generated'+(failed?' ('+failed+' failed)':''), failed>0);
 }
 
 // ── Zoom ──────────────────────────────────────────────────────────────────────
