@@ -140,34 +140,24 @@ module.exports = async function(context, req) {
       }
     }
 
-    // ── Build page list with URLs ───────────────────────────────────────────
+    // ── Build page list with blob names (not SAS URLs) ────────────────────
+    // SAS URLs expire and cause 403s. Instead we store blob names and generate
+    // fresh SAS URLs at read time in getFlipbook.
     const pagesWithUrls = pages.map(function(p) {
-      let imageUrl = null;
-      let thumbUrl = null;
-
-      // Layout thumb fallback (low-res, always available if thumb was generated)
-      if (p.thumbPath) {
-        try { thumbUrl = getSasUrl(acct, key, CONTAINER_IMAGES, p.thumbPath, 30); } catch(e) {}
-      }
-
-      // Hires version (generated above if blobPath exists)
-      if (p.thumbPath && hiresCache[p.thumbPath]) {
-        try { imageUrl = getSasUrl(acct, key, CONTAINER_IMAGES, hiresCache[p.thumbPath], 30); } catch(e) {}
-      }
-
-      // Fall back to layout thumb if hires not available
-      if (!imageUrl) imageUrl = thumbUrl;
-
-      // Only include thumbUrl (fallback) if it's different from imageUrl
-      const fallback = (imageUrl !== thumbUrl) ? thumbUrl : null;
+      // Hires blob name (generated above)
+      const hiresBlobName = (p.thumbPath && hiresCache[p.thumbPath]) ? hiresCache[p.thumbPath] : null;
+      // Fallback layout thumb blob name
+      const thumbBlobName = p.thumbPath || null;
+      // Use hires if available, otherwise layout thumb
+      const imageBlobName = hiresBlobName || thumbBlobName;
 
       return {
-        business:  p.business,
-        product:   p.product,
-        size:      p.size,
-        imageUrl,
-        thumbUrl:  fallback,
-        noArtwork: !imageUrl
+        business:       p.business,
+        product:        p.product,
+        size:           p.size,
+        imageBlobName,                // primary — hires if available, layout thumb otherwise
+        thumbBlobName:  hiresBlobName ? thumbBlobName : null, // fallback only if different
+        noArtwork:      !imageBlobName
       };
     });
 
