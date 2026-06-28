@@ -113,6 +113,14 @@ if (action === 'approved') {
   document.getElementById('message').textContent = 'This link appears to be invalid or has expired. Please contact us directly.';
 }
 
+// Notify the backend about this response (fire-and-forget — don't block UI)
+// Previously the email buttons went through /api/trackResponse which did a redirect.
+// Now they link here directly, so we ping trackResponse in the background instead.
+if (id && (action === 'approved' || action === 'changes')) {
+  fetch('/api/trackResponse?id=' + encodeURIComponent(id) + '&action=' + encodeURIComponent(action), { method: 'GET' })
+    .catch(function() { /* silent — UI already showing */ });
+}
+
 // Drag and drop
 var dz = document.getElementById('dropZone');
 dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag-over'); });
