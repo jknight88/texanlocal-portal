@@ -1,9 +1,27 @@
 // api/getFlipbook/index.js
 // Public endpoint — loads flipbook by token, checks expiry, returns page data
 // No auth required — this is a public link
-const { BlobServiceClient } = require('@azure/storage-blob');
-const STORAGE_CONN = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const CONTAINER    = 'portal-data';
+const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
+const STORAGE_CONN     = process.env.AZURE_STORAGE_CONNECTION_STRING;
+const CONTAINER        = 'portal-data';
+const CONTAINER_IMAGES = 'ad-proof-images';
+
+function parseConn() {
+  const p = {};
+  STORAGE_CONN.split(';').forEach(function(s){ const i=s.indexOf('='); if(i>-1) p[s.slice(0,i)]=s.slice(i+1); });
+  return p;
+}
+
+function getSasUrl(acct, key, blobName) {
+  const sk        = new StorageSharedKeyCredential(acct, key);
+  const startsOn  = new Date(Date.now() - 60 * 1000);           // 1-min clock skew buffer
+  const expiresOn = new Date(Date.now() + 4 * 60 * 60 * 1000); // 4 hours
+  const tok = generateBlobSASQueryParameters(
+    { containerName: CONTAINER_IMAGES, blobName, permissions: BlobSASPermissions.parse('r'), startsOn, expiresOn },
+    sk
+  ).toString();
+  return 'https://' + acct + '.blob.core.windows.net/' + CONTAINER_IMAGES + '/' + blobName + '?' + tok;
+}
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -59,6 +77,42 @@ module.exports = async function(context, req) {
     const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const moName = MONTHS[parseInt(flipbook.month)-1] || flipbook.month;
 
+    // Generate fresh SAS URLs for every page right now — no expiry issues
+    const conn  = parseConn();
+    const acct  = conn['AccountName'];
+    const key   = conn['AccountKey'];
+
+    const pagesWithFreshUrls = (flipbook.pages || []).map(function(p) {
+      // Support both old format (imageUrl SAS) and new format (imageBlobName)
+      let imageUrl = null;
+      let thumbUrl = null;
+      try {
+        if (p.imageBlobName) {
+          imageUrl = getSasUrl(acct, key, p.imageBlobName);
+        } else if (p.imageUrl) {
+          // Old flipbook saved with SAS URL — extract blob name and regenerate
+          const blobName = decodeURIComponent(p.imageUrl.split('?')[0].split('/').pop());
+          if (blobName && blobName.endsWith('.jpg')) imageUrl = getSasUrl(acct, key, blobName);
+          else imageUrl = p.imageUrl; // can't fix, use as-is
+        }
+        if (p.thumbBlobName) {
+          thumbUrl = getSasUrl(acct, key, p.thumbBlobName);
+        } else if (p.thumbUrl) {
+          const blobName = decodeURIComponent(p.thumbUrl.split('?')[0].split('/').pop());
+          if (blobName && blobName.endsWith('.jpg')) thumbUrl = getSasUrl(acct, key, blobName);
+          else thumbUrl = p.thumbUrl;
+        }
+      } catch(e) {}
+      return {
+        business:  p.business,
+        product:   p.product,
+        size:      p.size,
+        imageUrl,
+        thumbUrl,
+        noArtwork: p.noArtwork || !imageUrl
+      };
+    });
+
     context.res = { status:200, headers:CORS, body: JSON.stringify({
       ok: true,
       zone:        flipbook.zone,
@@ -66,7 +120,7 @@ module.exports = async function(context, req) {
       year:        flipbook.year,
       title:       flipbook.layoutTitle,
       monthName:   moName + ' ' + flipbook.year,
-      pages:       flipbook.pages,
+      pages:       pagesWithFreshUrls,
       expiresAt:   flipbook.expiresAt,
       viewCount:   flipbook.viewCount
     })};
