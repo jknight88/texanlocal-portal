@@ -108,16 +108,31 @@ module.exports = async function(context, req) {
       const size    = PRODUCT_SIZE[bk.product] || 'FP';
       const bizNorm = normBiz(bk.business);
 
-      // Find matching PDF: business name must match, size must match if parseable
+      // Find matching PDF: business name must match, size must match if parseable.
+      // Filenames use format: YEAR_MONTH_BusinessName_MMDD_SIZE.pdf
+      // so we search all parts for a size token, then check if the remaining joined
+      // parts contain the business name (rather than assuming parts[0] is the biz).
       let matchedFile = null;
       for (const pdf of pdfFiles) {
         const noExt   = pdf.filename.replace(/\.pdf$/i,'');
         const parts   = noExt.split('_');
-        const pdfBiz  = normBiz(parts[0]);
         const pdfSize = parts.find(function(p){ return /^(FP|HP|FC|BP|2P|2P1|2P2|QP)$/i.test(p); });
 
-        const bizMatch  = pdfBiz && (pdfBiz.includes(bizNorm.substring(0,6)) || bizNorm.includes(pdfBiz.substring(0,6)));
-        const sizeMatch = !pdfSize || pdfSize.toUpperCase() === size || 
+        // Join all non-size, non-date (not purely numeric) parts as the candidate biz string
+        const bizParts = parts.filter(function(p){
+          return !/^(FP|HP|FC|BP|2P|2P1|2P2|QP)$/i.test(p) && !/^\d{4}$/.test(p) && !/^\d{2}$/.test(p) && !/^\d{4}$/.test(p);
+        });
+        const pdfBizFull = normBiz(bizParts.join(''));
+        const pdfBizFirst = normBiz(bizParts[0] || '');
+
+        // Match if business name appears anywhere in the joined non-size parts
+        const bizMatch = pdfBizFull && bizNorm && (
+          pdfBizFull.includes(bizNorm.substring(0,6)) ||
+          bizNorm.includes(pdfBizFull.substring(0,6)) ||
+          pdfBizFirst.includes(bizNorm.substring(0,6)) ||
+          bizNorm.includes(pdfBizFirst.substring(0,6))
+        );
+        const sizeMatch = !pdfSize || pdfSize.toUpperCase() === size ||
                           (size==='FC' && /^FC/i.test(pdfSize)) ||
                           (size==='BP' && /^B[PC]/i.test(pdfSize));
 
