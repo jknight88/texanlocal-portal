@@ -155,8 +155,8 @@ module.exports = async function(context, req) {
     }
   }
 
-  // Return 200 — the respond page now handles the UI directly.
-  // (Previously we did a 302 redirect here, but email clients often block API redirects.)
+  // Return 200 — the respond page now links here directly and handles its own UI.
+  // (Previously we did a 302 redirect, but email clients often block API redirects.)
   context.res = {
     status: 200,
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
