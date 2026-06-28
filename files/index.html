@@ -134,6 +134,7 @@ let currentYear, currentMonth;
 let currentPreviewPath = null;
 let currentPreviewName = null;
 let currentPreviewUrl  = null;
+let currentInlineUrl   = null;
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 async function init() {
@@ -237,7 +238,7 @@ async function previewFile(fullPath, name) {
   document.querySelectorAll('.file-table tbody tr').forEach(r=>r.classList.remove('active'));
   const row = document.getElementById('row-'+safeId(fullPath));
   if (row) row.classList.add('active');
-  currentPreviewPath=fullPath; currentPreviewName=name; currentPreviewUrl=null;
+  currentPreviewPath=fullPath; currentPreviewName=name; currentPreviewUrl=null; currentInlineUrl=null;
 
   const panel = document.getElementById('previewPanel');
   panel.classList.add('visible');
@@ -245,11 +246,18 @@ async function previewFile(fullPath, name) {
   document.getElementById('previewContent').innerHTML=
     '<div class="preview-empty"><div class="pi">⏳</div><p>Loading preview…</p></div>';
 
-  // Get download URL for Full View / Download
+  // Get download URL for Download; get inline URL for Full View
   try {
     const dlRes  = await fetch(API+'/filesGetDownloadUrl?path='+encodeURIComponent(fullPath), { credentials:'include' });
     const dlData = await dlRes.json();
     if (dlData.url) currentPreviewUrl = dlData.url;
+  } catch(e) {}
+
+  // Inline URL (opens in browser tab instead of downloading)
+  try {
+    const inRes  = await fetch(API+'/filesGetDownloadUrl?path='+encodeURIComponent(fullPath)+'&inline=true', { credentials:'include' });
+    const inData = await inRes.json();
+    if (inData.url) currentInlineUrl = inData.url;
   } catch(e) {}
 
   // Get thumbnail SAS URL from ad-proof-images container
@@ -286,12 +294,15 @@ async function previewFile(fullPath, name) {
   }
 }
 
-function openFullWindow() { if (currentPreviewUrl) window.open(currentPreviewUrl,'_blank'); }
+function openFullWindow() {
+  var url = currentInlineUrl || currentPreviewUrl;
+  if (url) window.open(url, '_blank');
+}
 function downloadCurrent() { if (currentPreviewPath&&currentPreviewName) downloadFile(currentPreviewPath,currentPreviewName); }
 function closePreview() {
   document.getElementById('previewPanel').classList.remove('visible');
   document.querySelectorAll('.file-table tbody tr').forEach(r=>r.classList.remove('active'));
-  currentPreviewPath=null; currentPreviewName=null; currentPreviewUrl=null;
+  currentPreviewPath=null; currentPreviewName=null; currentPreviewUrl=null; currentInlineUrl=null;
 }
 
 async function downloadFile(fullPath, name) {
