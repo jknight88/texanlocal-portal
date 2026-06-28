@@ -141,6 +141,7 @@ module.exports = async function(context, req) {
 
       // Find thumbnail for matched file
       let thumbUrl = null;
+      let thumbBlobName = null;
       if (matchedFile) {
         const candidates = [
           matchedFile.blobPath.replace(/\//g,'_').replace(/\.pdf$/i,'.jpg'),
@@ -149,22 +150,24 @@ module.exports = async function(context, req) {
         for (const c of candidates) {
           try {
             await imgC.getBlockBlobClient(c).getProperties();
-            thumbUrl = getSasUrl(acct, key, CONTAINER_IMAGES, c, 7);
+            thumbBlobName = c;
+            thumbUrl = getSasUrl(acct, key, CONTAINER_IMAGES, c, 7); // kept for compat
             break;
           } catch(e) {}
         }
       }
 
       files.push({
-        id:        matchedFile ? matchedFile.blobPath : 'booking:'+bk.bookingId,
-        filename:  matchedFile ? matchedFile.filename : bk.business+'_'+month+year.slice(2)+'_'+size+'.pdf',
-        path:      matchedFile ? matchedFile.blobPath : null,
-        business:  bk.business,
-        size:      size,
-        zoneStr:   bk.zone,
-        zones:     [parseInt((bk.zone||'').split('-')[0])||0],
-        thumbUrl:  thumbUrl,
-        hasThumb:  !!thumbUrl,
+        id:           matchedFile ? matchedFile.blobPath : 'booking:'+bk.bookingId,
+        filename:     matchedFile ? matchedFile.filename : bk.business+'_'+month+year.slice(2)+'_'+size+'.pdf',
+        path:         matchedFile ? matchedFile.blobPath : null,
+        business:     bk.business,
+        size:         size,
+        zoneStr:      bk.zone,
+        zones:        [parseInt((bk.zone||'').split('-')[0])||0],
+        thumbUrl:     thumbUrl,      // kept for backward compat but SAS may be stale — use thumbBlobName instead
+        thumbBlobName: thumbBlobName, // blob name in ad-proof-images — use with /api/getThumbUrl
+        hasThumb:     !!thumbUrl,
         booked:    true,
         bookingId: bk.bookingId,
         product:   bk.product,
