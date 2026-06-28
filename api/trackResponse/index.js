@@ -155,12 +155,26 @@ module.exports = async function(context, req) {
     }
   }
 
-  // Return 200 — the respond page now links here directly and handles its own UI.
-  // (Previously we did a 302 redirect, but email clients often block API redirects.)
-  context.res = {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    body: JSON.stringify({ ok: true })
-  };
+  // If called directly by a browser (old email links), redirect to respond page.
+  // If called via fetch() from the respond page (new email links), return 200 JSON.
+  const accept   = (req.headers['accept'] || '');
+  const fetchHdr = (req.headers['x-requested-with'] || '');
+  const isBrowser = accept.includes('text/html') && !accept.includes('application/json') && !fetchHdr;
+
+  if (isBrowser) {
+    // Old-style email link — redirect to respond page so client sees the UI
+    const bizParam = record && record.business ? '&biz=' + encodeURIComponent(record.business) : '';
+    context.res = {
+      status: 302,
+      headers: { 'Location': BASE_URL + '/respond?id=' + sessionId + '&action=' + action + bizParam }
+    };
+  } else {
+    // Called via fetch() from respond page — just return ok
+    context.res = {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ ok: true })
+    };
+  }
   context.done();
 };
