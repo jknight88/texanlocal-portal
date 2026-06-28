@@ -155,12 +155,12 @@ module.exports = async function(context, req) {
     }
   }
 
-  // Redirect to respond page
-  // Pass business name to respond page
-  const bizParam = record && record.business ? '&biz='+encodeURIComponent(record.business) : '';
+  // Return 200 — the respond page now handles the UI directly.
+  // (Previously we did a 302 redirect here, but email clients often block API redirects.)
   context.res = {
-    status: 302,
-    headers: { 'Location': BASE_URL+'/respond?id='+sessionId+'&action='+action+bizParam }
+    status: 200,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify({ ok: true })
   };
   context.done();
 };
