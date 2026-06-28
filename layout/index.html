@@ -528,6 +528,7 @@ async function loadLayout() {
     // Update zone art counts
     updateZoneCounts();
     renderArtPanel();
+    loadAllThumbs();
 
     if (activeZone) renderSpreads();
     else if (zones.length) selectZone(zones[0].id);
@@ -626,8 +627,10 @@ function renderArtPanel() {
     const sc     = a.size==='FP'||a.size==='FC'||a.size==='BP'?'fp':a.size==='HP'?'hp':'two-p';
     const cc     = a.size==='FP'||a.size==='FC'||a.size==='BP'?'fp-card':a.size==='HP'?'hp-card':'two-p-card';
     const szLbl  = a.size==='2P'?'2P Spread':a.size==='FC'?'FC Cover':a.size==='BP'?'BP Back':a.size;
+    // Use data-thumb attribute — loadThumb() fetches a fresh SAS URL on demand
+    // so we never hit 403s from pre-baked expired SAS tokens
     const thumbHtml = a.thumbUrl
-      ? '<img src="'+a.thumbUrl+'" alt="'+esc(a.business)+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+      ? '<img data-thumb="'+esc(a.thumbBlobName)+'" alt="'+esc(a.business)+'" loading="lazy" style="opacity:0;transition:opacity .2s" onload="this.style.opacity=1" onerror="fetchThumbSrc(this)">' +
         '<div class="thumb-na" style="display:none"><div class="na-label">N/A</div><div class="na-sub">No preview</div></div>'
       : a.noArtwork
         ? '<div class="thumb-na" style="background:#fff3e0;border-bottom:2px solid #ffcc80"><div class="na-label" style="font-size:22px">⚠</div><div class="na-sub" style="color:#e65100;font-weight:700;font-size:9px;line-height:1.3">No Uploaded Artwork<br>for this file</div></div>'
@@ -651,6 +654,38 @@ function renderArtPanel() {
   }).join('');
 }
 
+// Fetch a fresh SAS URL for a thumbnail via getThumbUrl API
+// Called both on img load (to set src) and on onerror (to retry with fresh URL)
+async function fetchThumbSrc(img) {
+  const blobName = img.dataset.thumb;
+  if (!blobName) return;
+  try {
+    const res  = await fetch(API + '/getThumbUrl?blob=' + encodeURIComponent(blobName), { credentials: 'include' });
+    const data = await res.json();
+    if (data.url) {
+      img.onerror = function() {
+        // Genuinely missing — show N/A sibling
+        img.style.display = 'none';
+        if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
+      };
+      img.src = data.url;
+    } else {
+      img.style.display = 'none';
+      if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
+    }
+  } catch(e) {
+    img.style.display = 'none';
+    if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
+  }
+}
+
+// After rendering the art panel, kick off fresh SAS loads for all thumb images
+function loadAllThumbs() {
+  document.querySelectorAll('img[data-thumb]').forEach(function(img) {
+    if (!img.src || img.src === window.location.href) fetchThumbSrc(img);
+  });
+}
+
 async function genThumb(artId, pdfPath, btn) {
   const card = btn ? btn.closest('.art-card') : document.getElementById('artcard-'+artId.replace(/[^a-zA-Z0-9]/g,''));
   const wrap = card ? card.querySelector('.thumb-wrap') : null;
@@ -667,6 +702,7 @@ async function genThumb(artId, pdfPath, btn) {
       if (art) { art.thumbUrl=data.url; art.hasThumb=true; }
       showToast('Thumbnail ready!', false);
       renderArtPanel();
+      loadAllThumbs();
       if (activeZone) renderSpreads();
     } else {
       if (wrap) wrap.innerHTML = '<div class="thumb-na"><div class="na-label">N/A</div><div class="na-sub">'+(data.error||'Failed')+'</div></div>';
