@@ -400,6 +400,19 @@ function showNoArt(container,p){
 }
 
 // ─── STACKS ───────────────────────────────────────────────────────────────────
+function buildDots(){
+  const dots = document.getElementById('progressDots');
+  if(!dots) return;
+  dots.innerHTML = spreads.map(function(_,i){
+    return '<div class="dot'+(i===currentSpread?' active':'')+'" onclick="goTo('+i+')" title="Spread '+(i+1)+'"></div>';
+  }).join('');
+}
+
+function goTo(idx){
+  if(idx===currentSpread||isFlipping)return;
+  doFlip(idx>currentSpread?'next':'prev');
+}
+
 function updateStacks(){
   const done=currentSpread,remain=spreads.length-currentSpread-1;
   const mk=(n,max)=>{let h='';for(let i=0;i<Math.max(1,Math.min(n,max));i++)h+='<div class="stack-slice"></div>';return h;};
