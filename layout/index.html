@@ -1285,7 +1285,8 @@ async function generateFlipbook() {
               product:   art.product  || art.size || '',
               size:      art.size     || '',
               blobPath:  art.path     || null,
-              thumbPath: art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null,
+              // Use thumbBlobName (clean blob name) — avoids parsing stale SAS URLs
+              thumbPath: art.thumbBlobName || (art.thumbUrl ? art.thumbUrl.split('?')[0].split('/').pop() : null),
               noArtwork: art.noArtwork || false
             });
           });
