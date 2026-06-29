@@ -450,9 +450,9 @@ function _initAudio() {
     for (let i = 0; i < raw.length; i++) u8[i] = raw.charCodeAt(i);
     _ctx.decodeAudioData(ab.slice(0),
       function(buf){ _buf = buf; _decoding = false; },
-      function(e)  { console.warn('Audio decode error:', e); _decoding = false; }
+      function(e)  { console.warn('Audio decode:', e); _decoding = false; }
     );
-  } catch(e) { console.warn('Audio init error:', e); }
+  } catch(e) { console.warn('Audio init:', e); }
 }
 
 function _playFlipSound() {
@@ -474,12 +474,12 @@ function toggleSound(){
 }
 
 // ─── CURVED PAGE FLIP ────────────────────────────────────────────────────────
-// Multi-slice: page split into N vertical strips, each pivoting from the spine.
-// Outer strips lag behind spine strips (wave peel effect).
-// skewY adds top-lags-bottom vertical flex at peak.
+// Single leaf per face (front + back), full half-page size.
+// The "wave" is faked with a CSS perspective + rotateY on the leaf,
+// plus a dynamic skewY that peaks at 90° to simulate paper flex.
+// The leaf is clipped to the turning half so it never bleeds over the static page.
 
-const SLICES   = 8;
-const DURATION = 700;
+const DURATION = 650;
 
 function flipNext(){ if(isFlipping||currentSpread>=spreads.length-1)return; _initAudio(); doFlip('next'); }
 function flipPrev(){ if(isFlipping||currentSpread<=0)return; _initAudio(); doFlip('prev'); }
@@ -490,111 +490,87 @@ function doFlip(dir){
 
   const nextIdx = dir==='next' ? currentSpread+1 : currentSpread-1;
   const book    = document.getElementById('book');
-  const shadow  = dir==='next'
-    ? document.getElementById('shadowLeft')
-    : document.getElementById('shadowRight');
+  const shadow  = document.getElementById(dir==='next' ? 'shadowLeft' : 'shadowRight');
 
   const [curL, curR] = spreads[currentSpread];
   const [nxtL, nxtR] = spreads[nextIdx];
 
-  const frontIdx = dir==='next' ? (curR!==null?curR:curL) : (curL!==null?curL:curR);
-  const backIdx  = dir==='next' ? (nxtL!==null?nxtL:nxtR) : (nxtR!==null?nxtR:nxtL);
+  const frontIdx  = dir==='next' ? (curR!==null?curR:curL) : (curL!==null?curL:curR);
+  const backIdx   = dir==='next' ? (nxtL!==null?nxtL:nxtR) : (nxtR!==null?nxtR:nxtL);
   const frontSide = dir==='next' ? 'right' : 'left';
   const backSide  = dir==='next' ? 'left'  : 'right';
 
-  // Render destination underneath, keep static half on top
+  // Show destination spread underneath; keep static half on top
   renderSpread(nextIdx);
-  const lp = document.getElementById('pageLeftInner');
-  const rp = document.getElementById('pageRightInner');
-  if(dir==='next') renderPage(lp, curL, 'left');
-  else             renderPage(rp, curR, 'right');
+  if(dir==='next') renderPage(document.getElementById('pageLeftInner'),  curL, 'left');
+  else             renderPage(document.getElementById('pageRightInner'), curR, 'right');
 
-  const halfPx  = book.offsetWidth / 2;
-  const slicePx = halfPx / SLICES;
-  const sliceW  = 100 / SLICES;
-  const slices  = [];
+  // ── Build leaf ──────────────────────────────────────────────────────────────
+  // Outer wrapper: positioned over the turning half, clips to it.
+  // perspective is set here so rotateY looks correct for this half.
+  const outer = document.createElement('div');
+  outer.style.cssText = [
+    'position:absolute',
+    'top:0','bottom:0','width:50%',
+    dir==='next' ? 'left:50%' : 'left:0',
+    'overflow:hidden',
+    'z-index:20',
+    'pointer-events:none',
+    'perspective:1200px',
+    'perspective-origin:' + (dir==='next' ? '0% 50%' : '100% 50%')
+  ].join(';');
 
-  for (let s = 0; s < SLICES; s++){
-    const norm = s / (SLICES - 1 || 1); // 0=spine, 1=outer
+  // The leaf itself rotates inside the outer clip.
+  // transform-origin is at the spine edge.
+  const leaf = document.createElement('div');
+  leaf.style.cssText = [
+    'position:absolute',
+    'top:0','bottom:0','width:100%','left:0',
+    'transform-style:preserve-3d',
+    dir==='next' ? 'transform-origin:left center' : 'transform-origin:right center'
+  ].join(';');
 
-    // Clipping wrapper — shows only this column
-    const wrap = document.createElement('div');
-    wrap.className = 'flip-slice-wrap';
-    wrap.style.cssText = [
-      'position:absolute',
-      'top:0', 'bottom:0',
-      'width:' + sliceW + '%',
-      'overflow:hidden',
-      'pointer-events:none',
-      'z-index:20',
-      dir==='next'
-        ? 'left:' + (50 + s * sliceW) + '%'
-        : 'left:' + ((SLICES-1-s) * sliceW) + '%'
-    ].join(';');
+  // Front face
+  const front = document.createElement('div');
+  front.style.cssText = 'position:absolute;inset:0;backface-visibility:hidden;overflow:hidden;background:#fff';
+  renderPage(front, frontIdx, frontSide);
 
-    // Inner panel — full half-page wide, shifted so the right column shows
-    const inner = document.createElement('div');
-    inner.style.cssText = [
-      'position:absolute',
-      'top:0', 'bottom:0',
-      'width:' + halfPx + 'px',
-      dir==='next'
-        ? 'left:' + (-s * slicePx) + 'px'
-        : 'left:' + (-(SLICES-1-s) * slicePx) + 'px',
-      'transform-style:preserve-3d',
-      dir==='next' ? 'transform-origin:left center' : 'transform-origin:right center'
-    ].join(';');
+  // Back face — pre-rotated so it shows when leaf passes 90°
+  const back = document.createElement('div');
+  back.style.cssText = 'position:absolute;inset:0;backface-visibility:hidden;overflow:hidden;background:#fff;' +
+    (dir==='next' ? 'transform:rotateY(180deg)' : 'transform:rotateY(-180deg)');
+  // Back face content needs to be mirrored horizontally so it reads correctly
+  const backInner = document.createElement('div');
+  backInner.style.cssText = 'position:absolute;inset:0;' +
+    (dir==='next' ? 'transform:scaleX(-1)' : 'transform:scaleX(-1)');
+  renderPage(backInner, backIdx, backSide);
+  back.appendChild(backInner);
 
-    // Front face
-    const front = document.createElement('div');
-    front.style.cssText = 'position:absolute;inset:0;backface-visibility:hidden;overflow:hidden';
-    const fPage = document.createElement('div');
-    fPage.style.cssText = 'position:absolute;width:' + halfPx + 'px;top:0;bottom:0;' +
-      (dir==='next' ? 'left:' + (s * slicePx) + 'px' : 'left:' + ((SLICES-1-s) * slicePx) + 'px');
-    renderPage(fPage, frontIdx, frontSide);
-    front.appendChild(fPage);
+  leaf.appendChild(front);
+  leaf.appendChild(back);
+  outer.appendChild(leaf);
+  book.appendChild(outer);
 
-    // Back face  
-    const back = document.createElement('div');
-    back.style.cssText = 'position:absolute;inset:0;backface-visibility:hidden;overflow:hidden;transform:rotateY(180deg)';
-    const bPage = document.createElement('div');
-    bPage.style.cssText = 'position:absolute;width:' + halfPx + 'px;top:0;bottom:0;' +
-      (dir==='next' ? 'left:' + (s * slicePx) + 'px' : 'left:' + ((SLICES-1-s) * slicePx) + 'px');
-    renderPage(bPage, backIdx, backSide);
-    back.appendChild(bPage);
-
-    inner.appendChild(front);
-    inner.appendChild(back);
-    wrap.appendChild(inner);
-    book.appendChild(wrap);
-    slices.push({ wrap, inner, norm });
-  }
-
+  // ── Animate ──────────────────────────────────────────────────────────────
   const t0 = performance.now();
-  const MAX_LAG = 0.2; // outer edge lags this fraction of DURATION behind spine
 
   function animate(now){
-    const elapsed = now - t0;
-    const tGlobal = Math.min(elapsed / DURATION, 1);
-    let done = true;
+    const t    = Math.min((now - t0) / DURATION, 1);
+    // Ease-in-out cubic
+    const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
 
-    slices.forEach(function(sl){
-      const lag  = sl.norm * MAX_LAG * DURATION;
-      const tRaw = Math.min(Math.max(elapsed - lag, 0) / (DURATION * (1 - sl.norm * MAX_LAG * 0.5)), 1);
-      if (tRaw < 1) done = false;
-      const ease  = 1 - Math.pow(1 - tRaw, 3);
-      const angle = dir==='next' ? -(ease * 180) : (ease * 180);
-      const skew  = Math.sin(tRaw * Math.PI) * (4 + sl.norm * 12);
-      const skewDir = dir==='next' ? skew : -skew;
-      sl.inner.style.transform = 'rotateY(' + angle + 'deg) skewY(' + skewDir + 'deg)';
-    });
+    const angle = dir==='next' ? -(ease * 180) : (ease * 180);
+    // skewY peaks at 90° — simulates paper wave/flex
+    const skew  = Math.sin(ease * Math.PI) * 15;
+    const skewD = dir==='next' ? skew : -skew;
 
-    shadow.style.opacity = Math.sin(tGlobal * Math.PI) * 0.4;
+    leaf.style.transform = 'rotateY(' + angle + 'deg) skewY(' + skewD + 'deg)';
+    shadow.style.opacity = Math.sin(ease * Math.PI) * 0.4;
 
-    if (!done || tGlobal < 1){
+    if(t < 1){
       requestAnimationFrame(animate);
     } else {
-      slices.forEach(function(sl){ book.removeChild(sl.wrap); });
+      book.removeChild(outer);
       shadow.style.opacity = 0;
       renderSpread(nextIdx);
       currentSpread = nextIdx;
