@@ -77,9 +77,9 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .no-art .tl-mark{font-size:40px;opacity:.15}
 
 /* 3D PAGE FLIP — multi-slice curved flip like FlipHTML5 */
-.book{ perspective: 2000px; transform-style: preserve-3d; }
+.book{ perspective: 2500px; transform-style: preserve-3d; position:relative; }
 
-/* Container for the slices — covers the turning half */
+/* The turning leaf — covers the right half (next) or left half (prev) */
 .flip-leaf{
   position:absolute;
   top:0; bottom:0;
@@ -87,31 +87,45 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
   z-index:20;
   pointer-events:none;
   transform-style: preserve-3d;
-  overflow:hidden;
 }
-.flip-leaf.flip-next{ left:50%; }
-.flip-leaf.flip-prev{ left:0; }
-
-/* Each slice is a thin vertical strip of the page */
-.flip-slice{
-  position:absolute;
-  top:0; bottom:0;
-  transform-style: preserve-3d;
+/* flip-next pivots from LEFT edge (the spine) */
+.flip-leaf.flip-next{
+  left:50%;
   transform-origin: left center;
-  overflow:hidden;
-  backface-visibility:hidden;
 }
-.flip-slice-back{
+/* flip-prev pivots from RIGHT edge (the spine) */
+.flip-leaf.flip-prev{
+  left:0;
+  transform-origin: right center;
+}
+
+/* Front and back faces of the leaf */
+.flip-face{
+  position:absolute;
+  inset:0;
+  backface-visibility:hidden;
+  overflow:hidden;
+}
+.flip-face-front{
+  /* Faces viewer at start */
+}
+.flip-face-back{
+  /* Pre-rotated 180° so it shows on the back */
   transform: rotateY(180deg);
 }
+/* flip-prev back needs to mirror differently */
+.flip-leaf.flip-prev .flip-face-back{
+  transform: rotateY(-180deg);
+}
 
-/* Shadow overlay on the static page behind the turning leaf */
+/* Shadow overlay that sweeps across the static page */
 .flip-shadow{
   position:absolute;
   top:0; bottom:0; width:50%;
   pointer-events:none;
   z-index:15;
   opacity:0;
+  transition: opacity 0s;
 }
 .flip-shadow-left { left:0;   background:linear-gradient(to left, rgba(0,0,0,0.22), transparent); }
 .flip-shadow-right{ right:0;  background:linear-gradient(to right, rgba(0,0,0,0.22), transparent); }
@@ -423,7 +437,7 @@ function updateStacks(){
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
 // Web Audio API: decode the WAV once into a buffer, replay instantly each flip.
 // AudioContext created on first user gesture so browser autoplay policy allows it.
-let _ctx = null, _buf = null, _decoding = false;
+let _ctx = null, _buf = null, _decoding = false, _pendingPlay = false;
 
 function _ensureCtx() {
   if (_ctx) return;
@@ -437,7 +451,11 @@ function _ensureCtx() {
     const view = new Uint8Array(ab);
     for (let i = 0; i < str.length; i++) view[i] = str.charCodeAt(i);
     _ctx.decodeAudioData(ab,
-      function(decoded){ _buf = decoded; _decoding = false; },
+      function(decoded){
+        _buf = decoded;
+        _decoding = false;
+        if (_pendingPlay) { _pendingPlay = false; _playBuf(); }
+      },
       function(e){ console.warn('Audio decode failed', e); _decoding = false; }
     );
   } catch(e) { _decoding = false; }
@@ -459,8 +477,21 @@ function _playBuf() {
 
 function playFlipSound() {
   if (!soundEnabled) return;
-  _ensureCtx();
-  if (_buf) _playBuf();
+  if (!_ctx) {
+    // First gesture — create context and decode, then play when ready
+    _ensureCtx();
+    // _buf will be null briefly; _ensureCtx sets a callback to set _buf
+    // We'll play via the onDecoded callback below
+    _pendingPlay = true;
+    return;
+  }
+  _ensureCtx(); // ensure decoded
+  if (_buf) {
+    _playBuf();
+  } else {
+    // Still decoding — queue a play
+    _pendingPlay = true;
+  }
 }
 
 function toggleSound(){
@@ -527,17 +558,18 @@ function doFlip(dir){
   // Animate: rotateY sweeps 0→±180°; skewY peaks at 90° to simulate paper curl
   const startTime    = performance.now();
   const activeShadow = dir==='next' ? shadowL : shadowR;
-  const MAX_SKEW     = 20; // degrees of bend at peak
-
   function animate(now){
     const t    = Math.min((now - startTime) / DURATION, 1);
-    const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+    // Ease: fast start, slow at 90°, fast finish — mimics paper inertia
+    const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
 
+    // Page rotates 0→180 around the spine edge
     const angle = dir==='next' ? -(ease * 180) : (ease * 180);
-    const skew  = Math.sin(ease * Math.PI) * MAX_SKEW;
 
-    leaf.style.transform = 'rotateY(' + angle + 'deg) skewY(' + skew + 'deg)';
-    activeShadow.style.opacity = Math.sin(ease * Math.PI) * 0.28;
+    // Shadow peaks at the 90° midpoint
+    activeShadow.style.opacity = Math.sin(ease * Math.PI) * 0.35;
+
+    leaf.style.transform = 'rotateY(' + angle + 'deg)';
 
     if(t < 1){
       requestAnimationFrame(animate);
