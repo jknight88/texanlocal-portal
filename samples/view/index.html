@@ -435,157 +435,176 @@ function updateStacks(){
 }
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
-// Web Audio API: decode the WAV once into a buffer, replay instantly each flip.
-// AudioContext created on first user gesture so browser autoplay policy allows it.
-let _ctx = null, _buf = null, _decoding = false, _pendingPlay = false;
+let _ctx = null, _buf = null, _decoding = false;
 
-function _ensureCtx() {
-  if (_ctx) return;
-  _ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (_buf || _decoding) return;
-  _decoding = true;
+function _initAudio() {
+  if (_ctx) { if (_ctx.state === 'suspended') _ctx.resume(); return; }
   try {
-    const b64  = FLIP_SRC.split(',')[1];
-    const str  = atob(b64);
-    const ab   = new ArrayBuffer(str.length);
-    const view = new Uint8Array(ab);
-    for (let i = 0; i < str.length; i++) view[i] = str.charCodeAt(i);
-    _ctx.decodeAudioData(ab,
-      function(decoded){
-        _buf = decoded;
-        _decoding = false;
-        if (_pendingPlay) { _pendingPlay = false; _playBuf(); }
-      },
-      function(e){ console.warn('Audio decode failed', e); _decoding = false; }
+    _ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_decoding) return;
+    _decoding = true;
+    const b64 = FLIP_SRC.split(',')[1];
+    const raw = atob(b64);
+    const ab  = new ArrayBuffer(raw.length);
+    const u8  = new Uint8Array(ab);
+    for (let i = 0; i < raw.length; i++) u8[i] = raw.charCodeAt(i);
+    _ctx.decodeAudioData(ab.slice(0),
+      function(buf){ _buf = buf; _decoding = false; },
+      function(e)  { console.warn('Audio decode error:', e); _decoding = false; }
     );
-  } catch(e) { _decoding = false; }
+  } catch(e) { console.warn('Audio init error:', e); }
 }
 
-function _playBuf() {
-  if (!_ctx || !_buf) return;
+function _playFlipSound() {
+  if (!soundEnabled || !_ctx || !_buf) return;
   try {
     if (_ctx.state === 'suspended') _ctx.resume();
-    const src  = _ctx.createBufferSource();
-    const gain = _ctx.createGain();
-    src.buffer      = _buf;
-    gain.gain.value = 0.7;
-    src.connect(gain);
-    gain.connect(_ctx.destination);
-    src.start(0);
+    const s = _ctx.createBufferSource();
+    const g = _ctx.createGain();
+    s.buffer = _buf; g.gain.value = 0.8;
+    s.connect(g); g.connect(_ctx.destination);
+    s.start(0);
   } catch(e) {}
-}
-
-function playFlipSound() {
-  if (!soundEnabled) return;
-  if (!_ctx) {
-    // First gesture — create context and decode, then play when ready
-    _ensureCtx();
-    // _buf will be null briefly; _ensureCtx sets a callback to set _buf
-    // We'll play via the onDecoded callback below
-    _pendingPlay = true;
-    return;
-  }
-  _ensureCtx(); // ensure decoded
-  if (_buf) {
-    _playBuf();
-  } else {
-    // Still decoding — queue a play
-    _pendingPlay = true;
-  }
 }
 
 function toggleSound(){
   soundEnabled = !soundEnabled;
   document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
-  if (soundEnabled) _ensureCtx(); // unlock AudioContext on user gesture
+  _initAudio();
 }
 
-// ─── FLIP ────────────────────────────────────────────────────────────────────
-// Single-leaf rotateY + skewY approach: the skew peaks at 90° and returns to 0,
-// giving the impression of a page curving through the air instead of a rigid board.
+// ─── CURVED PAGE FLIP ────────────────────────────────────────────────────────
+// Multi-slice: page split into N vertical strips, each pivoting from the spine.
+// Outer strips lag behind spine strips (wave peel effect).
+// skewY adds top-lags-bottom vertical flex at peak.
 
-const DURATION = 580; // ms
+const SLICES   = 8;
+const DURATION = 700;
 
-function flipNext(){ if(isFlipping||currentSpread>=spreads.length-1)return; doFlip('next'); }
-function flipPrev(){ if(isFlipping||currentSpread<=0)return; doFlip('prev'); }
+function flipNext(){ if(isFlipping||currentSpread>=spreads.length-1)return; _initAudio(); doFlip('next'); }
+function flipPrev(){ if(isFlipping||currentSpread<=0)return; _initAudio(); doFlip('prev'); }
 
 function doFlip(dir){
   isFlipping = true;
-  playFlipSound();
+  _playFlipSound();
 
   const nextIdx = dir==='next' ? currentSpread+1 : currentSpread-1;
   const book    = document.getElementById('book');
-  const shadowL = document.getElementById('shadowLeft');
-  const shadowR = document.getElementById('shadowRight');
+  const shadow  = dir==='next'
+    ? document.getElementById('shadowLeft')
+    : document.getElementById('shadowRight');
 
   const [curL, curR] = spreads[currentSpread];
   const [nxtL, nxtR] = spreads[nextIdx];
 
-  // Which page turns away (front) and which arrives (back)?
-  let frontPageIdx, frontSide, backPageIdx, backSide;
-  if(dir === 'next'){
-    frontPageIdx = curR !== null ? curR : curL;  frontSide = 'right';
-    backPageIdx  = nxtL !== null ? nxtL : nxtR;  backSide  = 'left';
-  } else {
-    frontPageIdx = curL !== null ? curL : curR;  frontSide = 'left';
-    backPageIdx  = nxtR !== null ? nxtR : nxtL;  backSide  = 'right';
-  }
+  const frontIdx = dir==='next' ? (curR!==null?curR:curL) : (curL!==null?curL:curR);
+  const backIdx  = dir==='next' ? (nxtL!==null?nxtL:nxtR) : (nxtR!==null?nxtR:nxtL);
+  const frontSide = dir==='next' ? 'right' : 'left';
+  const backSide  = dir==='next' ? 'left'  : 'right';
 
-  // Show destination spread underneath; restore the non-turning static page
+  // Render destination underneath, keep static half on top
   renderSpread(nextIdx);
   const lp = document.getElementById('pageLeftInner');
   const rp = document.getElementById('pageRightInner');
-  if(dir === 'next'){ renderPage(lp, curL, 'left'); }
-  else              { renderPage(rp, curR, 'right'); }
+  if(dir==='next') renderPage(lp, curL, 'left');
+  else             renderPage(rp, curR, 'right');
 
-  // Build leaf with front + back faces
-  const leaf = document.createElement('div');
-  leaf.className = 'flip-leaf flip-' + (dir==='next' ? 'next' : 'prev');
-  leaf.style.transformStyle = 'preserve-3d';
+  const halfPx  = book.offsetWidth / 2;
+  const slicePx = halfPx / SLICES;
+  const sliceW  = 100 / SLICES;
+  const slices  = [];
 
-  const front = document.createElement('div');
-  front.className = 'flip-face flip-face-front';
-  renderPage(front, frontPageIdx, frontSide);
+  for (let s = 0; s < SLICES; s++){
+    const norm = s / (SLICES - 1 || 1); // 0=spine, 1=outer
 
-  const back = document.createElement('div');
-  back.className = 'flip-face flip-face-back';
-  renderPage(back, backPageIdx, backSide);
+    // Clipping wrapper — shows only this column
+    const wrap = document.createElement('div');
+    wrap.className = 'flip-slice-wrap';
+    wrap.style.cssText = [
+      'position:absolute',
+      'top:0', 'bottom:0',
+      'width:' + sliceW + '%',
+      'overflow:hidden',
+      'pointer-events:none',
+      'z-index:20',
+      dir==='next'
+        ? 'left:' + (50 + s * sliceW) + '%'
+        : 'left:' + ((SLICES-1-s) * sliceW) + '%'
+    ].join(';');
 
-  leaf.appendChild(front);
-  leaf.appendChild(back);
-  book.appendChild(leaf);
+    // Inner panel — full half-page wide, shifted so the right column shows
+    const inner = document.createElement('div');
+    inner.style.cssText = [
+      'position:absolute',
+      'top:0', 'bottom:0',
+      'width:' + halfPx + 'px',
+      dir==='next'
+        ? 'left:' + (-s * slicePx) + 'px'
+        : 'left:' + (-(SLICES-1-s) * slicePx) + 'px',
+      'transform-style:preserve-3d',
+      dir==='next' ? 'transform-origin:left center' : 'transform-origin:right center'
+    ].join(';');
 
-  // Animate: rotateY sweeps 0→±180°; skewY peaks at 90° to simulate paper curl
-  const startTime    = performance.now();
-  const activeShadow = dir==='next' ? shadowL : shadowR;
+    // Front face
+    const front = document.createElement('div');
+    front.style.cssText = 'position:absolute;inset:0;backface-visibility:hidden;overflow:hidden';
+    const fPage = document.createElement('div');
+    fPage.style.cssText = 'position:absolute;width:' + halfPx + 'px;top:0;bottom:0;' +
+      (dir==='next' ? 'left:' + (s * slicePx) + 'px' : 'left:' + ((SLICES-1-s) * slicePx) + 'px');
+    renderPage(fPage, frontIdx, frontSide);
+    front.appendChild(fPage);
+
+    // Back face  
+    const back = document.createElement('div');
+    back.style.cssText = 'position:absolute;inset:0;backface-visibility:hidden;overflow:hidden;transform:rotateY(180deg)';
+    const bPage = document.createElement('div');
+    bPage.style.cssText = 'position:absolute;width:' + halfPx + 'px;top:0;bottom:0;' +
+      (dir==='next' ? 'left:' + (s * slicePx) + 'px' : 'left:' + ((SLICES-1-s) * slicePx) + 'px');
+    renderPage(bPage, backIdx, backSide);
+    back.appendChild(bPage);
+
+    inner.appendChild(front);
+    inner.appendChild(back);
+    wrap.appendChild(inner);
+    book.appendChild(wrap);
+    slices.push({ wrap, inner, norm });
+  }
+
+  const t0 = performance.now();
+  const MAX_LAG = 0.2; // outer edge lags this fraction of DURATION behind spine
+
   function animate(now){
-    const t    = Math.min((now - startTime) / DURATION, 1);
-    // Ease: fast start, slow at 90°, fast finish — mimics paper inertia
-    const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
+    const elapsed = now - t0;
+    const tGlobal = Math.min(elapsed / DURATION, 1);
+    let done = true;
 
-    // Page rotates 0→180 around the spine edge
-    const angle = dir==='next' ? -(ease * 180) : (ease * 180);
+    slices.forEach(function(sl){
+      const lag  = sl.norm * MAX_LAG * DURATION;
+      const tRaw = Math.min(Math.max(elapsed - lag, 0) / (DURATION * (1 - sl.norm * MAX_LAG * 0.5)), 1);
+      if (tRaw < 1) done = false;
+      const ease  = 1 - Math.pow(1 - tRaw, 3);
+      const angle = dir==='next' ? -(ease * 180) : (ease * 180);
+      const skew  = Math.sin(tRaw * Math.PI) * (4 + sl.norm * 12);
+      const skewDir = dir==='next' ? skew : -skew;
+      sl.inner.style.transform = 'rotateY(' + angle + 'deg) skewY(' + skewDir + 'deg)';
+    });
 
-    // Shadow peaks at the 90° midpoint
-    activeShadow.style.opacity = Math.sin(ease * Math.PI) * 0.35;
+    shadow.style.opacity = Math.sin(tGlobal * Math.PI) * 0.4;
 
-    leaf.style.transform = 'rotateY(' + angle + 'deg)';
-
-    if(t < 1){
+    if (!done || tGlobal < 1){
       requestAnimationFrame(animate);
     } else {
-      book.removeChild(leaf);
-      activeShadow.style.opacity = 0;
+      slices.forEach(function(sl){ book.removeChild(sl.wrap); });
+      shadow.style.opacity = 0;
       renderSpread(nextIdx);
       currentSpread = nextIdx;
-      isFlipping = false;
+      isFlipping    = false;
       buildDots();
       updateStacks();
     }
   }
   requestAnimationFrame(animate);
 }
-
 init();
 </script>
 </body>
