@@ -162,6 +162,7 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 
 @media(max-width:600px){.hdr-title{display:none}.controls{padding:.5rem 1rem}.ctrl-btn{padding:6px 12px;font-size:13px}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/StPageFlip/2.0.7/page-flip.browser.js"></script>
 </head>
 <body>
 
@@ -283,6 +284,9 @@ async function init() {
 
     renderSpread(0);
     updateStacks();
+
+    // Init StPageFlip after viewer is visible so dimensions are correct
+    requestAnimationFrame(function(){ requestAnimationFrame(initPageFlip); });
 
     document.addEventListener('keydown',e=>{
       if(e.key==='ArrowRight'||e.key==='ArrowDown')flipNext();
@@ -473,114 +477,96 @@ function toggleSound(){
   _initAudio();
 }
 
-// ─── CURVED PAGE FLIP ────────────────────────────────────────────────────────
-// Single leaf per face (front + back), full half-page size.
-// The "wave" is faked with a CSS perspective + rotateY on the leaf,
-// plus a dynamic skewY that peaks at 90° to simulate paper flex.
-// The leaf is clipped to the turning half so it never bleeds over the static page.
+// ─── PAGE FLIP via StPageFlip ─────────────────────────────────────────────────
+let pageFlipInstance = null;
 
-const DURATION = 650;
+function flipNext(){
+  if(!pageFlipInstance)return;
+  _initAudio();
+  pageFlipInstance.flipNext();
+}
+function flipPrev(){
+  if(!pageFlipInstance)return;
+  _initAudio();
+  pageFlipInstance.flipPrev();
+}
+function doFlip(dir){ if(dir==='next') flipNext(); else flipPrev(); }
 
-function flipNext(){ if(isFlipping||currentSpread>=spreads.length-1)return; _initAudio(); doFlip('next'); }
-function flipPrev(){ if(isFlipping||currentSpread<=0)return; _initAudio(); doFlip('prev'); }
+function initPageFlip() {
+  const book  = document.getElementById('book');
+  const bookW = book.offsetWidth;
+  const bookH = book.offsetHeight;
+  const pageW = Math.floor(bookW / 2);
 
-function doFlip(dir){
-  isFlipping = true;
-  _playFlipSound();
+  // Flatten spreads into individual page elements for StPageFlip
+  // StPageFlip expects a list of .page divs — it pairs them into spreads itself.
+  // We give it: [spread0-left, spread0-right, spread1-left, spread1-right, ...]
+  const pageEls = [];
+  spreads.forEach(function(spread){
+    const [li, ri] = spread;
+    [li, ri].forEach(function(idx, side){
+      const div = document.createElement('div');
+      div.className = 'stpf-page';
+      div.style.cssText = 'background:#fff;overflow:hidden;width:100%;height:100%';
+      if (idx !== null) {
+        renderPage(div, idx, side === 0 ? 'left' : 'right');
+      } else {
+        div.style.background = '#f0ece4';
+      }
+      pageEls.push(div);
+    });
+  });
 
-  const nextIdx = dir==='next' ? currentSpread+1 : currentSpread-1;
-  const book    = document.getElementById('book');
-  const shadow  = document.getElementById(dir==='next' ? 'shadowLeft' : 'shadowRight');
+  // Replace book contents with a StPageFlip container
+  book.innerHTML = '';
+  const container = document.createElement('div');
+  container.id = 'stpfContainer';
+  container.style.cssText = 'width:100%;height:100%';
+  pageEls.forEach(function(p){ container.appendChild(p); });
+  book.appendChild(container);
 
-  const [curL, curR] = spreads[currentSpread];
-  const [nxtL, nxtR] = spreads[nextIdx];
+  try {
+    pageFlipInstance = new St.PageFlip(container, {
+      width:               pageW,
+      height:              bookH,
+      size:                'fixed',
+      drawShadow:          true,
+      flippingTime:        700,
+      usePortrait:         false,
+      autoSize:            false,
+      maxShadowOpacity:    0.6,
+      showCover:           true,
+      mobileScrollSupport: false,
+      disableFlipByClick:  true
+    });
 
-  const frontIdx  = dir==='next' ? (curR!==null?curR:curL) : (curL!==null?curL:curR);
-  const backIdx   = dir==='next' ? (nxtL!==null?nxtL:nxtR) : (nxtR!==null?nxtR:nxtL);
-  const frontSide = dir==='next' ? 'right' : 'left';
-  const backSide  = dir==='next' ? 'left'  : 'right';
+    pageFlipInstance.loadFromHTML(container.querySelectorAll('.stpf-page'));
 
-  // Show destination spread underneath; keep static half on top
-  renderSpread(nextIdx);
-  if(dir==='next') renderPage(document.getElementById('pageLeftInner'),  curL, 'left');
-  else             renderPage(document.getElementById('pageRightInner'), curR, 'right');
-
-  // ── Build leaf ──────────────────────────────────────────────────────────────
-  // Outer wrapper: positioned over the turning half, clips to it.
-  // perspective is set here so rotateY looks correct for this half.
-  const outer = document.createElement('div');
-  outer.style.cssText = [
-    'position:absolute',
-    'top:0','bottom:0','width:50%',
-    dir==='next' ? 'left:50%' : 'left:0',
-    'overflow:hidden',
-    'z-index:20',
-    'pointer-events:none',
-    'perspective:1200px',
-    'perspective-origin:' + (dir==='next' ? '0% 50%' : '100% 50%')
-  ].join(';');
-
-  // The leaf itself rotates inside the outer clip.
-  // transform-origin is at the spine edge.
-  const leaf = document.createElement('div');
-  leaf.style.cssText = [
-    'position:absolute',
-    'top:0','bottom:0','width:100%','left:0',
-    'transform-style:preserve-3d',
-    dir==='next' ? 'transform-origin:left center' : 'transform-origin:right center'
-  ].join(';');
-
-  // Front face
-  const front = document.createElement('div');
-  front.style.cssText = 'position:absolute;inset:0;backface-visibility:hidden;overflow:hidden;background:#fff';
-  renderPage(front, frontIdx, frontSide);
-
-  // Back face — pre-rotated so it shows when leaf passes 90°
-  const back = document.createElement('div');
-  back.style.cssText = 'position:absolute;inset:0;backface-visibility:hidden;overflow:hidden;background:#fff;' +
-    (dir==='next' ? 'transform:rotateY(180deg)' : 'transform:rotateY(-180deg)');
-  // Back face content needs to be mirrored horizontally so it reads correctly
-  const backInner = document.createElement('div');
-  backInner.style.cssText = 'position:absolute;inset:0;' +
-    (dir==='next' ? 'transform:scaleX(-1)' : 'transform:scaleX(-1)');
-  renderPage(backInner, backIdx, backSide);
-  back.appendChild(backInner);
-
-  leaf.appendChild(front);
-  leaf.appendChild(back);
-  outer.appendChild(leaf);
-  book.appendChild(outer);
-
-  // ── Animate ──────────────────────────────────────────────────────────────
-  const t0 = performance.now();
-
-  function animate(now){
-    const t    = Math.min((now - t0) / DURATION, 1);
-    // Ease-in-out cubic
-    const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
-
-    const angle = dir==='next' ? -(ease * 180) : (ease * 180);
-    // skewY peaks at 90° — simulates paper wave/flex
-    const skew  = Math.sin(ease * Math.PI) * 15;
-    const skewD = dir==='next' ? skew : -skew;
-
-    leaf.style.transform = 'rotateY(' + angle + 'deg) skewY(' + skewD + 'deg)';
-    shadow.style.opacity = Math.sin(ease * Math.PI) * 0.4;
-
-    if(t < 1){
-      requestAnimationFrame(animate);
-    } else {
-      book.removeChild(outer);
-      shadow.style.opacity = 0;
-      renderSpread(nextIdx);
-      currentSpread = nextIdx;
-      isFlipping    = false;
+    pageFlipInstance.on('flip', function(e){
+      _playFlipSound();
+      currentSpread = Math.floor(e.data / 2);
       buildDots();
       updateStacks();
+    });
+
+    // Start on correct spread
+    if (currentSpread > 0) {
+      pageFlipInstance.turnToPage(currentSpread * 2);
     }
+
+  } catch(err) {
+    console.error('StPageFlip init failed:', err);
+    // Fallback: restore basic spread layout
+    book.innerHTML = '';
+    const spread = document.createElement('div');
+    spread.className = 'spread';
+    spread.id = 'spread';
+    spread.innerHTML = '<div class="page page-left" id="pageLeft"><div class="page-inner" id="pageLeftInner"></div></div><div class="page page-right" id="pageRight"><div class="page-inner" id="pageRightInner"></div></div>';
+    book.appendChild(spread);
+    renderSpread(currentSpread);
   }
-  requestAnimationFrame(animate);
 }
+
 init();
 </script>
 </body>
