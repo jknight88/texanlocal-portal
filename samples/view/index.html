@@ -498,31 +498,22 @@ function initPageFlip() {
   const bookH = book.offsetHeight;
   const pageW = Math.floor(bookW / 2);
 
-  // Flatten spreads into individual page elements for StPageFlip
-  // StPageFlip expects a list of .page divs — it pairs them into spreads itself.
-  // We give it: [spread0-left, spread0-right, spread1-left, spread1-right, ...]
-  const pageEls = [];
-  spreads.forEach(function(spread){
-    const [li, ri] = spread;
-    [li, ri].forEach(function(idx, side){
-      const div = document.createElement('div');
-      div.className = 'stpf-page';
-      div.style.cssText = 'background:#fff;overflow:hidden;width:100%;height:100%';
-      if (idx !== null) {
-        renderPage(div, idx, side === 0 ? 'left' : 'right');
-      } else {
-        div.style.background = '#f0ece4';
-      }
-      pageEls.push(div);
-    });
+  // Build image URL list for StPageFlip.
+  // Our pages array is already in order (cover=pages[0], interior pages, back cover=pages[n-1]).
+  // StPageFlip with showCover:true treats page[0] as a single right-side cover
+  // and page[last] as a single left-side back cover — exactly matching our spread layout.
+  // For 2P (double-page) ads, we use thumbUrl as fallback since imageUrl is the full spread.
+  var imageUrls = pages.map(function(p){
+    // Pick best available URL
+    var url = p.imageUrl || p.thumbUrl || '';
+    return url;
   });
 
-  // Replace book contents with a StPageFlip container
+  // Replace book contents with StPageFlip container
   book.innerHTML = '';
   const container = document.createElement('div');
   container.id = 'stpfContainer';
   container.style.cssText = 'width:100%;height:100%';
-  pageEls.forEach(function(p){ container.appendChild(p); });
   book.appendChild(container);
 
   try {
@@ -534,37 +525,78 @@ function initPageFlip() {
       flippingTime:        700,
       usePortrait:         false,
       autoSize:            false,
-      maxShadowOpacity:    0.6,
+      maxShadowOpacity:    0.5,
       showCover:           true,
+      startPage:           0,
       mobileScrollSupport: false,
-      disableFlipByClick:  true
+      disableFlipByClick:  true,
+      useMouseEvents:      false
     });
 
-    pageFlipInstance.loadFromHTML(container.querySelectorAll('.stpf-page'));
+    pageFlipInstance.loadFromImages(imageUrls);
 
     pageFlipInstance.on('flip', function(e){
       _playFlipSound();
-      currentSpread = Math.floor(e.data / 2);
+      // Sync our currentSpread tracker
+      // page 0 = spread 0 (cover), pages 1-2 = spread 1, pages 3-4 = spread 2, etc.
+      // page N = last spread (back cover)
+      const pg = e.data;
+      if (pg === 0) currentSpread = 0;
+      else if (pg >= pages.length - 1) currentSpread = spreads.length - 1;
+      else currentSpread = Math.ceil(pg / 2);
       buildDots();
       updateStacks();
+      // Update page indicator
+      renderSpreadMeta(currentSpread);
     });
 
-    // Start on correct spread
-    if (currentSpread > 0) {
-      pageFlipInstance.turnToPage(currentSpread * 2);
-    }
+    pageFlipInstance.on('init', function(){
+      // Hide our static spread — StPageFlip owns rendering now
+      var existingSpread = document.getElementById('spread');
+      if (existingSpread) existingSpread.style.display = 'none';
+    });
 
   } catch(err) {
     console.error('StPageFlip init failed:', err);
-    // Fallback: restore basic spread layout
-    book.innerHTML = '';
-    const spread = document.createElement('div');
-    spread.className = 'spread';
-    spread.id = 'spread';
-    spread.innerHTML = '<div class="page page-left" id="pageLeft"><div class="page-inner" id="pageLeftInner"></div></div><div class="page page-right" id="pageRight"><div class="page-inner" id="pageRightInner"></div></div>';
-    book.appendChild(spread);
-    renderSpread(currentSpread);
+    _fallbackInit();
   }
+}
+
+function _fallbackInit() {
+  // Restore the original static book HTML if StPageFlip fails
+  const book = document.getElementById('book');
+  book.innerHTML =
+    '<div class="spread" id="spread">' +
+    '<div class="page page-left" id="pageLeft"><div class="page-inner" id="pageLeftInner"></div></div>' +
+    '<div class="page page-right" id="pageRight"><div class="page-inner" id="pageRightInner"></div></div>' +
+    '</div>' +
+    '<div class="flip-shadow" id="shadowLeft" style="left:0;background:linear-gradient(to left,rgba(0,0,0,.15),transparent)"></div>' +
+    '<div class="flip-shadow" id="shadowRight" style="right:0;left:auto;background:linear-gradient(to right,rgba(0,0,0,.15),transparent)"></div>';
+  renderSpread(0);
+}
+
+// Update just the metadata (page label, dots, buttons) without re-rendering pages
+function renderSpreadMeta(idx) {
+  let label = '';
+  if (idx === 0) { label = 'Cover'; }
+  else {
+    const [li, ri] = spreads[idx] || [null, null];
+    const ln = li !== null ? li + 1 : null;
+    const rn = ri !== null ? ri + 1 : null;
+    if (ln && rn) label = 'Pages ' + ln + '–' + rn;
+    else if (ln)  label = 'Page ' + ln;
+    else if (rn)  label = 'Page ' + rn;
+  }
+  const ind = document.getElementById('pageIndicator');
+  if (ind) ind.textContent = label + ' of ' + pages.length;
+  const bp = document.getElementById('btnPrev');
+  const bn = document.getElementById('btnNext');
+  const ap = document.getElementById('arrowPrev');
+  const an = document.getElementById('arrowNext');
+  if (bp) bp.disabled = idx === 0;
+  if (bn) bn.disabled = idx === spreads.length - 1;
+  if (ap) ap.disabled = idx === 0;
+  if (an) an.disabled = idx === spreads.length - 1;
 }
 
 init();
