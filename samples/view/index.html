@@ -494,12 +494,15 @@ let pageW = 0, pageH = 0, container = null;
 function flipNext(){
   if(!pageFlipInstance)return;
   _initAudio();
-  pageFlipInstance.flipNext();
+  var pg = pageFlipInstance.getCurrentPageIndex();
+  // From cover (pg=0), flip page 0 directly from bottom-right corner
+  if (pg === 0) pageFlipInstance.flip(1, 'bottom');
+  else pageFlipInstance.flipNext('bottom');
 }
 function flipPrev(){
   if(!pageFlipInstance)return;
   _initAudio();
-  pageFlipInstance.flipPrev();
+  pageFlipInstance.flipPrev('top');
 }
 function doFlip(dir){ if(dir==='next') flipNext(); else flipPrev(); }
 
@@ -591,13 +594,11 @@ function initPageFlip() {
       var existingSpread = document.getElementById('spread');
       if (existingSpread) existingSpread.style.display = 'none';
       _updateCoverOffset();
-      // Erase spine line on every animation frame during flipping
-      requestAnimationFrame(_eraseSpineLine);
+      _removeSpineLine();
     });
 
     pageFlipInstance.on('changeState', function(){
       _updateCoverOffset();
-      requestAnimationFrame(_eraseSpineLine);
     });
 
   } catch(err) {
@@ -625,25 +626,29 @@ function _updateCoverOffset() {
   }
 }
 
-// Erase the 1px spine line StPageFlip draws on its internal canvas
-function _eraseSpineLine() {
-  if (!container) return;
-  var canvases = container.querySelectorAll('canvas');
-  canvases.forEach(function(cv) {
-    var ctx = cv.getContext('2d');
-    if (!ctx) return;
-    var w = cv.width, h = cv.height;
-    if (w < 4 || h < 4) return;
-    // The spine line is drawn at x=0 (left edge) and x=w-1 (right edge) of each page canvas
-    // Clear a 2px column on each side
-    ctx.clearRect(0, 0, 2, h);
-    ctx.clearRect(w - 2, 0, 2, h);
-  });
-  // Keep erasing during flip animation
-  if (pageFlipInstance && pageFlipInstance.getState && 
-      pageFlipInstance.getState() === 'flipping') {
-    requestAnimationFrame(_eraseSpineLine);
-  }
+// Remove StPageFlip's spine line by injecting !important CSS after the library loads
+function _removeSpineLine() {
+  if (document.getElementById('stpfLineKill')) return;
+  var style = document.createElement('style');
+  style.id = 'stpfLineKill';
+  style.textContent = [
+    '#stpfContainer .stf__item { border: none !important; outline: none !important; box-shadow: none !important; }',
+    '#stpfContainer .stf__item--soft { border: none !important; }',
+    '#stpfContainer .stf__item--hard { border: none !important; }',
+    '#stpfContainer .stf__block { border: none !important; outline: none !important; }',
+    '#stpfContainer > div { border: none !important; }',
+    '#stpfContainer * { border-left: none !important; border-right: none !important; }'
+  ].join(' ');
+  document.head.appendChild(style);
+  // Also directly strip inline styles StPageFlip may set
+  setTimeout(function() {
+    container.querySelectorAll('*').forEach(function(el) {
+      if (el.style.borderLeft)  el.style.borderLeft  = 'none';
+      if (el.style.borderRight) el.style.borderRight = 'none';
+      if (el.style.border)      el.style.border      = 'none';
+      if (el.style.outline)     el.style.outline     = 'none';
+    });
+  }, 100);
 }
 
 function _fallbackInit() {
