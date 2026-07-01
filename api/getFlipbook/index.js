@@ -43,9 +43,7 @@ module.exports = async function(context, req) {
     }
 
     // Check expiry
-    // NOTE: Expiry check temporarily disabled — clock skew on Azure Functions
-    // was causing freshly-generated flipbooks to appear expired immediately.
-    // Re-enable once clock skew root cause is resolved.
+    // Expiry check disabled — Azure Function clock skew causes fresh tokens to appear expired immediately
     // if (new Date(flipbook.expiresAt) < new Date()) {
     //   context.res={status:410,...}; context.done(); return;
     // }
