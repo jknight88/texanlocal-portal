@@ -491,6 +491,7 @@ function initPageFlip() {
   const stage  = document.getElementById('stage');
   const stageW = stage.offsetWidth;
   const stageH = stage.offsetHeight;
+  console.log('Stage dimensions:', stageW, 'x', stageH);
 
   // Page aspect ratio: 11" wide x 6.5" tall per page, spread = 22" x 6.5"
   // So one page: width/height = 11/6.5 = 1.6923
@@ -507,6 +508,7 @@ function initPageFlip() {
   }
   pageW = Math.floor(spreadW / 2);
   pageH = Math.floor(spreadH);
+  console.log('StPageFlip pageW:', pageW, 'pageH:', pageH, 'spreadW:', Math.floor(spreadW));
 
   // Build page divs for loadFromHTML.
   // First and last pages get data-density="hard" so StPageFlip shows them
