@@ -472,11 +472,13 @@ function _updateCoverPosition(pgIdx) {
   var isFirst = pgIdx === 0;
   var isLast  = pgIdx >= pages.length - 1;
   if (isFirst) {
-    // Cover is on LEFT half of spread container — shift right by half a page to center
-    stpfContainer.style.transform = 'translateX(' + Math.floor(pageW/2) + 'px)';
-  } else if (isLast) {
-    // Back cover is on RIGHT half — shift left by half a page to center
+    // StPageFlip showCover puts cover on RIGHT half of spread container
+    // Container centered means cover center is at stageCenter + pageW/2
+    // Shift container LEFT by pageW/2 to bring cover center to stage center
     stpfContainer.style.transform = 'translateX(-' + Math.floor(pageW/2) + 'px)';
+  } else if (isLast) {
+    // Back cover on LEFT half — shift container RIGHT by pageW/2
+    stpfContainer.style.transform = 'translateX(' + Math.floor(pageW/2) + 'px)';
   } else {
     stpfContainer.style.transform = '';
   }
@@ -503,7 +505,7 @@ function initPageFlip() {
   const pageEls = pages.map(function(p, i) {
     const div = document.createElement('div');
     div.className = 'stpf-page';
-    if (i === 0 || i === pages.length - 1) div.setAttribute('data-density', 'hard');
+    // No hard density — all pages use soft flip for consistent curved animation
     div.style.cssText = 'background:#fff;overflow:hidden;width:100%;height:100%';
     var img = document.createElement('img');
     img.src = p.imageUrl || p.thumbUrl || '';
