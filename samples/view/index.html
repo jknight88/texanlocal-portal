@@ -161,6 +161,9 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .sound-btn:hover{border-color:rgba(255,255,255,.5);color:#fff}
 
 @media(max-width:600px){.hdr-title{display:none}.controls{padding:.5rem 1rem}.ctrl-btn{padding:6px 12px;font-size:13px}}
+/* Hide StPageFlip internal spine line */
+.stf__block { outline: none !important; }
+canvas { display: block; }
 </style>
 <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 </head>
@@ -515,7 +518,12 @@ function initPageFlip() {
   const pageW = Math.floor(spreadW / 2);
   const pageH = Math.floor(spreadH);
 
-  var imageUrls = pages.map(function(p){ return p.imageUrl || p.thumbUrl || ''; });
+  // Build image URLs — insert a blank first entry so the cover (pages[0]) 
+  // naturally lands on the RIGHT side of the opening spread (odd-page position).
+  // Then the last page lands on the LEFT side naturally as well.
+  // Use a 1x1 transparent PNG as the blank page placeholder.
+  var BLANK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  var imageUrls = [BLANK].concat(pages.map(function(p){ return p.imageUrl || p.thumbUrl || ''; }));
 
   // Clear book and create StPageFlip container centered in stage
   const book = document.getElementById('book');
@@ -537,7 +545,7 @@ function initPageFlip() {
       usePortrait:         false,
       autoSize:            false,
       maxShadowOpacity:    0.5,
-      showCover:           true,
+      showCover:           false,
       startPage:           0,
       mobileScrollSupport: false,
       disableFlipByClick:  true,
@@ -548,16 +556,15 @@ function initPageFlip() {
 
     pageFlipInstance.on('flip', function(e){
       _playFlipSound();
-      // Sync our currentSpread tracker
-      // page 0 = spread 0 (cover), pages 1-2 = spread 1, pages 3-4 = spread 2, etc.
-      // page N = last spread (back cover)
+      // Page indices are offset by 1 (blank placeholder at index 0)
+      // index 0 = blank, index 1 = cover (spread 0)
+      // index 2-3 = spread 1, index 4-5 = spread 2, etc.
       const pg = e.data;
-      if (pg === 0) currentSpread = 0;
-      else if (pg >= pages.length - 1) currentSpread = spreads.length - 1;
-      else currentSpread = Math.ceil(pg / 2);
+      if (pg <= 1) currentSpread = 0;
+      else if (pg >= pages.length) currentSpread = spreads.length - 1;
+      else currentSpread = Math.floor((pg - 1) / 2);
       buildDots();
       updateStacks();
-      // Update page indicator
       renderSpreadMeta(currentSpread);
     });
 
