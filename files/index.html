@@ -76,14 +76,12 @@ select:focus{border-color:var(--rd)}
 .toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
 .toast.show{opacity:1}
 .toast.err{background:var(--rd)}
-/* Move toolbar */
 .move-toolbar{display:none;align-items:center;gap:10px;background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:8px 14px;margin-bottom:1rem;flex-wrap:wrap}
 .move-toolbar.visible{display:flex}
 .move-toolbar span{font-size:13px;font-weight:700;color:#e65100}
 .move-toolbar select{padding:5px 8px;font-size:12px;border:1px solid #ffcc80;border-radius:4px}
 .move-toolbar button{padding:5px 14px;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
-.btn-move-confirm{background:#e65100;color:#fff}
-.btn-move-confirm:hover{background:#bf4000}
+.btn-move-confirm{background:#e65100;color:#fff}.btn-move-confirm:hover{background:#bf4000}
 .btn-move-cancel{background:#fff;color:#666;border:1px solid #ccc!important}
 .cb-cell{width:36px;padding-left:12px!important}
 input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--rd)}
@@ -115,7 +113,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--rd
     <p><strong>Drop PDFs here</strong> to upload &nbsp;·&nbsp; or click to browse</p>
     <span class="upload-progress" id="uploadProgress"></span>
   </div>
-  <!-- Move toolbar — appears when files are selected -->
   <div class="move-toolbar" id="moveToolbar">
     <span id="moveCount">0 files selected</span>
     <label style="font-size:12px;font-weight:700;color:#666">Move to:</label>
@@ -128,8 +125,8 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--rd
       <option value="09">September</option><option value="10">October</option>
       <option value="11">November</option><option value="12">December</option>
     </select>
-    <button class="btn-move-confirm" onclick="moveSelectedFiles()">↗ Move Files</button>
-    <button class="btn-move-cancel" onclick="clearSelection()">✕ Cancel</button>
+    <button class="btn-move-confirm" onclick="moveSelectedFiles()">Move Files</button>
+    <button class="btn-move-cancel" onclick="clearSelection()">Cancel</button>
   </div>
   <div class="workspace">
     <div class="file-list-wrap">
@@ -241,10 +238,10 @@ async function loadFiles() {
       '<th class="cb-cell"><input type="checkbox" id="cbAll" onclick="toggleAll(this)" title="Select all"></th><th>File Name</th><th>Size</th><th>Uploaded</th>'+
       '<th style="text-align:right">Actions</th></tr></thead><tbody>'+
       data.files.map(function(f) {
-        return '<tr id="row-'+safeId(f.fullPath)+'">'+
+        return '<tr id="row-'+safeId(f.fullPath)+'" onclick="previewFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')'+(checkMatch(f.name)?'':' style="background:#fff8f0"')+'">'+
           '<td class="cb-cell" onclick="event.stopPropagation()"><input type="checkbox" class="file-cb" data-path="'+esc(f.fullPath)+'" data-name="'+esc(f.name)+'" onchange="updateSelection()"></td>'+
-          '<td class="td-icon" onclick="previewFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')" style="cursor:pointer'+(checkMatch(f.name)?'':';background:#fff8f0')+'">📄</td>'+
-          '<td class="td-name" onclick="previewFile(\''+esc(f.fullPath)+'\',\''+esc(f.name)+'\')" style="cursor:pointer">'+
+          '<td class="td-icon">📄</td>'+
+          '<td class="td-name">'+
           esc(f.name)+
           (!checkMatch(f.name) ? ' <span title="No matching client found — check filename" style="color:#e65100;font-size:13px;cursor:help">⚠</span>' : '')+
         '</td>'+
@@ -316,46 +313,9 @@ async function previewFile(fullPath, name) {
     document.getElementById('previewContent').style.background='#f5f5f5';
     document.getElementById('previewContent').innerHTML=
       '<div class="preview-empty"><div class="pi">📄</div><p style="font-size:13px">'+esc(name)+'</p>'+
-      '<p style="font-size:11px;color:var(--md)">No thumbnail yet</p>'+
-      '<button onclick="generatePreviewThumb(''+esc(fullPath)+'',''+esc(cacheName)+'')" '+
-        'style="background:var(--rd);color:#fff;padding:8px 16px;border-radius:4px;border:none;font-size:12px;font-weight:700;margin-top:8px;cursor:pointer">'+
-        '⚡ Generate Preview</button>'+
-      (currentPreviewUrl?'<br><a href="'+currentPreviewUrl+'" target="_blank" style="color:var(--bl);font-size:11px;margin-top:8px;display:inline-block">Open PDF ↗</a>':'')+
+      '<p style="font-size:11px;color:var(--md)">No preview — use Full View to open</p>'+
+      (currentPreviewUrl?'<a href="'+currentPreviewUrl+'" target="_blank" style="background:var(--bl);color:#fff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:12px;font-weight:700;margin-top:8px;display:inline-block">Open PDF ↗</a>':'')+
       '</div>';
-  }
-}
-
-async function generatePreviewThumb(pdfPath, cacheName) {
-  const btn = document.querySelector('#previewContent button');
-  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
-  try {
-    const res  = await fetch(API+'/generateThumb', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ pdfPath })
-    });
-    const data = await res.json();
-    if (data.url) {
-      // Show the newly generated thumbnail
-      var img = document.createElement('img');
-      img.style.cssText = 'width:100%;height:auto;display:block';
-      img.onload = function() {
-        document.getElementById('previewContent').innerHTML = '';
-        document.getElementById('previewContent').style.background = '#222';
-        document.getElementById('previewContent').appendChild(img);
-      };
-      img.onerror = function() {
-        if (btn) { btn.disabled = false; btn.textContent = '⚡ Generate Preview'; }
-      };
-      img.src = data.url;
-    } else {
-      if (btn) { btn.disabled = false; btn.textContent = '⚡ Generate Preview'; }
-      alert('Could not generate preview: ' + (data.error || 'unknown error'));
-    }
-  } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '⚡ Generate Preview'; }
-    alert('Error: ' + e.message);
   }
 }
 
@@ -409,16 +369,9 @@ async function handleFiles(fileList) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error||'Upload failed');
-      showToast('✓ Uploaded: '+file.name+' — generating preview…');
-      // Auto-generate thumbnail in background so preview is ready immediately
-      const blobPath = currentYear+'/'+currentMonth+'/'+file.name;
-      fetch(API+'/generateThumb', {
-        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-        body: JSON.stringify({ pdfPath: blobPath })
-      }).then(function(r){ return r.json(); }).then(function(d){
-        if (d.url) showToast('✓ Preview ready: '+file.name);
-        else showToast('Preview generation failed for '+file.name, true);
-      }).catch(function(){});
+      showToast('✓ Uploaded: '+file.name+' — generating preview...');
+      var blobPath = currentYear+'/'+currentMonth+'/'+file.name;
+      fetch(API+'/generateThumb', {method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({pdfPath:blobPath})}).then(function(r){return r.json();}).then(function(d){if(d.url)showToast('✓ Preview ready: '+file.name);}).catch(function(){});
     } catch(e) { showToast('Failed: '+file.name+' — '+e.message, true); }
   }
   prog.style.display='none';
@@ -431,80 +384,58 @@ function fileToBase64(f) {
 }
 
 function updateSelection() {
-  const cbs = document.querySelectorAll('.file-cb:checked');
-  const toolbar = document.getElementById('moveToolbar');
-  const count = document.getElementById('moveCount');
+  var cbs = document.querySelectorAll('.file-cb:checked');
+  var toolbar = document.getElementById('moveToolbar');
   if (cbs.length > 0) {
     toolbar.classList.add('visible');
-    count.textContent = cbs.length + ' file' + (cbs.length !== 1 ? 's' : '') + ' selected';
-    // Populate year options
-    const yr = document.getElementById('moveYear');
+    document.getElementById('moveCount').textContent = cbs.length + ' file' + (cbs.length !== 1 ? 's' : '') + ' selected';
+    var yr = document.getElementById('moveYear');
     if (!yr.options.length) {
-      [currentYear, String(parseInt(currentYear)+1), String(parseInt(currentYear)-1)].forEach(function(y){
-        var o = document.createElement('option'); o.value = y; o.textContent = y; yr.appendChild(o);
+      [currentYear, String(parseInt(currentYear)+1), String(parseInt(currentYear)-1)].forEach(function(y) {
+        var o = document.createElement('option'); o.value=y; o.textContent=y; yr.appendChild(o);
       });
       yr.value = currentYear;
     }
-    // Default move month to current month
-    const mm = document.getElementById('moveMonth');
-    if (mm.value === currentMonth) {
-      // Pick a different default — previous month
-      var prev = String(parseInt(currentMonth) - 1).padStart(2,'0');
-      if (prev === '00') prev = '12';
-      mm.value = prev;
-    }
-  } else {
-    toolbar.classList.remove('visible');
-  }
-  // Sync select-all checkbox
-  const allCbs = document.querySelectorAll('.file-cb');
-  const cbAll = document.getElementById('cbAll');
+  } else { toolbar.classList.remove('visible'); }
+  var cbAll = document.getElementById('cbAll');
+  var allCbs = document.querySelectorAll('.file-cb');
   if (cbAll) cbAll.checked = allCbs.length > 0 && cbs.length === allCbs.length;
 }
-
 function toggleAll(masterCb) {
   document.querySelectorAll('.file-cb').forEach(function(cb){ cb.checked = masterCb.checked; });
   updateSelection();
 }
-
 function clearSelection() {
   document.querySelectorAll('.file-cb').forEach(function(cb){ cb.checked = false; });
-  const cbAll = document.getElementById('cbAll');
+  var cbAll = document.getElementById('cbAll');
   if (cbAll) cbAll.checked = false;
   document.getElementById('moveToolbar').classList.remove('visible');
 }
-
 async function moveSelectedFiles() {
-  const cbs = document.querySelectorAll('.file-cb:checked');
+  var cbs = document.querySelectorAll('.file-cb:checked');
   if (!cbs.length) return;
-  const toYear  = document.getElementById('moveYear').value;
-  const toMonth = document.getElementById('moveMonth').value;
-  if (toYear === currentYear && toMonth === currentMonth) {
-    showToast('Target is the same as current month', true); return;
-  }
-  const files = Array.from(cbs).map(function(cb){ return { path: cb.dataset.path, name: cb.dataset.name }; });
-  const btn = document.querySelector('.btn-move-confirm');
-  btn.disabled = true; btn.textContent = 'Moving…';
-  let moved = 0, failed = 0;
+  var toYear  = document.getElementById('moveYear').value;
+  var toMonth = document.getElementById('moveMonth').value;
+  if (toYear === currentYear && toMonth === currentMonth) { showToast('Target is the same as current month', true); return; }
+  var files = Array.from(cbs).map(function(cb){ return { path: cb.dataset.path, name: cb.dataset.name }; });
+  var btn = document.querySelector('.btn-move-confirm');
+  btn.disabled = true; btn.textContent = 'Moving...';
+  var moved = 0, failed = 0;
   for (var i = 0; i < files.length; i++) {
     try {
-      const res = await fetch(API+'/filesMoveFile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      var res = await fetch(API+'/filesMoveFile', {
+        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
         body: JSON.stringify({ sourcePath: files[i].path, targetYear: toYear, targetMonth: toMonth })
       });
-      const data = await res.json();
-      if (res.ok && data.ok) moved++;
-      else { failed++; console.warn('Move failed:', files[i].name, data.error); }
-    } catch(e) { failed++; console.warn('Move error:', files[i].name, e.message); }
+      var data = await res.json();
+      if (res.ok && data.ok) moved++; else failed++;
+    } catch(e) { failed++; }
   }
-  btn.disabled = false; btn.textContent = '↗ Move Files';
+  btn.disabled = false; btn.textContent = 'Move Files';
   clearSelection();
   showToast(moved + ' file' + (moved!==1?'s':'') + ' moved' + (failed?' ('+failed+' failed)':''));
   loadFiles();
 }
-
 async function logout() {
   await fetch(API+'/authLogout',{method:'POST',credentials:'include'});
   sessionStorage.clear(); window.location.href='/';
