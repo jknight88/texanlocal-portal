@@ -489,6 +489,7 @@ function toggleSound(){
 
 // ─── PAGE FLIP via StPageFlip ─────────────────────────────────────────────────
 let pageFlipInstance = null;
+let pageW = 0, pageH = 0, container = null;
 
 function flipNext(){
   if(!pageFlipInstance)return;
@@ -521,8 +522,8 @@ function initPageFlip() {
     spreadH = stageH - padY;
     spreadW = spreadH * SPREAD_RATIO;
   }
-  const pageW = Math.floor(spreadW / 2);
-  const pageH = Math.floor(spreadH);
+  pageW = Math.floor(spreadW / 2);
+  pageH = Math.floor(spreadH);
 
   // Build page divs for loadFromHTML.
   // First and last pages get data-density="hard" so StPageFlip shows them
@@ -548,7 +549,7 @@ function initPageFlip() {
   book.innerHTML = '';
   book.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:visible;background:transparent';
 
-  const container = document.createElement('div');
+  container = document.createElement('div');
   container.id = 'stpfContainer';
   container.style.cssText = 'width:'+(pageW*2)+'px;height:'+pageH+'px;position:relative;flex-shrink:0';
   pageEls.forEach(function(el){ container.appendChild(el); });
@@ -575,7 +576,6 @@ function initPageFlip() {
 
     pageFlipInstance.on('flip', function(e){
       _playFlipSound();
-      // cover=page[0] (spread 0), interior pairs, back cover=page[n-1] (last spread)
       const pg = e.data;
       if (pg === 0) currentSpread = 0;
       else if (pg >= pages.length - 1) currentSpread = spreads.length - 1;
@@ -583,25 +583,66 @@ function initPageFlip() {
       buildDots();
       updateStacks();
       renderSpreadMeta(currentSpread);
+      _updateCoverOffset();
+      _eraseSpineLine();
     });
 
     pageFlipInstance.on('init', function(){
       var existingSpread = document.getElementById('spread');
       if (existingSpread) existingSpread.style.display = 'none';
+      _updateCoverOffset();
+      // Erase spine line on every animation frame during flipping
+      requestAnimationFrame(_eraseSpineLine);
     });
 
     pageFlipInstance.on('changeState', function(){
-      // Remove the hairline border StPageFlip draws on page items
-      container.querySelectorAll('.stf__item').forEach(function(el){
-        el.style.outline = 'none';
-        el.style.border  = 'none';
-        el.style.boxShadow = 'none';
-      });
+      _updateCoverOffset();
+      requestAnimationFrame(_eraseSpineLine);
     });
 
   } catch(err) {
     console.error('StPageFlip init failed:', err);
     _fallbackInit();
+  }
+}
+
+// Shift container so single cover/back-cover page appears centered
+function _updateCoverOffset() {
+  var pg = pageFlipInstance ? pageFlipInstance.getCurrentPageIndex() : 0;
+  var isFirst = pg === 0;
+  var isLast  = pg >= pages.length - 1;
+  if (isFirst) {
+    // Cover is on the RIGHT half — shift container left by half its width so it centers
+    container.style.transform = 'translateX(-' + pageW + 'px)';
+    container.style.marginLeft = pageW + 'px';
+  } else if (isLast) {
+    // Back cover is on the LEFT half — shift container right
+    container.style.transform = 'translateX(' + pageW + 'px)';
+    container.style.marginLeft = '0';
+  } else {
+    container.style.transform = '';
+    container.style.marginLeft = '0';
+  }
+}
+
+// Erase the 1px spine line StPageFlip draws on its internal canvas
+function _eraseSpineLine() {
+  if (!container) return;
+  var canvases = container.querySelectorAll('canvas');
+  canvases.forEach(function(cv) {
+    var ctx = cv.getContext('2d');
+    if (!ctx) return;
+    var w = cv.width, h = cv.height;
+    if (w < 4 || h < 4) return;
+    // The spine line is drawn at x=0 (left edge) and x=w-1 (right edge) of each page canvas
+    // Clear a 2px column on each side
+    ctx.clearRect(0, 0, 2, h);
+    ctx.clearRect(w - 2, 0, 2, h);
+  });
+  // Keep erasing during flip animation
+  if (pageFlipInstance && pageFlipInstance.getState && 
+      pageFlipInstance.getState() === 'flipping') {
+    requestAnimationFrame(_eraseSpineLine);
   }
 }
 
