@@ -474,15 +474,12 @@ let pageW = 0, pageH = 0, container = null;
 function flipNext(){
   if(!pageFlipInstance)return;
   _initAudio();
-  var pg = pageFlipInstance.getCurrentPageIndex();
-  // From cover (pg=0), flip page 0 directly from bottom-right corner
-  if (pg === 0) pageFlipInstance.flip(1, 'bottom');
-  else pageFlipInstance.flipNext('bottom');
+  pageFlipInstance.flipNext();
 }
 function flipPrev(){
   if(!pageFlipInstance)return;
   _initAudio();
-  pageFlipInstance.flipPrev('top');
+  pageFlipInstance.flipPrev();
 }
 function doFlip(dir){ if(dir==='next') flipNext(); else flipPrev(); }
 
@@ -589,24 +586,8 @@ function initPageFlip() {
   }
 }
 
-// Shift container so single cover/back-cover page appears centered
-function _updateCoverOffset() {
-  var pg = pageFlipInstance ? pageFlipInstance.getCurrentPageIndex() : 0;
-  var isFirst = pg === 0;
-  var isLast  = pg >= pages.length - 1;
-  if (isFirst) {
-    // Cover is on the RIGHT half — shift container left by half its width so it centers
-    container.style.transform = 'translateX(-' + pageW + 'px)';
-    container.style.marginLeft = pageW + 'px';
-  } else if (isLast) {
-    // Back cover is on the LEFT half — shift container right
-    container.style.transform = 'translateX(' + pageW + 'px)';
-    container.style.marginLeft = '0';
-  } else {
-    container.style.transform = '';
-    container.style.marginLeft = '0';
-  }
-}
+// Cover centering handled by StPageFlip's showCover:true natively
+function _updateCoverOffset() { /* no-op */ }
 
 // Remove StPageFlip's spine line by injecting !important CSS after the library loads
 function _removeSpineLine() {
