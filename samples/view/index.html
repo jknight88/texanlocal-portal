@@ -472,12 +472,12 @@ function _updateCoverPosition(pgIdx) {
   var isFirst = pgIdx === 0;
   var isLast  = pgIdx >= pages.length - 1;
   if (isFirst) {
-    // showCover:false — cover (page 0) is on LEFT half of container
-    // Shift container RIGHT by pageW/2 to center the cover in the stage
-    stpfContainer.style.transform = 'translateX(' + Math.floor(pageW/2) + 'px)';
-  } else if (isLast) {
-    // Last page on RIGHT half — shift container LEFT by pageW/2 to center it
+    // showCover:true — cover (page 0) is on RIGHT half of container
+    // Shift container LEFT by pageW/2 to center the cover in the stage
     stpfContainer.style.transform = 'translateX(-' + Math.floor(pageW/2) + 'px)';
+  } else if (isLast) {
+    // Back cover on LEFT half — shift container RIGHT by pageW/2
+    stpfContainer.style.transform = 'translateX(' + Math.floor(pageW/2) + 'px)';
   } else {
     stpfContainer.style.transform = '';
   }
@@ -534,7 +534,7 @@ function initPageFlip() {
       usePortrait:         false,
       autoSize:            false,
       maxShadowOpacity:    0.5,
-      showCover:           false,  // false = all pages soft; we handle centering ourselves
+      showCover:           true,
       startPage:           0,
       mobileScrollSupport: false,
       disableFlipByClick:  true,
@@ -542,6 +542,14 @@ function initPageFlip() {
     });
 
     pageFlipInstance.loadFromHTML(stpfContainer.querySelectorAll('.stpf-page'));
+
+    // Override hard density on cover/back pages so they flip softly like interior pages
+    try {
+      var pc = pageFlipInstance.getPageCount();
+      for (var pi = 0; pi < pc; pi++) {
+        pageFlipInstance.getPage(pi).setDensity('soft');
+      }
+    } catch(e) { console.warn('Could not override density:', e); }
 
     pageFlipInstance.on('flip', function(e){
       _playFlipSound();
