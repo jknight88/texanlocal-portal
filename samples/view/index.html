@@ -42,12 +42,7 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
   max-width:min(calc((100vh - 140px) * 1.6923), calc((100vw - 112px) / 2));
 }
 
-/* STACK BARS — Fix 1: thin hairlines on outer edges only */
-.stack{position:absolute;top:4px;bottom:4px;width:3px;display:flex;flex-direction:column;gap:1px;overflow:hidden;border-radius:1px}
-.stack-left{left:-5px}
-.stack-right{right:-5px}
-.stack-slice{flex:1;background:#ccc5b8;border-left:1px solid #aaa090;border-right:none;transition:flex .3s ease}
-.stack-right .stack-slice{background:#ccc5b8;border-left:none;border-right:1px solid #aaa090}
+/* Stack bars removed — StPageFlip handles page depth */
 
 /* BOOK */
 .book{position:absolute;inset:0;width:100%;height:100%;display:flex;overflow:visible;border-radius:0;box-shadow:none}
@@ -195,7 +190,6 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 
 <div class="stage" id="stage" style="display:none">
   <div class="book-container" id="bookContainer">
-    <div class="stack stack-left"  id="stackLeft"></div>
     <div class="book" id="book">
       <div class="spread" id="spread">
         <div class="page page-left"  id="pageLeft" ><div class="page-inner" id="pageLeftInner" ></div></div>
@@ -205,7 +199,6 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
       <div class="flip-shadow flip-shadow-left"  id="shadowLeft"></div>
       <div class="flip-shadow flip-shadow-right" id="shadowRight"></div>
     </div>
-    <div class="stack stack-right" id="stackRight"></div>
   </div>
 </div>
 
@@ -478,11 +471,11 @@ function _updateCoverPosition(pgIdx) {
   var isFirst = pgIdx === 0;
   var isLast  = pgIdx >= pages.length - 1;
   if (isFirst) {
-    // Cover renders on LEFT half — shift container right to center it
-    stpfContainer.style.transform = 'translateX(' + pageW + 'px)';
+    // Cover is on LEFT half of spread container — shift right by half a page to center
+    stpfContainer.style.transform = 'translateX(' + Math.floor(pageW/2) + 'px)';
   } else if (isLast) {
-    // Back cover renders on RIGHT half — shift container left to center it
-    stpfContainer.style.transform = 'translateX(-' + pageW + 'px)';
+    // Back cover is on RIGHT half — shift left by half a page to center
+    stpfContainer.style.transform = 'translateX(-' + Math.floor(pageW/2) + 'px)';
   } else {
     stpfContainer.style.transform = '';
   }
@@ -555,7 +548,6 @@ function initPageFlip() {
       else if (pg >= pages.length - 1) currentSpread = spreads.length - 1;
       else currentSpread = Math.ceil(pg / 2);
       buildDots();
-      updateStacks();
       _updateCoverPosition(pg);
       // Sync prev/next button state with StPageFlip page index
       var atFirst = pg === 0;
