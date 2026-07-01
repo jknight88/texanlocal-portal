@@ -462,6 +462,22 @@ function flipPrev(){
 }
 function doFlip(dir){ if(dir==='next') flipNext(); else flipPrev(); }
 
+function _updateCoverPosition(pgIdx) {
+  if (!stpfContainer) return;
+  // Cover (pg 0) is on RIGHT half — shift left to center it
+  // Back cover (last page) is on LEFT half — shift right to center it
+  // Interior spreads — no shift
+  var isFirst = pgIdx === 0;
+  var isLast  = pgIdx >= pages.length - 1;
+  if (isFirst) {
+    stpfContainer.style.transform = 'translateX(-' + pageW + 'px)';
+  } else if (isLast) {
+    stpfContainer.style.transform = 'translateX(' + pageW + 'px)';
+  } else {
+    stpfContainer.style.transform = '';
+  }
+}
+
 function initPageFlip() {
   const stage  = document.getElementById('stage');
   const stageW = stage.offsetWidth;
@@ -530,14 +546,27 @@ function initPageFlip() {
       else currentSpread = Math.ceil(pg / 2);
       buildDots();
       updateStacks();
+      _updateCoverPosition(pg);
+      // Sync prev/next button state with StPageFlip page index
+      var atFirst = pg === 0;
+      var atLast  = pg >= pages.length - 1;
+      document.getElementById('btnPrev').disabled   = atFirst;
+      document.getElementById('btnNext').disabled   = atLast;
+      document.getElementById('arrowPrev').disabled = atFirst;
+      document.getElementById('arrowNext').disabled = atLast;
     });
 
     pageFlipInstance.on('init', function(){
+      _updateCoverPosition(0); // cover starts on right half, shift to center
       // Inject CSS to remove the spine line StPageFlip draws
       if (!document.getElementById('stpfKill')) {
         var s = document.createElement('style');
         s.id = 'stpfKill';
-        s.textContent = '#stpfContainer .stf__item{border:none!important;outline:none!important}';
+        s.textContent = [
+          '#stpfContainer *{border:none!important;outline:none!important;box-shadow:none!important}',
+          '.stf__parent,.stf__wrapper,.stf__block{border:none!important;outline:none!important}',
+          '.stf__outerShadow,.stf__innerShadow,.stf__hardShadow,.stf__hardInnerShadow{border:none!important}'
+        ].join(' ');
         document.head.appendChild(s);
       }
     });
