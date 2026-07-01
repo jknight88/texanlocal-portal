@@ -161,9 +161,15 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .sound-btn:hover{border-color:rgba(255,255,255,.5);color:#fff}
 
 @media(max-width:600px){.hdr-title{display:none}.controls{padding:.5rem 1rem}.ctrl-btn{padding:6px 12px;font-size:13px}}
-/* Hide StPageFlip internal spine line */
-.stf__block { outline: none !important; }
-canvas { display: block; }
+/* Hide StPageFlip spine line and page borders */
+.stf__block, .stf__item, .stf__item--soft, .stf__item--hard {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+#stpfContainer canvas { display: block; }
+/* The spine line is a 1px right border on the left page — remove via sibling selector */
+.stf__item:first-child { border-right: none !important; }
 </style>
 <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 </head>
@@ -518,14 +524,26 @@ function initPageFlip() {
   const pageW = Math.floor(spreadW / 2);
   const pageH = Math.floor(spreadH);
 
-  // Build image URLs — insert a blank first entry so the cover (pages[0]) 
-  // naturally lands on the RIGHT side of the opening spread (odd-page position).
-  // Then the last page lands on the LEFT side naturally as well.
-  // Use a 1x1 transparent PNG as the blank page placeholder.
-  var BLANK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-  var imageUrls = [BLANK].concat(pages.map(function(p){ return p.imageUrl || p.thumbUrl || ''; }));
+  // Build page divs for loadFromHTML.
+  // First and last pages get data-density="hard" so StPageFlip shows them
+  // as single cover pages (right-side cover, left-side back cover).
+  const pageEls = pages.map(function(p, i) {
+    const div = document.createElement('div');
+    div.className = 'stpf-page';
+    // Hard cover: first page (front cover) and last page (back cover)
+    if (i === 0 || i === pages.length - 1) {
+      div.setAttribute('data-density', 'hard');
+    }
+    div.style.cssText = 'width:100%;height:100%;background:#fff;overflow:hidden;position:relative';
+    const img = document.createElement('img');
+    img.src = p.imageUrl || p.thumbUrl || '';
+    img.style.cssText = 'width:100%;height:100%;object-fit:fill;display:block';
+    img.alt = p.business || '';
+    div.appendChild(img);
+    return div;
+  });
 
-  // Clear book and create StPageFlip container centered in stage
+  // Clear book and create StPageFlip container
   const book = document.getElementById('book');
   book.innerHTML = '';
   book.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:visible;background:transparent';
@@ -533,6 +551,7 @@ function initPageFlip() {
   const container = document.createElement('div');
   container.id = 'stpfContainer';
   container.style.cssText = 'width:'+(pageW*2)+'px;height:'+pageH+'px;position:relative;flex-shrink:0';
+  pageEls.forEach(function(el){ container.appendChild(el); });
   book.appendChild(container);
 
   try {
@@ -545,33 +564,39 @@ function initPageFlip() {
       usePortrait:         false,
       autoSize:            false,
       maxShadowOpacity:    0.5,
-      showCover:           false,
+      showCover:           true,
       startPage:           0,
       mobileScrollSupport: false,
       disableFlipByClick:  true,
       useMouseEvents:      false
     });
 
-    pageFlipInstance.loadFromImages(imageUrls);
+    pageFlipInstance.loadFromHTML(container.querySelectorAll('.stpf-page'));
 
     pageFlipInstance.on('flip', function(e){
       _playFlipSound();
-      // Page indices are offset by 1 (blank placeholder at index 0)
-      // index 0 = blank, index 1 = cover (spread 0)
-      // index 2-3 = spread 1, index 4-5 = spread 2, etc.
+      // cover=page[0] (spread 0), interior pairs, back cover=page[n-1] (last spread)
       const pg = e.data;
-      if (pg <= 1) currentSpread = 0;
-      else if (pg >= pages.length) currentSpread = spreads.length - 1;
-      else currentSpread = Math.floor((pg - 1) / 2);
+      if (pg === 0) currentSpread = 0;
+      else if (pg >= pages.length - 1) currentSpread = spreads.length - 1;
+      else currentSpread = Math.ceil(pg / 2);
       buildDots();
       updateStacks();
       renderSpreadMeta(currentSpread);
     });
 
     pageFlipInstance.on('init', function(){
-      // Hide our static spread — StPageFlip owns rendering now
       var existingSpread = document.getElementById('spread');
       if (existingSpread) existingSpread.style.display = 'none';
+    });
+
+    pageFlipInstance.on('changeState', function(){
+      // Remove the hairline border StPageFlip draws on page items
+      container.querySelectorAll('.stf__item').forEach(function(el){
+        el.style.outline = 'none';
+        el.style.border  = 'none';
+        el.style.boxShadow = 'none';
+      });
     });
 
   } catch(err) {
