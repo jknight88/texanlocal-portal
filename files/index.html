@@ -105,6 +105,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--rd
       <select id="selYear" onchange="renderMonthTabs()"></select>
     </div>
     <div class="file-count" id="fileCount"></div>
+    <button class="btn-hdr" style="background:var(--rd);border-color:var(--rd);font-size:11px" onclick="generateAllPreviews()" id="btnGenAll">⚡ Generate All Previews</button>
   </div>
   <div class="month-tabs" id="monthTabs"></div>
   <div class="upload-zone" id="uploadZone">
@@ -436,6 +437,40 @@ async function moveSelectedFiles() {
   showToast(moved + ' file' + (moved!==1?'s':'') + ' moved' + (failed?' ('+failed+' failed)':''));
   loadFiles();
 }
+async function generateAllPreviews() {
+  if (!currentMonth || !currentYear) { showToast('Select a month first', true); return; }
+  const btn = document.getElementById('btnGenAll');
+  btn.disabled = true;
+  // Get current file list
+  let files = [];
+  try {
+    const res  = await fetch(API+'/filesListFiles?year='+currentYear+'&month='+currentMonth, { credentials:'include' });
+    const data = await res.json();
+    files = (data.files || []).filter(function(f){ return f.name.toLowerCase().endsWith('.pdf'); });
+  } catch(e) { showToast('Could not load file list', true); btn.disabled=false; return; }
+  if (!files.length) { showToast('No PDF files found', true); btn.disabled=false; return; }
+  showToast('Generating previews for ' + files.length + ' files...');
+  let done = 0, skipped = 0, failed = 0;
+  for (var i = 0; i < files.length; i++) {
+    btn.textContent = '⚡ ' + (i+1) + '/' + files.length + '...';
+    try {
+      const res  = await fetch(API+'/generateThumb', {
+        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+        body: JSON.stringify({ pdfPath: files[i].fullPath })
+      });
+      const data = await res.json();
+      if (data.cached) skipped++;
+      else if (data.url) done++;
+      else failed++;
+    } catch(e) { failed++; }
+    // Small delay to avoid hammering the API
+    if (i < files.length - 1) await new Promise(function(r){ setTimeout(r, 500); });
+  }
+  btn.disabled = false;
+  btn.textContent = '⚡ Generate All Previews';
+  showToast('✓ Done — ' + done + ' generated, ' + skipped + ' already existed' + (failed ? ', ' + failed + ' failed' : ''));
+}
+
 async function logout() {
   await fetch(API+'/authLogout',{method:'POST',credentials:'include'});
   sessionStorage.clear(); window.location.href='/';
