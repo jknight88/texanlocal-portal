@@ -494,27 +494,43 @@ function flipPrev(){
 function doFlip(dir){ if(dir==='next') flipNext(); else flipPrev(); }
 
 function initPageFlip() {
-  const book  = document.getElementById('book');
-  const bookW = book.offsetWidth;
-  const bookH = book.offsetHeight;
-  const pageW = Math.floor(bookW / 2);
+  // Measure the stage to get true available space
+  const stage  = document.getElementById('stage');
+  const stageW = stage.offsetWidth;
+  const stageH = stage.offsetHeight;
+
+  // Page aspect ratio: 11" wide x 6.5" tall per page, spread = 22" x 6.5"
+  // So one page: width/height = 11/6.5 = 1.6923
+  const PAGE_RATIO = 11 / 6.5;
+  const SPREAD_RATIO = PAGE_RATIO * 2; // 3.3846
+
+  // Fit spread into stage with padding
+  const padX = 80, padY = 20;
+  let spreadW = stageW - padX;
+  let spreadH = spreadW / SPREAD_RATIO;
+  if (spreadH > stageH - padY) {
+    spreadH = stageH - padY;
+    spreadW = spreadH * SPREAD_RATIO;
+  }
+  const pageW = Math.floor(spreadW / 2);
+  const pageH = Math.floor(spreadH);
 
   var imageUrls = pages.map(function(p){ return p.imageUrl || p.thumbUrl || ''; });
 
-  // StPageFlip needs its own container sized to the full book
+  // Clear book and create StPageFlip container centered in stage
+  const book = document.getElementById('book');
   book.innerHTML = '';
+  book.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:visible;background:transparent';
+
   const container = document.createElement('div');
   container.id = 'stpfContainer';
-  // Must be exact pixel size — StPageFlip measures this
-  container.style.cssText = 'position:absolute;top:0;left:0;width:'+bookW+'px;height:'+bookH+'px;overflow:hidden';
+  container.style.cssText = 'width:'+(pageW*2)+'px;height:'+pageH+'px;position:relative;flex-shrink:0';
   book.appendChild(container);
-  // Keep book from clipping
-  book.style.overflow = 'visible';
 
   try {
     pageFlipInstance = new St.PageFlip(container, {
-      width:               pageW,      // ONE page width (StPageFlip doubles this for spreads)
-      height:              bookH,
+      width:               pageW,
+      height:              pageH,
       size:                'fixed',
       drawShadow:          true,
       flippingTime:        700,
