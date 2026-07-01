@@ -472,13 +472,12 @@ function _updateCoverPosition(pgIdx) {
   var isFirst = pgIdx === 0;
   var isLast  = pgIdx >= pages.length - 1;
   if (isFirst) {
-    // StPageFlip showCover puts cover on RIGHT half of spread container
-    // Container centered means cover center is at stageCenter + pageW/2
-    // Shift container LEFT by pageW/2 to bring cover center to stage center
-    stpfContainer.style.transform = 'translateX(-' + Math.floor(pageW/2) + 'px)';
-  } else if (isLast) {
-    // Back cover on LEFT half — shift container RIGHT by pageW/2
+    // showCover:false — cover (page 0) is on LEFT half of container
+    // Shift container RIGHT by pageW/2 to center the cover in the stage
     stpfContainer.style.transform = 'translateX(' + Math.floor(pageW/2) + 'px)';
+  } else if (isLast) {
+    // Last page on RIGHT half — shift container LEFT by pageW/2 to center it
+    stpfContainer.style.transform = 'translateX(-' + Math.floor(pageW/2) + 'px)';
   } else {
     stpfContainer.style.transform = '';
   }
@@ -521,7 +520,7 @@ function initPageFlip() {
 
   stpfContainer = document.createElement('div');
   stpfContainer.id = 'stpfContainer';
-  stpfContainer.style.cssText = 'width:'+(pageW*2)+'px;height:'+pageH+'px;position:relative;flex-shrink:0;overflow:hidden;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.5)';
+  stpfContainer.style.cssText = 'width:'+(pageW*2)+'px;height:'+pageH+'px;position:relative;flex-shrink:0;overflow:hidden;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.5);transition:transform 0.35s ease';
   pageEls.forEach(function(el){ stpfContainer.appendChild(el); });
   book.appendChild(stpfContainer);
 
@@ -535,7 +534,7 @@ function initPageFlip() {
       usePortrait:         false,
       autoSize:            false,
       maxShadowOpacity:    0.5,
-      showCover:           true,
+      showCover:           false,  // false = all pages soft; we handle centering ourselves
       startPage:           0,
       mobileScrollSupport: false,
       disableFlipByClick:  true,
@@ -562,7 +561,8 @@ function initPageFlip() {
     });
 
     pageFlipInstance.on('init', function(){
-      _updateCoverPosition(0); // cover starts on right half, shift to center
+      // Center cover on init
+      setTimeout(function(){ _updateCoverPosition(0); }, 50);
       // Inject CSS to remove the spine line StPageFlip draws
       if (!document.getElementById('stpfKill')) {
         var s = document.createElement('style');
