@@ -80,55 +80,23 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
 .book{ perspective: 2500px; transform-style: preserve-3d; position:relative; }
 
 /* The turning leaf — covers the right half (next) or left half (prev) */
-.flip-leaf{
-  position:absolute;
-  top:0; bottom:0;
-  width:50%;
-  z-index:20;
-  pointer-events:none;
-  transform-style: preserve-3d;
-}
+
 /* flip-next pivots from LEFT edge (the spine) */
-.flip-leaf.flip-next{
-  left:50%;
-  transform-origin: left center;
-}
+
 /* flip-prev pivots from RIGHT edge (the spine) */
-.flip-leaf.flip-prev{
-  left:0;
-  transform-origin: right center;
-}
+
 
 /* Front and back faces of the leaf */
-.flip-face{
-  position:absolute;
-  inset:0;
-  backface-visibility:hidden;
-  overflow:hidden;
-}
-.flip-face-front{
-  /* Faces viewer at start */
-}
-.flip-face-back{
-  /* Pre-rotated 180° so it shows on the back */
-  transform: rotateY(180deg);
-}
+
+
+
 /* flip-prev back needs to mirror differently */
-.flip-leaf.flip-prev .flip-face-back{
-  transform: rotateY(-180deg);
-}
+.flip-leaf.flip-prev 
 
 /* Shadow overlay that sweeps across the static page */
-.flip-shadow{
-  position:absolute;
-  top:0; bottom:0; width:50%;
-  pointer-events:none;
-  z-index:15;
-  opacity:0;
-  transition: opacity 0s;
-}
-.flip-shadow-left { left:0;   background:linear-gradient(to left, rgba(0,0,0,0.22), transparent); }
-.flip-shadow-right{ right:0;  background:linear-gradient(to right, rgba(0,0,0,0.22), transparent); }
+
+
+
 
 /* CONTROLS */
 .controls{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
@@ -231,8 +199,6 @@ body{font-family:'Georgia',serif;background:#2a2a2a;min-height:100vh;overflow:hi
         <div class="page page-right" id="pageRight"><div class="page-inner" id="pageRightInner"></div></div>
       </div>
       <!-- Shadow overlays for 3D flip -->
-      <div class="flip-shadow flip-shadow-left"  id="shadowLeft"></div>
-      <div class="flip-shadow flip-shadow-right" id="shadowRight"></div>
     </div>
     <div class="stack stack-right" id="stackRight"></div>
   </div>
@@ -672,9 +638,7 @@ function _fallbackInit() {
     '<div class="spread" id="spread">' +
     '<div class="page page-left" id="pageLeft"><div class="page-inner" id="pageLeftInner"></div></div>' +
     '<div class="page page-right" id="pageRight"><div class="page-inner" id="pageRightInner"></div></div>' +
-    '</div>' +
-    '<div class="flip-shadow" id="shadowLeft" style="left:0;background:linear-gradient(to left,rgba(0,0,0,.15),transparent)"></div>' +
-    '<div class="flip-shadow" id="shadowRight" style="right:0;left:auto;background:linear-gradient(to right,rgba(0,0,0,.15),transparent)"></div>';
+    '</div>';
   renderSpread(0);
 }
 
